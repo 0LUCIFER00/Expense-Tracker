@@ -36,7 +36,7 @@ export class ExpenseService {
   deleteExpense(expense: Expense) {
     let index = this.expenses.indexOf(expense);
     this.expenses.splice(index, 1);
-    // this.saveToLocalStorage(this.expenses);
+    this.saveToLocalStorage(this.expenses);
   }
 
   filterByMonth(month: number): Expense[] {
