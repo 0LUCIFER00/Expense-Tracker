@@ -7,6 +7,7 @@
   max-width: 800px;
   margin: 2rem auto;
   font-family: 'Segoe UI', sans-serif;
+  padding-bottom: 2px;
 }
 
 .filter-bar {
@@ -39,7 +40,7 @@
   justify-content: space-between;
   padding: 0.8rem;
   background-color: #f4f6fa;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.7rem;
   border-radius: 6px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
@@ -81,4 +82,19 @@
 
 .expense-list li:has(.hig){
   background-color: #c5daff;
+}
+
+.spend.blowing-box {
+  padding: 0.5rem;
+  margin: auto;
+  width: fit-content;
+  border-radius: 10px;
+  background: rgb(124, 187, 255);
+  transition: transform 0.3s ease;
+  color: white;
+}
+
+/* Hover effect for interaction */
+.spend.blowing-box:hover {
+  transform: scale(1.03);
 }

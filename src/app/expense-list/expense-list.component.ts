@@ -46,7 +46,7 @@ export class ExpenseListComponent {
   constructor(private expenseService: ExpenseService) {}
 
   allExpense() {
-    this.expenses = this.expenseService.getExpenses();
+    this.expenses = this.expenseService.getExpenses()
     // .sort((a, b) =>
     //   new Date(a.date).getMonth() - new Date(b.date).getMonth()
     // );

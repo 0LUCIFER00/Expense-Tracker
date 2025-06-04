@@ -13,6 +13,9 @@
           {{ m.label }}
         </option>
       </select>
+      <div class="spend blowing-box">
+        <app-total-summary [total]="total"></app-total-summary>
+      </div>
     </div>
 
     <ul class="expense-list">
@@ -23,15 +26,16 @@
         <span>Delete</span>
       </li>
       <li *ngFor="let e of expenses">
-        <span class="expense-date">{{ e.date | date : "shortDate" }}</span>
+        <span class="expense-date">{{ e.date | date }}</span>
         <span class="expense-amount">₹{{ e.amount }}</span>
         <span class="expense-desc">{{ e.description }}</span>
         <span>
           <button class="btn-danger" (click)="onDelete(e)">X</button>
         </span>
       </li>
+      <div *ngIf="total == 0">
+        <h3 style="text-align: center;">No Record Found...</h3>
+      </div>
     </ul>
-
-    <app-total-summary [total]="total"></app-total-summary>
   </div>
 </div>

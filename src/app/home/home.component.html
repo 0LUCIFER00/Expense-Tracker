@@ -2,7 +2,8 @@
   <header class="hero-section">
     <h1>Welcome to Expense Tracker</h1>
     <p class="subtitle">Track your spending. Control your budget. Master your finances.</p>
-    <button class="btn-primary" routerLink="/add-expense">Add New Expense</button>
+    <p class="date">Today : {{ today | date: 'fullDate' }}</p>
+    <button class="btn-primary" routerLink="/add-expense">➕Add New Expense</button>
   </header>
 
   <section class="stats-section">
@@ -15,12 +16,16 @@
       <p>₹{{ totalSpent }}</p>
     </div>
     <div class="card">
-      <h2>Expenses This Month</h2>
+      <h2>This Month Expenses</h2>
       <p>₹{{ currentMonthSpent }}</p>
+    </div>
+    <div class="card">
+      <h2>Last Month Expenses</h2>
+      <p>₹{{ lastMonthSpent }}</p>
     </div>
   </section>
 
   <section class="actions-section">
-    <button class="btn-secondary" routerLink="/view-expenses">View All Expenses</button>
+    <button class="btn-secondary" routerLink="/view-expenses">📊View All Expenses</button>
   </section>
 </div>

@@ -11,17 +11,19 @@ import { RouterModule } from '@angular/router';
   imports: [CommonModule, RouterModule],
 })
 export class HomeComponent {
+  today = new Date();
   subscribe: any;
   expenses: Expense[] = [];
   totalSpent: number = 0;
   currentMonthSpent: number = 0;
+  lastMonthSpent: number = 0;
   totalExpenses: number = 0;
 
   constructor(private expenseService: ExpenseService) {}
 
   ngOnInit() {
     this.expenses = this.expenseService.getExpenses();
-    this.totalSpent = this.expenses.reduce((acc, e) => acc + +e.amount, 0);
+    this.totalSpent = this.expenses.reduce((acc, e) => acc + e.amount, 0);
     this.totalExpenses = this.expenses.length;
 
     const currentMonth = new Date().getMonth();
@@ -33,6 +35,14 @@ export class HomeComponent {
           date.getMonth() === currentMonth && date.getFullYear() === currentYear
         );
       })
-      .reduce((acc, e) => acc + +e.amount, 0);
+      .reduce((acc, e) => acc + e.amount, 0);
+    this.lastMonthSpent = this.expenses
+      .filter((e) => {
+        const date = new Date(e.date);
+        return (
+          date.getMonth() === currentMonth-1 && date.getFullYear() === currentYear
+        );
+      })
+      .reduce((acc, e) => acc + e.amount, 0);
   }
 }

@@ -81,3 +81,9 @@
 .btn-secondary:hover {
   background-color: #e4eaff;
 }
+
+.date {
+  margin: 1rem 0;
+  font-style: italic;
+  color: #777;
+}
