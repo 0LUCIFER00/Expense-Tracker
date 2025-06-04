@@ -1,0 +1,37 @@
+<div class="body">
+  <div class="filter-expense-section">
+    <div class="filter-bar">
+      <label for="yearFilter">Filter by Year:</label>
+      <select id="yearFilter" (change)="onFilterYear($event.target)">
+        <option *ngFor="let y of years" [value]="y.value">
+          {{ y.label }}
+        </option>
+      </select>
+      <label for="monthFilter">Filter by Month:</label>
+      <select id="monthFilter" (change)="onFilterMonth($event.target)">
+        <option *ngFor="let m of months" [value]="m.value">
+          {{ m.label }}
+        </option>
+      </select>
+    </div>
+
+    <ul class="expense-list">
+      <li style="background: rgb(124, 187, 255); color: rgb(235, 235, 235)">
+        <span class="expense-date">Date(MM/DD/YY)</span>
+        <span class="expense-amount">Amount</span>
+        <span class="expense-desc">Description</span>
+        <span>Delete</span>
+      </li>
+      <li *ngFor="let e of expenses">
+        <span class="expense-date">{{ e.date | date : "shortDate" }}</span>
+        <span class="expense-amount">₹{{ e.amount }}</span>
+        <span class="expense-desc">{{ e.description }}</span>
+        <span>
+          <button class="btn-danger" (click)="onDelete(e)">X</button>
+        </span>
+      </li>
+    </ul>
+
+    <app-total-summary [total]="total"></app-total-summary>
+  </div>
+</div>

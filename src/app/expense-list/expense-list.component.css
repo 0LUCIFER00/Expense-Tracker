@@ -1,0 +1,84 @@
+
+.filter-expense-section {
+  padding: 2rem;
+  background-color: #fdfdfd;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  max-width: 800px;
+  margin: 2rem auto;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.filter-bar label {
+  margin-right: 0.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.filter-bar select {
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+.expense-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.expense-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.8rem;
+  background-color: #f4f6fa;
+  margin-bottom: 0.6rem;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+
+.expense-date {
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.expense-amount {
+  font-weight: bold;
+  color: #2a3f9d;
+  flex: 1;
+}
+
+.expense-desc {
+  flex: 1;
+}
+
+.btn-danger{
+  color: white;
+  background: rgb(230, 62, 62);
+  border: none;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.btn-danger:hover{
+  width: 24px;
+  height: 24px;
+}
+
+
+.expense-list li:has(.mid){
+  background-color: #e0ebff;
+}
+
+.expense-list li:has(.hig){
+  background-color: #c5daff;
+}

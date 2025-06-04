@@ -1,0 +1,68 @@
+
+.expense-form-container {
+  max-width: 500px;
+  margin: 2.75rem auto;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.expense-form-container h2 {
+  text-align: center;
+  color: #2a3f9d;
+  margin-bottom: 1.5rem;
+}
+
+.expense-form .form-group {
+  margin-bottom: 1.2rem;
+}
+
+.expense-form label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: bold;
+  color: #444;
+}
+
+.expense-form input {
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.expense-form input:focus {
+  border-color: #2a3f9d;
+  outline: none;
+  box-shadow: 0 0 5px rgba(42, 63, 157, 0.3);
+}
+
+.expense-form button {
+  width: 100%;
+  background-color: #2a3f9d;
+  color: white;
+  padding: 0.9rem;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background-color 0.3s;
+}
+
+.expense-form button:hover {
+  background-color: #1c2978;
+}
+
+.expense-form button:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+}
+
+.expense-form .form-group .ng-invalid.ng-touched {
+  border-color: red;
+}

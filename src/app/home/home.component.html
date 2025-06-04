@@ -1,0 +1,26 @@
+<div class="home-container">
+  <header class="hero-section">
+    <h1>Welcome to Expense Tracker</h1>
+    <p class="subtitle">Track your spending. Control your budget. Master your finances.</p>
+    <button class="btn-primary" routerLink="/add-expense">Add New Expense</button>
+  </header>
+
+  <section class="stats-section">
+    <div class="card">
+      <h2>Total Entries</h2>
+      <p>{{ totalExpenses }}</p>
+    </div>
+    <div class="card">
+      <h2>Total Spent</h2>
+      <p>₹{{ totalSpent }}</p>
+    </div>
+    <div class="card">
+      <h2>Expenses This Month</h2>
+      <p>₹{{ currentMonthSpent }}</p>
+    </div>
+  </section>
+
+  <section class="actions-section">
+    <button class="btn-secondary" routerLink="/view-expenses">View All Expenses</button>
+  </section>
+</div>
