@@ -1,0 +1,190 @@
+<div class="settings-page">
+
+    <div class="settings-top-row">
+        <h2 class="settings-title">Settings</h2>
+
+        <div class="toggle-section">
+            <p class="description">Create admin access</p>
+
+            <label class="switch">
+                <input type="checkbox" [(ngModel)]="isEnabled" (change)="onToggleChange()">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <div class="settings-header">
+        <div></div>
+        <h3>Normal User</h3>
+        <h3>Admin User</h3>
+    </div>
+
+    <div class="settings-card">
+
+        <div class="settings-row">
+            <div class="setting-label">Balance Management Visiable to..</div>
+
+            <label class="switch">
+                <input type="checkbox" [(ngModel)]="addBalanceUserAccess" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
+                <span class="slider"></span>
+            </label>
+
+            <label class="switch">
+                <input type="checkbox" [(ngModel)]="addBalanceAdminAccess" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="settings-row">
+            <div class="setting-label">
+                Balance Update Access
+            </div>
+
+            <label class="switch">
+                <input type="checkbox" [(ngModel)]="addExpenseUserAccess" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
+                <span class="slider"></span>
+            </label>
+
+            <label class="switch">
+                <input type="checkbox" [(ngModel)]="addExpenseAdminAccess" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="settings-row">
+            <div class="setting-label">Past & Future Date Update Permission</div>
+
+            <label class="switch">
+                <input type="checkbox" [(ngModel)]="updatePermissionUser" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
+                <span class="slider"></span>
+            </label>
+
+            <label class="switch">
+                <input type="checkbox" [(ngModel)]="updatePermissionAdmin" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="settings-row">
+            <div class="setting-label">View Expense Permission</div>
+
+            <label class="switch">
+                <input type="checkbox" [(ngModel)]="viewPermissionUser" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
+                <span class="slider"></span>
+            </label>
+
+            <label class="switch">
+                <input type="checkbox" [(ngModel)]="viewPermissionAdmin" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="settings-row">
+            <div class="setting-label">Expense List Remove Permission</div>
+
+            <label class="switch">
+                <input type="checkbox" [(ngModel)]="removePermissionUser" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
+                <span class="slider"></span>
+            </label>
+
+            <label class="switch">
+                <input type="checkbox" [(ngModel)]="removePermissionAdmin" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
+                <span class="slider"></span>
+            </label>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Enable Admin Access Popup -->
+<div class="overlay" *ngIf="showPopup">
+
+    <div class="popup">
+
+        <h3>Balance Management</h3>
+
+        <p class="warning-text">
+            Are you sure you want to hide this section for the current user?
+        </p>
+
+        <div class="form-group">
+            <label>Current User</label>
+            <input type="text" [value]="currentUserName" readonly class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label>Admin Password</label>
+            <input type="password" [(ngModel)]="adminPassword" class="form-control" placeholder="Enter admin password">
+        </div>
+
+        <div class="form-group">
+            <label>Confirm Admin Password</label>
+            <input type="password" [(ngModel)]="confirmPassword" class="form-control"
+                placeholder="Confirm admin password">
+        </div>
+
+        <div class="error-message" *ngIf="confirmPassword && adminPassword !== confirmPassword">
+
+            Passwords do not match
+
+        </div>
+
+        <div class="btn-group">
+
+            <button type="button" class="cancel-btn" (click)="onCancel()">
+                Cancel
+            </button>
+
+            <button type="button" class="ok-btn" (click)="onOk()"
+                [disabled]="!adminPassword || adminPassword !== confirmPassword">
+
+                OK
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Disable Admin Access Popup -->
+<div class="overlay" *ngIf="showChancelPopup">
+
+    <div class="popup">
+
+        <h3>Balance Management</h3>
+
+        <p class="warning-text">
+            Are you sure you want to disable this section for the current user?
+        </p>
+
+        <div class="form-group">
+            <label>Current User</label>
+            <input type="text" [value]="currentUserName" readonly class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label>Admin Password</label>
+            <input type="password" [(ngModel)]="adminCancelPassword" class="form-control"
+                placeholder="Enter admin password">
+        </div>
+
+        <div class="btn-group">
+
+            <button type="button" class="cancel-btn" (click)="onCancelCancel()">
+                Cancel
+            </button>
+
+            <button type="button" class="ok-btn" (click)="onOkCancel()" [disabled]="!adminCancelPassword">
+
+                OK
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>

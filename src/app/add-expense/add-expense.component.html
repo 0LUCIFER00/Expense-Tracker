@@ -1,7 +1,22 @@
 <div class="expense-form-container">
   <h2>Add New Expense</h2>
 
-  <form [formGroup]="expenseForm" (ngSubmit)="onSubmit()" class="expense-form">
+  <form [formGroup]="expenseForm" class="expense-form">
+
+    <div class="form-group">
+      <label for="source">Spend From</label>
+
+      <select id="source" formControlName="source" [attr.disabled]="!expenseAccess ? true : null">
+
+        <option value="">Select Account</option>
+
+        <option *ngFor="let item of availableBalances" [value]="item.id">
+          {{ item.type }} - {{ item.category }}
+        </option>
+
+      </select>
+    </div>
+
     <div class="form-group">
       <label for="amount">Amount (₹)</label>
       <input id="amount" formControlName="amount" type="number" placeholder="Enter amount">
@@ -17,6 +32,25 @@
       <input id="date" formControlName="date" type="date">
     </div>
 
-    <button type="submit" [disabled]="expenseForm.invalid"> Add Expense</button>
+    <div class="button-group">
+
+      <!-- Show Add Expense when source is not selected -->
+      <button *ngIf="!expenseAccess || !expenseForm.get('source')?.value" type="button" class="expense-btn"
+        [disabled]="isMainFormInvalid()" (click)="onSubmit(false)">
+        Add Expense
+      </button>
+
+      <!-- Show Add & Update Balance only after selecting Spend From -->
+      <button *ngIf="expenseAccess && expenseForm.get('source')?.value" type="button" class="update-btn"
+        [disabled]="isMainFormInvalid()" (click)="onSubmit(true)">
+        Add & Update Balance
+      </button>
+
+    </div>
+
   </form>
 </div>
+
+<app-expense-date-popup *ngIf="showDatePopup" [popupType]="popupType" [canAddDirectly]="updatePermission"
+  (cancel)="closeDatePopup()" (add)="addFromPopup()" (adminPermission)="adminPermissionFromPopup()">
+</app-expense-date-popup>

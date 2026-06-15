@@ -1,0 +1,56 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.popup {
+  width: 420px;
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.popup h3 {
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.popup p {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.btn-group {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+button {
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.cancel-btn {
+  background: #e0e0e0;
+}
+
+.ok-btn {
+  background: #1976d2;
+  color: white;
+}
+
+.admin-btn {
+  background: #28a745;
+  color: white;
+}

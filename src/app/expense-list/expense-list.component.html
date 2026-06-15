@@ -1,41 +1,94 @@
 <div class="body">
-  <div class="filter-expense-section">
+  <div class="filter-expense-section" [ngClass]="canViewSourceDetails ? 'full-view' : 'compact-view'">
+
     <div class="filter-bar">
       <label for="yearFilter">Filter by Year:</label>
-      <select id="yearFilter" (change)="onFilterYear($event.target)">
+      <select id="yearFilter" (change)="onFilterYear($event)">
         <option *ngFor="let y of years" [value]="y.value">
           {{ y.label }}
         </option>
       </select>
-      <label for="monthFilter">Filter by Month:</label>
-      <select id="monthFilter" (change)="onFilterMonth($event.target)">
+
+      <select id="monthFilter" (change)="onFilterMonth($event)">
         <option *ngFor="let m of months" [value]="m.value">
           {{ m.label }}
         </option>
       </select>
+
       <div class="spend blowing-box">
         <app-total-summary [total]="total"></app-total-summary>
       </div>
     </div>
 
-    <ul class="expense-list">
-      <li style="background: rgb(124, 187, 255); color: rgb(235, 235, 235)">
-        <span class="expense-date">Date(MM/DD/YY)</span>
-        <span class="expense-amount">Amount</span>
-        <span class="expense-desc">Description</span>
-        <span>Delete</span>
+    <ul class="expense-list expense-header-list">
+      <li class="header-row expense-row"
+        [ngClass]="canViewSourceDetails ? 'with-source-columns' : 'without-source-columns'">
+
+        <span class="expense-date sortable" (click)="onSort('date')">
+          Date{{ getSortIcon('date') }}
+        </span>
+
+        <span class="expense-amount sortable" (click)="onSort('amount')">
+          Amount{{ getSortIcon('amount') }}
+        </span>
+
+        <span class="expense-desc sortable" (click)="onSort('description')">
+          Description{{ getSortIcon('description') }}
+        </span>
+
+        <span class="expense-type sortable" *ngIf="canViewSourceDetails" (click)="onSort('sourceType')">
+          Source Type{{ getSortIcon('sourceType') }}
+        </span>
+
+        <span class="expense-category sortable" *ngIf="canViewSourceDetails" (click)="onSort('sourceCategory')">
+          Category{{ getSortIcon('sourceCategory') }}
+        </span>
+
+        <span class="expense-status sortable" (click)="onSort('status')">
+          Status{{ getSortIcon('status') }}
+        </span>
+
+        <span>Action</span>
       </li>
-      <li *ngFor="let e of expenses">
-        <span class="expense-date">{{ e.date | date }}</span>
+    </ul>
+
+    <ul class="expense-list expense-data-scroll">
+      <li *ngFor="let e of expenses" class="expense-row"
+        [ngClass]="canViewSourceDetails ? 'with-source-columns' : 'without-source-columns'">
+
+        <span class="expense-date">{{ e.date | date:'MM/dd/yy' }}</span>
         <span class="expense-amount">₹{{ e.amount }}</span>
         <span class="expense-desc">{{ e.description }}</span>
-        <span>
-          <button class="btn-danger" (click)="onDelete(e)">X</button>
+
+        <span class="expense-type" *ngIf="canViewSourceDetails">
+          {{ e.sourceType || '-' }}
+        </span>
+
+        <span class="expense-category" *ngIf="canViewSourceDetails">
+          {{ e.sourceCategory || '-' }}
+        </span>
+
+        <span class="expense-status" [ngClass]="e.status === 'Done' ? 'status-done' : 'status-pending'">
+          {{ e.status }}
+        </span>
+
+        <span class="action-buttons">
+
+          <button *ngIf="e.isPendingApproval && canApprovePending" type="button" class="btn-success"
+            (click)="onApprovePending(e)">
+            ✓
+          </button>
+
+          <button type="button" class="btn-danger" (click)="onDelete(e)">
+            X
+          </button>
+
         </span>
       </li>
-      <div *ngIf="total == 0">
-        <h3 style="text-align: center;">No Record Found...</h3>
-      </div>
     </ul>
+
+    <div *ngIf="expenses.length === 0" class="no-record">
+      <h3>No Record Found...</h3>
+    </div>
   </div>
 </div>

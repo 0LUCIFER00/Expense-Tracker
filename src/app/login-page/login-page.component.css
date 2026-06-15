@@ -1,0 +1,147 @@
+* {
+  box-sizing: border-box;
+}
+
+.login-page {
+  min-height: 91.8vh;
+  background: linear-gradient(to right, #e8f3ff, #badaff);
+  font-family: Arial, sans-serif;
+}
+
+
+.logo {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.nav-links a {
+  color: white;
+  text-decoration: none;
+  margin-left: 24px;
+  font-weight: 500;
+}
+
+.nav-links a:hover {
+  text-decoration: underline;
+}
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: #f9f8ff;
+  padding: 35px 30px;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  text-align: center;
+}
+
+.access-msg {
+  color: #d32f2f;
+  background: #fdecea;
+  border: 1px solid #f5c2c7;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.success {
+  color: green;
+  font-size: 14px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.login-card h1 {
+  margin-bottom: 10px;
+  color: #1f3c88;
+  font-size: 32px;
+}
+
+.subtitle {
+  color: #666;
+  margin-bottom: 25px;
+  font-size: 16px;
+}
+
+.form-group {
+  text-align: left;
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  transition: 0.3s;
+}
+
+.form-group input:focus {
+  border-color: #1e88e5;
+  box-shadow: 0 0 4px rgba(30, 136, 229, 0.4);
+}
+
+.error {
+  color: red;
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background-color: #2f49b7;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover:not(:disabled) {
+  background-color: #1f3c88;
+}
+
+button:disabled {
+  background-color: #9fa8da;
+  cursor: not-allowed;
+}
+
+.footer-text {
+  margin-top: 18px;
+  font-size: 14px;
+  color: #555;
+}
+
+.footer-text a {
+  color: #1e88e5;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.footer-text a:hover {
+  text-decoration: underline;
+}

@@ -1,9 +1,45 @@
 <header class="header">
   <div class="logo">Expense Tracker</div>
   <nav class="nav-links">
-    <a routerLink="/">Home</a>
+    <a routerLink="/home">Home</a>
     <a routerLink="/add-expense">Add Expense</a>
     <a routerLink="/view-expenses">View Expenses</a>
-    <!-- <a routerLink="/login">Log Out</a> -->
+    <a *ngIf="showBalanceManagement" routerLink="/bal-mnt">Balance Management</a>
+    <div class="profile-menu">
+
+    <button
+        class="profile-btn"
+        type="button"
+        (click)="toggleProfileMenu()">
+
+        <span class="profile-icon">👤</span>
+
+    </button>
+
+    <div
+        class="profile-dropdown" #profileMenu
+        *ngIf="showProfileMenu">
+
+        <a routerLink="/profile" (click)="closeProfileMenu()">
+            👤 My Profile
+        </a>
+
+        <a routerLink="/settings" (click)="closeProfileMenu()">
+            ⚙️ Settings
+        </a>
+
+        <a routerLink="/help_support" (click)="closeProfileMenu()">
+            ❓ Help & Support
+        </a>
+
+        <hr>
+
+        <a href="javascript:void(0)" (click)="logout()">
+            🚪 Logout
+        </a>
+
+    </div>
+
+</div>
   </nav>
 </header>

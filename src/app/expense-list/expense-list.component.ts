@@ -1,29 +1,44 @@
-import { Component, Input } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Expense } from '../shared/expense.model';
 import { CommonModule } from '@angular/common';
 import { ExpenseService } from '../shared/expense.service';
 import { TotalSummaryComponent } from '../total-summary/total-summary.component';
 import { FormsModule } from '@angular/forms';
+import { UserService } from '../shared/user.service';
 
 @Component({
   selector: 'app-expense-list',
+  standalone: true,
   imports: [CommonModule, TotalSummaryComponent, FormsModule],
   templateUrl: './expense-list.component.html',
   styleUrl: './expense-list.component.css',
 })
-export class ExpenseListComponent {
+export class ExpenseListComponent implements OnInit {
   expenses: Expense[] = [];
   total = 0;
 
+  currentYear = new Date().getFullYear();
+  recentYearsCount = 5;
+
+  selectedMonth = 0;
+  selectedYear = 0;
+
+  canApprovePending = false;
+
+  canViewSourceDetails = false;
+
+  sortColumn: keyof Expense | null = null;
+  sortDirection: 'asc' | 'desc' | 'default' = 'default';
+
   years = [
     { value: 0, label: 'All' },
-    { value: 2025, label: '2025' },
-    { value: 2024, label: '2024' },
-    { value: 2023, label: '2023' },
-    { value: 2022, label: '2022' },
-    { value: 2021, label: '2021' },
-    { value: 2020, label: '< 2021' },
+    ...Array.from({ length: this.recentYearsCount }, (_, i) => ({
+      value: this.currentYear - i,
+      label: (this.currentYear - i).toString(),
+    })),
+    { value: -1, label: '< 5 Years' },
   ];
+
   months = [
     { value: 0, label: 'All' },
     { value: 1, label: 'January' },
@@ -39,55 +54,165 @@ export class ExpenseListComponent {
     { value: 11, label: 'November' },
     { value: 12, label: 'December' },
   ];
-  ngOnInit() {
-    this.allExpense();
+
+  constructor(
+    private expenseService: ExpenseService,
+    private userService: UserService
+  ) { }
+
+  ngOnInit(): void {
+    this.setViewPermission();
+    this.applyFilters();
   }
 
-  constructor(private expenseService: ExpenseService) {}
+  setViewPermission(): void {
+    const loginType = localStorage.getItem('loginType');
+    const settings = this.userService.getSettingsAccess();
 
-  allExpense() {
-    this.expenses = this.expenseService.getExpenses()
-    // .sort((a, b) =>
-    //   new Date(a.date).getMonth() - new Date(b.date).getMonth()
-    // );
-    this.total = this.expenseService.forTotal(this.expenses);
-  }
-
-  month: any;
-  year: any;
-  onFilterMonth(month: any) {
-    this.month = month;
-    const monthNum = month.value;
-    if (monthNum == 0) {
-      this.expenses = this.expenseService.alterExpen();
+    if (loginType === 'admin') {
+      this.canViewSourceDetails = settings.viewPermissionAdmin;
+      this.canApprovePending = settings.updatePermissionAdmin;
     } else {
-      this.expenses = this.expenseService.filterByMonth(monthNum - 1);
+      this.canViewSourceDetails = settings.viewPermissionUser;
+      this.canApprovePending = settings.updatePermissionUser;
     }
+  }
+
+  onApprovePending(expense: Expense): void {
+    const approved = this.expenseService.approvePendingExpense(expense);
+
+    if (approved) {
+      this.applyFilters();
+    }
+  }
+
+  onFilterMonth(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.selectedMonth = Number(target.value);
+    this.applyFilters();
+  }
+
+  onFilterYear(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.selectedYear = Number(target.value);
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
+    let filteredExpenses = this.expenseService.getExpenses();
+
+    if (this.selectedMonth !== 0) {
+      filteredExpenses = filteredExpenses.filter(
+        (expense) => new Date(expense.date).getMonth() === this.selectedMonth - 1
+      );
+    }
+
+    if (this.selectedYear === -1) {
+      const limitYear = this.currentYear - this.recentYearsCount + 1;
+      filteredExpenses = filteredExpenses.filter(
+        (expense) => new Date(expense.date).getFullYear() < limitYear
+      );
+    } else if (this.selectedYear !== 0) {
+      filteredExpenses = filteredExpenses.filter(
+        (expense) => new Date(expense.date).getFullYear() === this.selectedYear
+      );
+    }
+
+    this.expenses = this.applySorting(filteredExpenses);
     this.total = this.expenseService.forTotal(this.expenses);
   }
 
-  onFilterYear(year: any) {
-    this.year = year;
-    const yearNum = year.value;
-
-    const input = document.getElementById('monthFilter') as HTMLInputElement;
-    if (yearNum == 0) {
-      this.expenses = this.expenseService.getExpenses();
-    } else {
-      this.expenses = this.expenseService.filterByYear(yearNum - 0);
-    }
-    this.onFilterMonth(input);
-    this.total = this.expenseService.forTotal(this.expenses);
-  }
-
-  onDelete(expense: Expense) {
+  onDelete(expense: Expense): void {
     this.expenseService.deleteExpense(expense);
-    this.allExpense();
-    if (this.year) {
-      this.onFilterYear(this.year);
+    this.applyFilters();
+  }
+
+  getExpenseStatus(expense: Expense): string {
+    return expense.status || 'Pending / Waiting Admin';
+  }
+
+  getStatusClass(expense: Expense): string {
+    if (expense.status === 'Done') {
+      return 'status-done';
     }
-    if (this.month) {
-      this.onFilterMonth(this.month);
+
+    return 'status-pending';
+  }
+
+  onSort(column: keyof Expense): void {
+    if (this.sortColumn !== column) {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    } else if (this.sortDirection === 'asc') {
+      this.sortDirection = 'desc';
+    } else if (this.sortDirection === 'desc') {
+      this.sortDirection = 'default';
+      this.sortColumn = null;
+    } else {
+      this.sortDirection = 'asc';
     }
+
+    this.applyFilters();
+  }
+
+  applySorting(expenses: Expense[]): Expense[] {
+    // Default user-added order
+    if (!this.sortColumn || this.sortDirection === 'default') {
+      return expenses.sort((a, b) => {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : Number(a.id || 0);
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : Number(b.id || 0);
+
+        return aTime - bTime;
+      });
+    }
+
+    return expenses.sort((a: any, b: any) => {
+      let valueA = a[this.sortColumn as string];
+      let valueB = b[this.sortColumn as string];
+
+      if (this.sortColumn === 'date') {
+        valueA = new Date(valueA).getTime();
+        valueB = new Date(valueB).getTime();
+      }
+
+      if (this.sortColumn === 'amount') {
+        valueA = Number(valueA);
+        valueB = Number(valueB);
+      }
+
+      if (typeof valueA === 'string') {
+        valueA = valueA.toLowerCase();
+      }
+
+      if (typeof valueB === 'string') {
+        valueB = valueB.toLowerCase();
+      }
+
+      if (valueA < valueB) {
+        return this.sortDirection === 'asc' ? -1 : 1;
+      }
+
+      if (valueA > valueB) {
+        return this.sortDirection === 'asc' ? 1 : -1;
+      }
+
+      return 0;
+    });
+  }
+
+  getSortIcon(column: keyof Expense): string {
+    if (this.sortColumn !== column) {
+      return '';
+    }
+
+    if (this.sortDirection === 'asc') {
+      return ' ↑';
+    }
+
+    if (this.sortDirection === 'desc') {
+      return ' ↓';
+    }
+
+    return '';
   }
 }

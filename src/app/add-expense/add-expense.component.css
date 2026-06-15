@@ -1,10 +1,9 @@
-
 .expense-form-container {
   max-width: 500px;
-  margin: 2.75rem auto;
+  margin: 0.7rem auto;
   background: #ffffff;
   border-radius: 12px;
-  padding: 2rem;
+  padding: 1.8rem;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -12,57 +11,142 @@
 .expense-form-container h2 {
   text-align: center;
   color: #2a3f9d;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
+/* Common Form Group */
+.form-group,
 .expense-form .form-group {
-  margin-bottom: 1.2rem;
+  margin-bottom: 1rem;
 }
 
+.form-group label,
 .expense-form label {
   display: block;
   margin-bottom: 0.4rem;
-  font-weight: bold;
+  font-weight: 600;
   color: #444;
 }
 
-.expense-form input {
+/* Inputs and Select */
+.form-group input,
+.expense-form input,
+.form-group select {
   width: 100%;
-  padding: 0.7rem;
+  padding: 0.75rem;
   border: 1px solid #ccc;
   border-radius: 8px;
   font-size: 1rem;
-  transition: border-color 0.3s;
+  background-color: #fff;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
 }
 
-.expense-form input:focus {
+/* Custom Select Dropdown */
+.form-group select {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background-image:
+    linear-gradient(45deg, transparent 50%, #5b6b88 50%),
+    linear-gradient(135deg, #5b6b88 50%, transparent 50%);
+
+  background-position:
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 12px) calc(50% - 3px);
+
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+
+  padding-right: 45px;
+}
+
+/* Focus */
+.form-group input:focus,
+.expense-form input:focus,
+.form-group select:focus {
   border-color: #2a3f9d;
   outline: none;
   box-shadow: 0 0 5px rgba(42, 63, 157, 0.3);
 }
 
-.expense-form button {
-  width: 100%;
-  background-color: #2a3f9d;
-  color: white;
-  padding: 0.9rem;
-  font-size: 1.1rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  margin-top: 1rem;
-  transition: background-color 0.3s;
+/* Hover */
+.form-group select:hover,
+.form-group input:hover,
+.expense-form input:hover {
+  border-color: #8db4ff;
 }
 
-.expense-form button:hover {
+/* Placeholder option */
+.form-group select option[value=""] {
+  color: #9ca3af;
+}
+
+/* Submit Button */
+.button-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 1rem;
+}
+
+.expense-btn,
+.update-btn {
+  flex: 1;
+  padding: 0.9rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.expense-btn {
+  background-color: #2a3f9d;
+}
+
+.expense-btn:hover:not(:disabled) {
   background-color: #1c2978;
 }
 
-.expense-form button:disabled {
+.update-btn {
+  background-color: #28a745;
+}
+
+.update-btn:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.expense-btn:disabled,
+.update-btn:disabled {
   background-color: #aaa;
   cursor: not-allowed;
 }
 
-.expense-form .form-group .ng-invalid.ng-touched {
-  border-color: red;
+/* Validation */
+.expense-form input.ng-invalid.ng-touched,
+.form-group select.ng-invalid.ng-touched {
+  border-color: #dc3545;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .expense-form-container {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+
+  .expense-form-container h2 {
+    font-size: 1.5rem;
+  }
+}
+
+select:disabled {
+  background-color: #f1f3f5;
+  color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.8;
 }

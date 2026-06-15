@@ -1,0 +1,42 @@
+<div class="overlay">
+  <div class="popup">
+
+    <h3>Confirm Expense Date</h3>
+
+    <p *ngIf="popupType === 'past'">
+      You selected a past date.
+    </p>
+
+    <p *ngIf="popupType === 'future'">
+      You selected a future date.
+    </p>
+
+    <div class="btn-group">
+
+      <button
+        type="button"
+        class="cancel-btn"
+        (click)="cancel.emit()">
+        Cancel
+      </button>
+
+      <button
+        *ngIf="canAddDirectly"
+        type="button"
+        class="ok-btn"
+        (click)="add.emit()">
+        Add
+      </button>
+
+      <button
+        *ngIf="!canAddDirectly"
+        type="button"
+        class="admin-btn"
+        (click)="adminPermission.emit()">
+        Admin Permission
+      </button>
+
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,136 @@
+<div class="body">
+
+    <div class="header-row">
+        <h2 class="header">Balance Management</h2>
+
+        <!-- <div class="toggle-section">
+            <p class="description">Make admin can only access</p>
+
+            <label class="switch">
+                <input type="checkbox" [(ngModel)]="isEnabled" (change)="onToggleChange()">
+                <span class="slider"></span>
+            </label>
+        </div> -->
+    </div>
+
+    <div class="balance-container">
+
+        <div class="balance-row" *ngFor="let item of balances; let i = index">
+
+            <div class="balance-field">
+                <label>Type</label>
+
+                <select [(ngModel)]="item.type" (ngModelChange)="onTypeChange(item); onBalanceRowChange(item)">
+                    <option value="Hand Cash">Hand Cash</option>
+                    <option value="Wallet">Wallet</option>
+                    <option value="Bank Account">Bank Account</option>
+                </select>
+            </div>
+
+            <div class="balance-field">
+                <label>
+                    {{
+                    item.type === 'Hand Cash'
+                    ? 'Cash Type'
+                    : item.type === 'Wallet'
+                    ? 'Wallet Name'
+                    : 'Bank Name'
+                    }}
+                </label>
+
+                <select [(ngModel)]="item.category" (change)="onCategoryChange(item)">
+
+                    <option value="">Select</option>
+
+                    <option *ngFor="let option of getOptions(item.type)" [value]="option">
+                        {{ option }}
+                    </option>
+
+                    <option value="other">
+                        + Add New
+                    </option>
+
+                </select>
+                <!-- <div class="field-error" *ngIf="!item.category">
+                    Please select a value
+                </div> -->
+            </div>
+
+
+            <div class="balance-field">
+                <label>Balance</label>
+
+                <input type="number" [(ngModel)]="item.balance" (input)="onBalanceRowChange(item)"
+                    placeholder="Enter balance">
+            </div>
+            <!-- <div class="field-error" *ngIf="item.balance !== null && item.balance <= 0">
+                Enter a valid amount
+            </div> -->
+
+            <div class="balance-actions">
+
+                <button type="button" class="add-balance-btn" *ngIf="i === balances.length - 1" (click)="addRow()">
+                    +
+                </button>
+
+                <button type="button" class="delete-balance-btn" *ngIf="balances.length > 1" (click)="removeRow(i)">
+                    ×
+                </button>
+
+                <button type="button" class="save-balance-btn" [disabled]="
+    item.saved ||
+    !item.type ||
+    !item.category ||
+    item.balance === null ||
+    item.balance === '' ||
+    item.balance <= 0
+  " (click)="saveBalanceRow(item)">
+                    ✓
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Add New Option Popup -->
+<div class="custom-popup-overlay" *ngIf="popupVisible">
+
+    <div class="custom-popup">
+
+        <h3>
+            Add New
+            {{
+            selectedItem?.type === 'Hand Cash'
+            ? 'Cash Type'
+            : selectedItem?.type === 'Wallet'
+            ? 'Wallet'
+            : 'Bank'
+            }}
+        </h3>
+
+        <input type="text" [(ngModel)]="popupValue" placeholder="Enter value">
+
+        <div class="popup-actions">
+
+            <button type="button" class="popup-cancel-btn" (click)="popupVisible = false">
+                Cancel
+            </button>
+
+            <button type="button" class="popup-save-btn" (click)="saveNewOption()">
+                Add
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="toast-message" *ngIf="toastMessage">
+    {{ toastMessage }}
+</div>
