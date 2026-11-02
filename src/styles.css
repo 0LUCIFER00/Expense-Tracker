@@ -338,3 +338,35 @@ html[data-theme='dark'] {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/*
+ * Pages that fit the window.
+ *
+ * FitsScreenDirective puts this class on <body> while such a page is open. The
+ * shell is pinned to the viewport so the window itself does not scroll, and the
+ * routed page is allowed to shrink — without min-height: 0 a flex child refuses
+ * to go below its content, which is what would push the page off-screen.
+ *
+ * Only where there is room for it: below this size the content genuinely does
+ * not fit, and scrolling is the right answer.
+ */
+@media (min-width: 900px) and (min-height: 680px) {
+  body.fits-screen app-root {
+    height: 100dvh;
+  }
+
+  /*
+   * The shell's main is normally `flex: 1 0 auto` — it grows but never shrinks,
+   * which is right when the window scrolls. Here it has to give, or a page
+   * taller than the viewport pushes the footer off the bottom.
+   */
+  body.fits-screen app-root > .app-main {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  body.fits-screen app-root > .app-main > *:not(router-outlet) {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+}

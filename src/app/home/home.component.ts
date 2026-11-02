@@ -9,6 +9,7 @@ import { BalanceService } from '../shared/balance.service';
 import { SettingsService } from '../shared/settings.service';
 import { WhatsappService, WhatsappLinkStatus } from '../shared/whatsapp.service';
 import { parseLocalDate } from '../shared/date-utils';
+import { FitsScreenDirective } from '../shared/fits-screen.directive';
 
 /** A row in "Where your money is": the account plus its share of the largest. */
 interface AccountRow {
@@ -27,7 +28,7 @@ interface CategoryBar extends CategoryTotal {
   standalone: true,
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
-  imports: [CommonModule, RouterModule]
+  imports: [CommonModule, RouterModule, FitsScreenDirective]
 })
 export class HomeComponent implements OnInit {
   private readonly expenseService = inject(ExpenseService);

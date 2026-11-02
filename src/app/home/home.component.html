@@ -1,4 +1,4 @@
-<div class="dashboard">
+<div class="dashboard" appFitsScreen>
 
   <p class="page-error" *ngIf="loadError">{{ loadError }}</p>
 
@@ -59,18 +59,20 @@
         No accounts yet. Add one and your balances appear here.
       </p>
 
-      <div class="account-row" *ngFor="let row of accountRows">
-        <div class="account-head">
-          <span class="account-name">{{ row.account.category }}</span>
-          <span class="account-amount tnum">₹{{ row.account.balance | number }}</span>
-        </div>
+      <div class="scroll-area">
+        <div class="account-row" *ngFor="let row of accountRows">
+          <div class="account-head">
+            <span class="account-name">{{ row.account.category }}</span>
+            <span class="account-amount tnum">₹{{ row.account.balance | number }}</span>
+          </div>
 
-        <span class="account-kind">{{ row.account.type }}</span>
+          <span class="account-kind">{{ row.account.type }}</span>
 
         <!-- Decorative: the amount beside it already states the value. -->
-        <span class="account-track" aria-hidden="true">
-          <span class="account-fill" [style.width.%]="row.share"></span>
-        </span>
+          <span class="account-track" aria-hidden="true">
+            <span class="account-fill" [style.width.%]="row.share"></span>
+          </span>
+        </div>
       </div>
 
       <a class="card-link" routerLink="/bal-mnt">Manage accounts</a>
@@ -88,15 +90,17 @@
         Nothing recorded this month yet.
       </p>
 
-      <div class="category-row" *ngFor="let bar of categoryBars">
-        <span class="category-name">{{ bar.category }}</span>
+      <div class="scroll-area">
+        <div class="category-row" *ngFor="let bar of categoryBars">
+          <span class="category-name">{{ bar.category }}</span>
 
-        <span class="category-track" aria-hidden="true">
-          <span class="category-fill" [attr.data-tone]="bar.tone"
-            [style.width.%]="bar.share"></span>
-        </span>
+          <span class="category-track" aria-hidden="true">
+            <span class="category-fill" [attr.data-tone]="bar.tone"
+              [style.width.%]="bar.share"></span>
+          </span>
 
-        <span class="category-amount tnum">₹{{ bar.total | number }}</span>
+          <span class="category-amount tnum">₹{{ bar.total | number }}</span>
+        </div>
       </div>
     </section>
 
@@ -107,20 +111,22 @@
         Your last few expenses will show up here.
       </p>
 
-      <div class="recent-row" *ngFor="let item of recent">
-        <span class="recent-date tnum">{{ item.date | date: 'd MMM' }}</span>
+      <div class="scroll-area">
+        <div class="recent-row" *ngFor="let item of recent">
+          <span class="recent-date tnum">{{ item.date | date: 'd MMM' }}</span>
 
-        <span class="recent-what">
-          {{ item.description }}
-          <span class="recent-meta" *ngIf="item.category || item.sourceCategory">
-            ·
-            {{ item.sourceCategory || item.category }}
+          <span class="recent-what">
+            {{ item.description }}
+            <span class="recent-meta" *ngIf="item.category || item.sourceCategory">
+              ·
+              {{ item.sourceCategory || item.category }}
+            </span>
           </span>
-        </span>
 
-        <span class="recent-amount tnum" [class.pending]="item.isPendingApproval">
-          ₹{{ item.amount | number }}
-        </span>
+          <span class="recent-amount tnum" [class.pending]="item.isPendingApproval">
+            ₹{{ item.amount | number }}
+          </span>
+        </div>
       </div>
 
       <a class="card-link" routerLink="/view-expenses">See all expenses</a>

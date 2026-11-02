@@ -14,11 +14,18 @@ import { BalanceAccount } from '../shared/models';
 import { parseLocalDate, today } from '../shared/date-utils';
 import { ExpenseDatePopupComponent } from './expense-date-popup/expense-date-popup.component';
 import { RouterModule } from '@angular/router';
+import { FitsScreenDirective } from '../shared/fits-screen.directive';
 
 @Component({
   selector: 'app-add-expense',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule, RouterModule, ExpenseDatePopupComponent],
+  imports: [
+    ReactiveFormsModule,
+    CommonModule,
+    RouterModule,
+    FitsScreenDirective,
+    ExpenseDatePopupComponent
+  ],
   templateUrl: './add-expense.component.html',
   styleUrl: './add-expense.component.css'
 })

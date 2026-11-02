@@ -1,63 +1,79 @@
-<div class="add-page">
+<div class="add-page" appFitsScreen>
 
   <form [formGroup]="expenseForm" class="card form-card">
 
-    <h1 class="form-title">Add an expense</h1>
-    <p class="form-subtitle">Amount first — the rest can wait</p>
+    <div class="form-head">
+      <h1 class="form-title">Add an expense</h1>
+      <p class="form-subtitle">Amount first — the rest can wait</p>
+    </div>
 
     <p class="form-error" *ngIf="errorMessage">{{ errorMessage }}</p>
     <p class="form-success" *ngIf="successMessage">{{ successMessage }}</p>
 
-    <label class="field-label" for="amount">Amount</label>
-    <div class="amount-field">
-      <span class="amount-prefix tnum" aria-hidden="true">₹</span>
-      <input id="amount" class="amount-input tnum" formControlName="amount" type="text"
-        inputmode="decimal" placeholder="0">
-    </div>
+    <div class="form-grid">
 
-    <label class="field-label" for="description">What was it for</label>
-    <input id="description" class="text-field" formControlName="description" type="text"
-      placeholder="Coffee, auto fare, groceries…">
+      <div class="field field-amount">
+        <label class="field-label" for="amount">Amount</label>
 
-    <fieldset class="category-field">
-      <legend class="field-label">Category</legend>
-      <p class="field-hint">Groups your spending, so the dashboard can show where it goes.</p>
-
-      <div class="chip-row">
-        <button type="button" class="chip" [class.on]="!expenseForm.get('category')?.value"
-          (click)="onPickCategory('')">
-          None
-        </button>
-
-        <button type="button" class="chip" *ngFor="let name of categories"
-          [class.on]="expenseForm.get('category')?.value === name" (click)="onPickCategory(name)">
-          {{ name }}
-        </button>
+        <div class="amount-field">
+          <span class="amount-prefix tnum" aria-hidden="true">₹</span>
+          <input id="amount" class="amount-input tnum" formControlName="amount" type="text"
+            inputmode="decimal" placeholder="0">
+        </div>
       </div>
-    </fieldset>
 
-    <label class="field-label" for="source">Spend from</label>
-    <select id="source" class="text-field" formControlName="source"
-      [attr.disabled]="!expenseAccess ? true : null">
+      <div class="field field-what">
+        <label class="field-label" for="description">What was it for</label>
+        <input id="description" class="text-field" formControlName="description" type="text"
+          placeholder="Coffee, auto fare, groceries…">
+      </div>
 
-      <option value="">Don't take it from an account</option>
+      <fieldset class="field field-category">
+        <legend class="field-label">Category</legend>
+        <p class="field-hint">Groups your spending, so the dashboard can show where it goes.</p>
 
-      <option *ngFor="let item of availableBalances" [value]="item.id">
-        {{ item.category }}<ng-container *ngIf="item.balance !== null"> — ₹{{ item.balance | number }}</ng-container>
-      </option>
+        <div class="chip-row">
+          <button type="button" class="chip" [class.on]="!expenseForm.get('category')?.value"
+            (click)="onPickCategory('')">
+            None
+          </button>
 
-    </select>
+          <button type="button" class="chip" *ngFor="let name of categories"
+            [class.on]="expenseForm.get('category')?.value === name" (click)="onPickCategory(name)">
+            {{ name }}
+          </button>
+        </div>
+      </fieldset>
 
-    <p class="field-note good" *ngIf="expenseAccess && canSeeBalances">
-      Balance shown beside each account, so you pick with the figure in front of you
-    </p>
+      <div class="field field-source">
+        <label class="field-label" for="source">Spend from</label>
 
-    <p class="field-note" *ngIf="!expenseAccess">
-      This account may only log expenses, not spend from a balance.
-    </p>
+        <select id="source" class="text-field" formControlName="source"
+          [attr.disabled]="!expenseAccess ? true : null">
 
-    <label class="field-label" for="date">Date</label>
-    <input id="date" class="text-field" formControlName="date" type="date">
+          <option value="">Don't take it from an account</option>
+
+          <option *ngFor="let item of availableBalances" [value]="item.id">
+            {{ item.category }}<ng-container *ngIf="item.balance !== null"> — ₹{{ item.balance | number }}</ng-container>
+          </option>
+
+        </select>
+
+        <p class="field-note good" *ngIf="expenseAccess && canSeeBalances">
+          Balance shown beside each account, so you pick with the figure in front of you
+        </p>
+
+        <p class="field-note" *ngIf="!expenseAccess">
+          This account may only log expenses, not spend from a balance.
+        </p>
+      </div>
+
+      <div class="field field-date">
+        <label class="field-label" for="date">Date</label>
+        <input id="date" class="text-field" formControlName="date" type="date">
+      </div>
+
+    </div>
 
     <div class="form-actions">
       <button type="button" class="btn-good" *ngIf="expenseAccess"
@@ -72,7 +88,7 @@
       </button>
     </div>
 
-    <p class="field-note">
+    <p class="field-note form-foot">
       Two buttons instead of one that changes label — both choices visible, neither
       hidden behind a selection.
     </p>
