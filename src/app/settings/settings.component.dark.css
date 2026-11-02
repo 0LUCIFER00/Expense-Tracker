@@ -1,0 +1,177 @@
+/*
+ * Dark theme overrides for this component.
+ *
+ * Scoped to [data-theme="dark"], so the light stylesheet beside this one
+ * stays exactly as it was. Kept separate to make that guarantee obvious.
+ */
+:host-context([data-theme='dark']) .settings-page {
+  background-color: #1a2032;
+  border: 1px solid #2e3853;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+:host-context([data-theme='dark']) .settings-title {
+  color: #e7eaf3;
+}
+
+:host-context([data-theme='dark']) .description {
+  color: #a8b1c9;
+}
+
+:host-context([data-theme='dark']) .settings-header h3 {
+  color: #c9d2ea;
+}
+
+:host-context([data-theme='dark']) .settings-card {
+  background: linear-gradient(135deg, #212941, #232c49);
+  border-color: #2e3853;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+:host-context([data-theme='dark']) .settings-row:hover {
+  background: rgba(127, 155, 255, 0.07);
+}
+
+:host-context([data-theme='dark']) .settings-row:not(:last-child) {
+  border-bottom-color: #2e3853;
+}
+
+:host-context([data-theme='dark']) .setting-label {
+  color: #d3daec;
+}
+
+:host-context([data-theme='dark']) .toggle-caption {
+  color: #8c96b3;
+}
+
+:host-context([data-theme='dark']) .slider {
+  background-color: #3b4668;
+}
+
+:host-context([data-theme='dark']) .slider::before {
+  background: #d8deee;
+}
+
+:host-context([data-theme='dark']) input:checked + .slider {
+  background-color: #2f9e63;
+}
+
+:host-context([data-theme='dark']) .switch input:disabled + .slider {
+  background-color: #2a3147;
+}
+
+:host-context([data-theme='dark']) .switch input:disabled + .slider::before {
+  background-color: #596283;
+}
+
+:host-context([data-theme='dark']) .permissions-note {
+  background: #212941;
+  border-color: #2e3853;
+  color: #a8b1c9;
+}
+
+/* popups */
+:host-context([data-theme='dark']) .overlay {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+:host-context([data-theme='dark']) .popup {
+  background: #1a2032;
+  border: 1px solid #2e3853;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+:host-context([data-theme='dark']) .popup h3 {
+  color: #e7eaf3;
+}
+
+:host-context([data-theme='dark']) .popup p,
+:host-context([data-theme='dark']) .warning-text {
+  color: #a8b1c9;
+}
+
+:host-context([data-theme='dark']) .form-group label {
+  color: #d3daec;
+}
+
+:host-context([data-theme='dark']) .form-control {
+  background: #232b45;
+  border-color: #2e3853;
+  color: #e7eaf3;
+}
+
+:host-context([data-theme='dark']) .form-control:read-only {
+  background-color: #1d2437;
+  color: #a8b1c9;
+}
+
+:host-context([data-theme='dark']) .error-message,
+:host-context([data-theme='dark']) .page-error {
+  color: #ff8a80;
+}
+
+:host-context([data-theme='dark']) .cancel-btn {
+  background: #2e3853;
+  color: #e7eaf3;
+}
+
+:host-context([data-theme='dark']) .ok-btn {
+  background: #3b52c4;
+}
+
+:host-context([data-theme='dark']) .ok-btn:disabled {
+  background-color: #39405c;
+  color: #8a93ad;
+}
+
+/* WhatsApp panel */
+:host-context([data-theme='dark']) .whatsapp-card {
+  background: #212941;
+  border-color: #2e3853;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+:host-context([data-theme='dark']) .whatsapp-head h3 {
+  color: #e7eaf3;
+}
+
+:host-context([data-theme='dark']) .whatsapp-state {
+  background: #2a3147;
+  color: #a8b1c9;
+}
+
+:host-context([data-theme='dark']) .whatsapp-state.on {
+  background: #11291f;
+  color: #5fd3a0;
+}
+
+:host-context([data-theme='dark']) .whatsapp-hint {
+  color: #a8b1c9;
+}
+
+:host-context([data-theme='dark']) .whatsapp-code {
+  background: #1a2032;
+  border-color: #3b4668;
+}
+
+:host-context([data-theme='dark']) .whatsapp-code p {
+  color: #a8b1c9;
+}
+
+:host-context([data-theme='dark']) .whatsapp-code code {
+  background: #232b45;
+  color: #9db0ff;
+}
+
+:host-context([data-theme='dark']) .whatsapp-expiry {
+  color: #7a84a0;
+}
+
+:host-context([data-theme='dark']) .whatsapp-error {
+  color: #ff8a80;
+}
+
+:host-context([data-theme='dark']) .whatsapp-btn.ghost {
+  background: #2e3853;
+  color: #9db0ff;
+}

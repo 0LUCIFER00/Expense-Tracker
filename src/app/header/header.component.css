@@ -202,3 +202,53 @@
     top: 46px;
   }
 }
+
+/* Light/dark switch, same hit area as the account button beside it. */
+.theme-btn {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border: none;
+  border-radius: 50%;
+  background: #eef4ff;
+  color: #2a3f9d;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .3s ease;
+}
+
+.theme-btn:hover {
+  background: #dce9ff;
+  transform: scale(1.05);
+}
+
+.theme-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.icon-sun {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.icon-moon {
+  fill: currentColor;
+  stroke: none;
+}
+
+@media (max-width: 400px) {
+  .theme-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .theme-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+}

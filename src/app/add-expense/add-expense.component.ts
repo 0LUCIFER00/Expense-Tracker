@@ -19,7 +19,7 @@ import { ExpenseDatePopupComponent } from './expense-date-popup/expense-date-pop
   standalone: true,
   imports: [ReactiveFormsModule, CommonModule, ExpenseDatePopupComponent],
   templateUrl: './add-expense.component.html',
-  styleUrl: './add-expense.component.css'
+  styleUrls: ['./add-expense.component.css', './add-expense.component.dark.css']
 })
 export class AddExpenseComponent implements OnInit {
   private readonly fb = inject(FormBuilder);

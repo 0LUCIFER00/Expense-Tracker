@@ -10,6 +10,23 @@
 
   <div class="header-actions">
 
+    <button class="theme-btn" type="button" (click)="toggleTheme()"
+      [attr.aria-pressed]="theme.isDark"
+      [attr.title]="theme.isDark ? 'Switch to light' : 'Switch to dark'"
+      aria-label="Switch between light and dark">
+
+      <svg *ngIf="theme.isDark" class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="4.2" />
+        <path d="M12 2.6v2.4M12 19v2.4M4.2 12H1.8M22.2 12h-2.4" />
+        <path d="M5.9 5.9 7.6 7.6M16.4 16.4l1.7 1.7M18.1 5.9l-1.7 1.7M7.6 16.4l-1.7 1.7" />
+      </svg>
+
+      <svg *ngIf="!theme.isDark" class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M20.2 14.6A8.4 8.4 0 0 1 9.4 3.8a8.4 8.4 0 1 0 10.8 10.8Z" />
+      </svg>
+
+    </button>
+
     <div class="profile-menu">
 
       <button class="profile-btn" type="button" aria-label="Account menu" [attr.aria-expanded]="showProfileMenu"

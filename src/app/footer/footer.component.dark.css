@@ -1,0 +1,11 @@
+/*
+ * Dark theme overrides for this component.
+ *
+ * Scoped to [data-theme="dark"], so the light stylesheet beside this one
+ * stays exactly as it was. Kept separate to make that guarantee obvious.
+ */
+:host-context([data-theme='dark']) .footer {
+  background-color: #141b31;
+  border-top: 1px solid #2e3853;
+  color: #a8b1c9;
+}

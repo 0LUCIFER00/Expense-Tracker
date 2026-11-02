@@ -1,0 +1,46 @@
+/*
+ * Dark theme overrides for this component.
+ *
+ * Scoped to [data-theme="dark"], so the light stylesheet beside this one
+ * stays exactly as it was. Kept separate to make that guarantee obvious.
+ */
+:host-context([data-theme='dark']) .hero-section h1,
+:host-context([data-theme='dark']) .card p {
+  color: #9db0ff;
+}
+
+:host-context([data-theme='dark']) .subtitle {
+  color: #a8b1c9;
+}
+
+:host-context([data-theme='dark']) .date {
+  color: #7a84a0;
+}
+
+:host-context([data-theme='dark']) .card {
+  background-color: #1a2032;
+  border: 1px solid #2e3853;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+:host-context([data-theme='dark']) .card h2 {
+  color: #a8b1c9;
+}
+
+:host-context([data-theme='dark']) .btn-primary {
+  background-color: #3b52c4;
+}
+
+:host-context([data-theme='dark']) .btn-primary:hover {
+  background-color: #4a62d8;
+}
+
+:host-context([data-theme='dark']) .btn-secondary {
+  background-color: #232b45;
+  color: #9db0ff;
+  border-color: #3b52c4;
+}
+
+:host-context([data-theme='dark']) .btn-secondary:hover {
+  background-color: #2e3853;
+}

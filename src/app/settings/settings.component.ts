@@ -11,7 +11,7 @@ import { WhatsappService, WhatsappLinkStatus } from '../shared/whatsapp.service'
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './settings.component.html',
-  styleUrl: './settings.component.css'
+  styleUrls: ['./settings.component.css', './settings.component.dark.css']
 })
 export class SettingsComponent implements OnInit {
   private readonly auth = inject(AuthService);

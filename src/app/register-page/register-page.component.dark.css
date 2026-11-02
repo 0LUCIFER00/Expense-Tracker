@@ -1,0 +1,69 @@
+/*
+ * Dark theme overrides for this component.
+ *
+ * Scoped to [data-theme="dark"], so the light stylesheet beside this one
+ * stays exactly as it was. Kept separate to make that guarantee obvious.
+ */
+:host-context([data-theme='dark']) .register-page {
+  background: linear-gradient(to right, #121829, #18203a);
+}
+
+:host-context([data-theme='dark']) .register-card {
+  background: #1a2032;
+  border: 1px solid #2e3853;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+:host-context([data-theme='dark']) .register-card h1 {
+  color: #9db0ff;
+}
+
+:host-context([data-theme='dark']) .subtitle,
+:host-context([data-theme='dark']) .footer-text {
+  color: #a8b1c9;
+}
+
+:host-context([data-theme='dark']) .form-group label {
+  color: #d3daec;
+}
+
+:host-context([data-theme='dark']) .form-group input {
+  background-color: #232b45;
+  border-color: #2e3853;
+  color: #e7eaf3;
+}
+
+:host-context([data-theme='dark']) .form-group input::placeholder {
+  color: #7a84a0;
+}
+
+:host-context([data-theme='dark']) .form-group input:focus {
+  border-color: #7f9bff;
+  box-shadow: 0 0 4px rgba(127, 155, 255, 0.45);
+}
+
+:host-context([data-theme='dark']) button {
+  background-color: #3b52c4;
+}
+
+:host-context([data-theme='dark']) button:hover:not(:disabled) {
+  background-color: #4a62d8;
+}
+
+:host-context([data-theme='dark']) button:disabled {
+  background-color: #39405c;
+  color: #8a93ad;
+}
+
+:host-context([data-theme='dark']) .footer-text a {
+  color: #9db0ff;
+}
+
+:host-context([data-theme='dark']) .success {
+  color: #5fd3a0;
+}
+
+:host-context([data-theme='dark']) .error,
+:host-context([data-theme='dark']) .form-error {
+  color: #ff8a80;
+}

@@ -19,7 +19,7 @@ import { ApiError } from '../shared/api.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './register-page.component.html',
-  styleUrl: './register-page.component.css'
+  styleUrls: ['./register-page.component.css', './register-page.component.dark.css']
 })
 export class RegisterPageComponent implements OnDestroy {
   private readonly fb = inject(FormBuilder);

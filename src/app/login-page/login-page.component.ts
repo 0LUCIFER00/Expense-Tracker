@@ -12,7 +12,7 @@ import { ApiError } from '../shared/api.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './login-page.component.html',
-  styleUrl: './login-page.component.css'
+  styleUrls: ['./login-page.component.css', './login-page.component.dark.css']
 })
 export class LoginPageComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);

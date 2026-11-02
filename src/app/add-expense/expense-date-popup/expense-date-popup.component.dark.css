@@ -1,0 +1,36 @@
+/*
+ * Dark theme overrides for this component.
+ *
+ * Scoped to [data-theme="dark"], so the light stylesheet beside this one
+ * stays exactly as it was. Kept separate to make that guarantee obvious.
+ */
+:host-context([data-theme='dark']) .overlay {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+:host-context([data-theme='dark']) .popup {
+  background: #1a2032;
+  border: 1px solid #2e3853;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+:host-context([data-theme='dark']) .popup h3 {
+  color: #e7eaf3;
+}
+
+:host-context([data-theme='dark']) .popup p {
+  color: #a8b1c9;
+}
+
+:host-context([data-theme='dark']) .cancel-btn {
+  background: #2e3853;
+  color: #e7eaf3;
+}
+
+:host-context([data-theme='dark']) .ok-btn {
+  background: #3b52c4;
+}
+
+:host-context([data-theme='dark']) .admin-btn {
+  background: #1f8a4c;
+}

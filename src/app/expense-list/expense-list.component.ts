@@ -13,7 +13,7 @@ import { TotalSummaryComponent } from '../total-summary/total-summary.component'
   standalone: true,
   imports: [CommonModule, TotalSummaryComponent, FormsModule],
   templateUrl: './expense-list.component.html',
-  styleUrl: './expense-list.component.css'
+  styleUrls: ['./expense-list.component.css', './expense-list.component.dark.css']
 })
 export class ExpenseListComponent implements OnInit {
   private readonly expenseService = inject(ExpenseService);

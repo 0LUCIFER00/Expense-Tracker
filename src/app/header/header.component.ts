@@ -11,13 +11,14 @@ import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { Subscription, filter } from 'rxjs';
 import { AuthService } from '../auth.service';
 import { SettingsService } from '../shared/settings.service';
+import { ThemeService } from '../shared/theme.service';
 
 @Component({
   selector: 'app-header',
   standalone: true,
   imports: [RouterLink, NgIf],
   templateUrl: './header.component.html',
-  styleUrl: './header.component.css'
+  styleUrls: ['./header.component.css', './header.component.dark.css']
 })
 export class HeaderComponent implements OnInit, OnDestroy {
 
@@ -38,8 +39,14 @@ export class HeaderComponent implements OnInit, OnDestroy {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private settingsService: SettingsService
+    private settingsService: SettingsService,
+    /** Public: the template reads isDark to pick the icon. */
+    readonly theme: ThemeService
   ) { }
+
+  toggleTheme(): void {
+    this.theme.toggle();
+  }
 
   ngOnInit(): void {
     this.subscriptions.add(

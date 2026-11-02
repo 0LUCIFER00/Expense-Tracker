@@ -6,7 +6,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './expense-date-popup.component.html',
-  styleUrl: './expense-date-popup.component.css'
+  styleUrls: ['./expense-date-popup.component.css', './expense-date-popup.component.dark.css']
 })
 export class ExpenseDatePopupComponent {
   @Input() popupType: 'past' | 'future' = 'past';

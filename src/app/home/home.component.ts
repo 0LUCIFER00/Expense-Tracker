@@ -9,7 +9,7 @@ import { parseLocalDate } from '../shared/date-utils';
   selector: 'app-home',
   standalone: true,
   templateUrl: './home.component.html',
-  styleUrl: './home.component.css',
+  styleUrls: ['./home.component.css', './home.component.dark.css'],
   imports: [CommonModule, RouterModule]
 })
 export class HomeComponent implements OnInit {

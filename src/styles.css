@@ -50,3 +50,24 @@ textarea {
     font-size: 16px;
   }
 }
+
+/*
+ * Dark theme.
+ *
+ * Additive only: every rule here is scoped to [data-theme="dark"], so the
+ * light styling above is untouched. Each component stylesheet carries its own
+ * matching :host-context() block for the surfaces it owns.
+ *
+ *   page    #0f1420      ink      #e7eaf3
+ *   surface #1a2032      ink-2    #a8b1c9
+ *   sunken  #232b45      ink-3    #7a84a0
+ *   border  #2e3853      accent   #7f9bff
+ */
+html[data-theme='dark'] body {
+  background: #0f1420;
+  color: #e7eaf3;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+}
