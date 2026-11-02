@@ -1,26 +1,65 @@
 import { Routes } from '@angular/router';
-import { HomeComponent } from './home/home.component';
-import { AddExpenseComponent } from './add-expense/add-expense.component';
-import { ExpenseListComponent } from './expense-list/expense-list.component';
-import { LoginPageComponent } from './login-page/login-page.component';
-import { RegisterPageComponent } from './register-page/register-page.component';
 import { authGuard } from './auth.guard';
 import { balanceGuard } from './balance.guard';
-import { BalMntComponent } from './bal-mnt/bal-mnt.component';
-import { ProfileComponent } from './profile/profile.component';
-import { SettingsComponent } from './settings/settings.component';
-import { HelpSupportComponent } from './help-support/help-support.component';
 
+/*
+ * Every page past the login screen is loaded on demand.
+ *
+ * Only Login and Register are in the initial bundle, because they are all a
+ * first-time visitor can reach; the rest arrive as separate chunks when their
+ * route is first opened. Eagerly importing them all put the initial download
+ * over its budget, and most of it is never needed on the page being visited.
+ */
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
-  { path: 'login', component: LoginPageComponent },
-  { path: 'register', component: RegisterPageComponent },
-  { path: 'home', component: HomeComponent, canActivate: [authGuard] },
-  { path: 'add-expense', component: AddExpenseComponent, canActivate: [authGuard] },
-  { path: 'view-expenses', component: ExpenseListComponent, canActivate: [authGuard] },
-  { path: 'bal-mnt', component: BalMntComponent, canActivate: [authGuard, balanceGuard] },
-  { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
-  { path: 'settings', component: SettingsComponent, canActivate: [authGuard] },
-  { path: 'help_support', component: HelpSupportComponent, canActivate: [authGuard] },
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./login-page/login-page.component').then(m => m.LoginPageComponent)
+  },
+  {
+    path: 'register',
+    loadComponent: () =>
+      import('./register-page/register-page.component').then(m => m.RegisterPageComponent)
+  },
+  {
+    path: 'home',
+    canActivate: [authGuard],
+    loadComponent: () => import('./home/home.component').then(m => m.HomeComponent)
+  },
+  {
+    path: 'add-expense',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./add-expense/add-expense.component').then(m => m.AddExpenseComponent)
+  },
+  {
+    path: 'view-expenses',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./expense-list/expense-list.component').then(m => m.ExpenseListComponent)
+  },
+  {
+    path: 'bal-mnt',
+    canActivate: [authGuard, balanceGuard],
+    loadComponent: () => import('./bal-mnt/bal-mnt.component').then(m => m.BalMntComponent)
+  },
+  {
+    path: 'profile',
+    canActivate: [authGuard],
+    loadComponent: () => import('./profile/profile.component').then(m => m.ProfileComponent)
+  },
+  {
+    path: 'settings',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./settings/settings.component').then(m => m.SettingsComponent)
+  },
+  {
+    path: 'help_support',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./help-support/help-support.component').then(m => m.HelpSupportComponent)
+  },
   { path: '**', redirectTo: 'login' }
 ];

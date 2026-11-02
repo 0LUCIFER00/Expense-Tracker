@@ -1,1 +1,149 @@
-<p>profile works!</p>
+<div class="profile-page">
+
+  <p class="page-error" *ngIf="loadError">{{ loadError }}</p>
+  <p class="page-success" *ngIf="successMessage">{{ successMessage }}</p>
+
+  <section class="identity-card">
+    <div class="avatar" aria-hidden="true">{{ initials }}</div>
+
+    <div class="identity-text">
+      <h2>{{ user?.name }}</h2>
+      <p class="email">{{ user?.email }}</p>
+
+      <p class="meta">
+        <span class="badge" [class.admin]="isAdminSession">
+          {{ isAdminSession ? 'Signed in as admin' : 'Signed in as user' }}
+        </span>
+
+        <span *ngIf="user?.createdAt">
+          Member since {{ user?.createdAt | date: 'MMMM y' }}
+        </span>
+      </p>
+    </div>
+  </section>
+
+  <section class="stats-row">
+    <div class="stat">
+      <span class="stat-label">Entries</span>
+      <span class="stat-value">{{ totalExpenses }}</span>
+    </div>
+
+    <div class="stat">
+      <span class="stat-label">Total spent</span>
+      <span class="stat-value">₹{{ totalSpent }}</span>
+    </div>
+
+    <!-- The count is not a balance, but it is still about the accounts. -->
+    <div class="stat" *ngIf="canSeeBalances">
+      <span class="stat-label">Accounts</span>
+      <span class="stat-value">{{ accountCount }}</span>
+    </div>
+  </section>
+
+  <section class="profile-card">
+    <h3>Your details</h3>
+
+    <div class="field-row">
+      <label for="profileName">Name</label>
+
+      <ng-container *ngIf="!editingName">
+        <span class="field-value">{{ user?.name }}</span>
+
+        <button type="button" class="link-btn" (click)="onEditName()">Change</button>
+      </ng-container>
+
+      <ng-container *ngIf="editingName">
+        <input id="profileName" type="text" class="form-control" [(ngModel)]="nameDraft"
+          [disabled]="nameBusy" placeholder="Your full name">
+
+        <span class="field-actions">
+          <button type="button" class="primary-btn" [disabled]="nameBusy" (click)="onSaveName()">
+            Save
+          </button>
+
+          <button type="button" class="ghost-btn" [disabled]="nameBusy" (click)="onCancelName()">
+            Cancel
+          </button>
+        </span>
+      </ng-container>
+    </div>
+
+    <p class="field-error" *ngIf="nameError">{{ nameError }}</p>
+
+    <div class="field-row">
+      <label>Email</label>
+      <span class="field-value">{{ user?.email }}</span>
+      <span class="field-hint">This is how you sign in, so it cannot be changed here.</span>
+    </div>
+
+    <div class="field-row">
+      <label>Admin password</label>
+
+      <span class="field-value">
+        {{ user?.hasAdminPassword ? 'Set' : 'Not set' }}
+      </span>
+
+      <a class="link-btn" routerLink="/settings">Manage in Settings</a>
+    </div>
+  </section>
+
+  <section class="profile-card">
+    <h3>Change password</h3>
+
+    <p class="card-hint">
+      Your current password is needed even though you are already signed in, so
+      an unlocked browser is not enough to lock you out of your own account.
+    </p>
+
+    <div class="form-group">
+      <label for="currentPassword">Current password</label>
+      <input id="currentPassword" type="password" class="form-control"
+        [(ngModel)]="currentPassword" [disabled]="passwordBusy"
+        placeholder="Enter your current password">
+    </div>
+
+    <div class="form-group">
+      <label for="newPassword">New password</label>
+      <input id="newPassword" type="password" class="form-control" [(ngModel)]="newPassword"
+        [disabled]="passwordBusy" placeholder="At least 6 characters">
+    </div>
+
+    <div class="form-group">
+      <label for="confirmNewPassword">Confirm new password</label>
+      <input id="confirmNewPassword" type="password" class="form-control"
+        [(ngModel)]="confirmPassword" [disabled]="passwordBusy"
+        placeholder="Repeat the new password">
+    </div>
+
+    <p class="field-error" *ngIf="confirmPassword && !passwordsMatch">
+      The new passwords do not match.
+    </p>
+
+    <p class="field-error" *ngIf="passwordError">{{ passwordError }}</p>
+
+    <button type="button" class="primary-btn" [disabled]="!canSubmitPassword"
+      (click)="onChangePassword()">
+      {{ passwordBusy ? 'Saving…' : 'Change password' }}
+    </button>
+  </section>
+
+  <section class="profile-card">
+    <h3>Elsewhere</h3>
+
+    <ul class="link-list">
+      <li>
+        <a routerLink="/settings">Settings</a>
+        <span>Permissions, the admin password and WhatsApp</span>
+      </li>
+      <li>
+        <a routerLink="/view-expenses">View expenses</a>
+        <span>Filter, sort and export your entries</span>
+      </li>
+      <li>
+        <a routerLink="/help_support">Help &amp; support</a>
+        <span>How the app works, and the WhatsApp commands</span>
+      </li>
+    </ul>
+  </section>
+
+</div>

@@ -7,7 +7,13 @@ import { WhatsappService, WhatsappLinkStatus } from '../shared/whatsapp.service'
 import { DEFAULT_SETTINGS, Session } from '../shared/models';
 
 const SESSION: Session = {
-  user: { id: 'u1', name: 'Ada Lovelace', email: 'ada@example.com', hasAdminPassword: false },
+  user: {
+    id: 'u1',
+    name: 'Ada Lovelace',
+    email: 'ada@example.com',
+    hasAdminPassword: false,
+    createdAt: '2026-01-15T09:00:00.000Z'
+  },
   loginType: 'user'
 };
 

@@ -6,6 +6,8 @@ export interface SessionUser {
   name: string;
   email: string;
   hasAdminPassword: boolean;
+  /** When the account was created; null on the leaner session responses. */
+  createdAt: string | null;
 }
 
 export interface Session {
@@ -31,6 +33,8 @@ export interface Expense {
   amount: number;
   description: string;
   date: string;
+  /** What it was spent on. Null for entries made before categories existed. */
+  category: string | null;
 
   sourceId: string | null;
   sourceType: string | null;
@@ -51,6 +55,8 @@ export interface NewExpense {
   amount: number;
   description: string;
   date: string;
+  /** One of the server's categories, or null to leave it unfiled. */
+  category: string | null;
   sourceId: string | null;
   updateBalance: boolean;
   /** Minutes behind UTC, so the server can tell what "today" means here. */

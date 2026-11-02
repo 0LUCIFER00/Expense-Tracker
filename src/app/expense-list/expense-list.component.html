@@ -18,6 +18,22 @@
         </option>
       </select>
 
+      <select id="categoryFilter" aria-label="Filter by category"
+        *ngIf="usedCategories.length > 1" (change)="onFilterCategory($event)">
+
+        <option value="">All categories</option>
+
+        <option *ngFor="let name of usedCategories" [value]="name">
+          {{ name }}
+        </option>
+
+      </select>
+
+      <button type="button" class="export-btn" [disabled]="expenses.length === 0"
+        (click)="onExportCsv()">
+        Export CSV
+      </button>
+
       <div class="spend blowing-box">
         <app-total-summary [total]="total"></app-total-summary>
       </div>
@@ -39,12 +55,16 @@
           Description{{ getSortIcon('description') }}
         </span>
 
+        <span class="expense-spend-category sortable" (click)="onSort('category')">
+          Category{{ getSortIcon('category') }}
+        </span>
+
         <span class="expense-type sortable" *ngIf="canViewSourceDetails" (click)="onSort('sourceType')">
           Source Type{{ getSortIcon('sourceType') }}
         </span>
 
         <span class="expense-category sortable" *ngIf="canViewSourceDetails" (click)="onSort('sourceCategory')">
-          Category{{ getSortIcon('sourceCategory') }}
+          Account{{ getSortIcon('sourceCategory') }}
         </span>
 
         <span class="expense-status sortable" (click)="onSort('status')">
@@ -63,11 +83,16 @@
         <span class="expense-amount" data-label="Amount">₹{{ e.amount }}</span>
         <span class="expense-desc" data-label="Description">{{ e.description }}</span>
 
+        <span class="expense-spend-category" data-label="Category"
+          [class.uncategorised]="!e.category">
+          {{ e.category || 'Uncategorised' }}
+        </span>
+
         <span class="expense-type" data-label="Source Type" *ngIf="canViewSourceDetails">
           {{ e.sourceType || '-' }}
         </span>
 
-        <span class="expense-category" data-label="Category" *ngIf="canViewSourceDetails">
+        <span class="expense-category" data-label="Account" *ngIf="canViewSourceDetails">
           {{ e.sourceCategory || '-' }}
         </span>
 

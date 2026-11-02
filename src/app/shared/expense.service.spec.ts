@@ -4,7 +4,7 @@ import {
   HttpTestingController,
   provideHttpClientTesting
 } from '@angular/common/http/testing';
-import { ExpenseService } from './expense.service';
+import { ExpenseService, UNCATEGORISED } from './expense.service';
 import { BalanceService } from './balance.service';
 import { Expense } from './models';
 
@@ -14,6 +14,7 @@ function expense(overrides: Partial<Expense> = {}): Expense {
     amount: 100,
     description: 'Coffee',
     date: '2026-10-20',
+    category: null,
     sourceId: null,
     sourceType: null,
     sourceCategory: null,
@@ -59,6 +60,7 @@ describe('ExpenseService', () => {
         amount: 250,
         description: 'Groceries',
         date: '2026-10-30',
+        category: 'Groceries',
         sourceId: 'b1',
         updateBalance: true,
         tzOffset: -330
@@ -72,6 +74,7 @@ describe('ExpenseService', () => {
       amount: 250,
       description: 'Groceries',
       date: '2026-10-30',
+      category: 'Groceries',
       sourceId: 'b1',
       updateBalance: true,
       tzOffset: -330
@@ -86,6 +89,7 @@ describe('ExpenseService', () => {
         amount: 9999,
         description: 'Too much',
         date: '2026-10-30',
+        category: null,
         sourceId: 'b1',
         updateBalance: true,
         tzOffset: 0
@@ -160,6 +164,62 @@ describe('ExpenseService', () => {
 
     it('is zero for an empty list', () => {
       expect(service.totalOf([])).toBe(0);
+    });
+  });
+
+  describe('listCategories', () => {
+    it('fetches the list the server allows', () => {
+      let received: string[] = [];
+      service.listCategories().subscribe(categories => (received = categories));
+
+      http.expectOne('/api/expenses/categories').flush(['Food & Drink', 'Travel']);
+
+      expect(received).toEqual(['Food & Drink', 'Travel']);
+    });
+
+    it('asks once, however many callers there are', () => {
+      service.listCategories().subscribe();
+      http.expectOne('/api/expenses/categories').flush(['Travel']);
+
+      service.listCategories().subscribe();
+      http.expectNone('/api/expenses/categories');
+    });
+  });
+
+  describe('byCategory', () => {
+    it('sums settled entries per category, largest first', () => {
+      const totals = service.byCategory([
+        expense({ category: 'Travel', amount: 300 }),
+        expense({ category: 'Food & Drink', amount: 100 }),
+        expense({ category: 'Food & Drink', amount: 250 })
+      ]);
+
+      expect(totals).toEqual([
+        { category: 'Food & Drink', total: 350 },
+        { category: 'Travel', total: 300 }
+      ]);
+    });
+
+    it('groups entries with no category rather than dropping them', () => {
+      const totals = service.byCategory([
+        expense({ category: null, amount: 40 }),
+        expense({ category: null, amount: 60 })
+      ]);
+
+      expect(totals).toEqual([{ category: UNCATEGORISED, total: 100 }]);
+    });
+
+    it('leaves pending entries out, like totalOf does', () => {
+      const totals = service.byCategory([
+        expense({ category: 'Travel', amount: 300 }),
+        expense({ category: 'Travel', amount: 99, status: 'Pending / Waiting Admin' })
+      ]);
+
+      expect(totals).toEqual([{ category: 'Travel', total: 300 }]);
+    });
+
+    it('is empty for an empty list', () => {
+      expect(service.byCategory([])).toEqual([]);
     });
   });
 });

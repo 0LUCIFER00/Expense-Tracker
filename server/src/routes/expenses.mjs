@@ -4,10 +4,13 @@ import { requireAuth } from '../auth.mjs';
 import { asyncRoute, badRequest, notFound, parseAmount, parseDate } from '../http.mjs';
 import { effectivePermissions } from '../settings-store.mjs';
 import { removeExpense } from '../expense-store.mjs';
+import { CATEGORIES, normaliseCategory } from '../categories.mjs';
 
 export const expensesRouter = Router();
 
 expensesRouter.use(requireAuth);
+
+expensesRouter.get('/categories', (_req, res) => res.json(CATEGORIES));
 
 const STATUS_LABEL = {
   done: 'Done',
@@ -20,6 +23,8 @@ function toApi(row, { canViewSource }) {
     amount: row.amount,
     description: row.description,
     date: row.spent_on,
+    // Null for entries made before categories existed; the UI words that.
+    category: row.category,
     // The source columns are the permission-gated ones; hide them server-side
     // rather than relying on the UI not to render them.
     sourceId: canViewSource ? row.source_id : null,
@@ -36,7 +41,8 @@ function toApi(row, { canViewSource }) {
 }
 
 const SELECT_COLUMNS = `
-  id, amount, description, spent_on, source_id, source_type, source_category,
+  id, amount, description, spent_on, category,
+  source_id, source_type, source_category,
   expense_access, update_permission, balance_updated, status, remarks, created_at
 `;
 
@@ -74,6 +80,7 @@ expensesRouter.post('/', asyncRoute(async (req, res) => {
   const description = String(req.body?.description ?? '').trim();
   const date = parseDate(req.body?.date);
   const sourceId = req.body?.sourceId ? String(req.body.sourceId) : null;
+  const category = normaliseCategory(req.body?.category);
   const wantsBalanceUpdate = Boolean(req.body?.updateBalance);
 
   if (amount === null) {
@@ -86,6 +93,10 @@ expensesRouter.post('/', asyncRoute(async (req, res) => {
 
   if (!date) {
     return badRequest(res, 'A valid date is required');
+  }
+
+  if (req.body?.category && !category) {
+    return badRequest(res, 'That is not one of the expense categories');
   }
 
   const permissions = await effectivePermissions(req.session);
@@ -144,14 +155,14 @@ expensesRouter.post('/', asyncRoute(async (req, res) => {
 
       const { rows } = await client.query(
         `insert into expenses (
-           user_id, amount, description, spent_on,
+           user_id, amount, description, spent_on, category,
            source_id, source_type, source_category,
            expense_access, update_permission, balance_updated, status, remarks
          )
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
          returning ${SELECT_COLUMNS}`,
         [
-          req.session.userId, amount, description, date,
+          req.session.userId, amount, description, date, category,
           source?.id ?? null, source?.type ?? null, source?.category ?? null,
           updateBalance, permissions.canBackdate, debit, status, remarks
         ]

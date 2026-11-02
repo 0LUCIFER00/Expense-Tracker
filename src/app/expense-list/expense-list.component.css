@@ -60,6 +60,29 @@
   box-shadow: 0 0 0 2px #7cbbff33;
 }
 
+.export-btn {
+  flex: 0 0 auto;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid #7cbbff;
+  border-radius: 6px;
+  background-color: #fff;
+  color: #1c5fa8;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.export-btn:hover:not(:disabled) {
+  background-color: #eaf4ff;
+}
+
+.export-btn:disabled {
+  border-color: #d6dbe4;
+  color: #9aa3b2;
+  cursor: not-allowed;
+}
+
 .spend.blowing-box {
   padding: 0.5rem 1rem;
   margin-left: auto;
@@ -96,11 +119,15 @@
 }
 
 .with-source-columns {
-  grid-template-columns: 100px 90px minmax(120px, 1.3fr) 130px 130px minmax(170px, 1.5fr) 60px;
+  grid-template-columns:
+    72px 68px minmax(90px, 1.2fr) minmax(80px, 1fr)
+    minmax(70px, 0.9fr) minmax(70px, 0.9fr) minmax(95px, 1.1fr) 48px;
+  gap: 0.5rem;
 }
 
 .without-source-columns {
-  grid-template-columns: 100px 90px minmax(180px, 1.5fr) minmax(180px, 1.5fr) 60px;
+  grid-template-columns:
+    90px 80px minmax(140px, 1.5fr) minmax(100px, 1fr) minmax(140px, 1.3fr) 56px;
 }
 
 .expense-header-list {
@@ -129,6 +156,7 @@
 .expense-date,
 .expense-amount,
 .expense-desc,
+.expense-spend-category,
 .expense-type,
 .expense-category,
 .expense-status {
@@ -147,10 +175,17 @@
   color: #222;
 }
 
+.expense-spend-category,
 .expense-type,
 .expense-category,
 .expense-status {
   color: #444;
+}
+
+/* An entry from before categories existed, or one filed without a category. */
+.uncategorised {
+  color: #8a93a6;
+  font-style: italic;
 }
 
 .status-done {
@@ -225,7 +260,7 @@
 
 /* ================= Tablet ================= */
 /*
- * The seven-column table stops fitting here, so every row turns into a card
+ * The eight-column table stops fitting here, so every row turns into a card
  * and each value carries its own label (the column header is dropped).
  */
 @media (max-width: 900px) {
@@ -262,6 +297,7 @@
   .expense-date,
   .expense-amount,
   .expense-desc,
+  .expense-spend-category,
   .expense-type,
   .expense-category,
   .expense-status {
@@ -289,7 +325,8 @@
     align-items: stretch;
   }
 
-  .filter-bar select {
+  .filter-bar select,
+  .export-btn {
     flex: 1 1 100%;
     width: 100%;
   }

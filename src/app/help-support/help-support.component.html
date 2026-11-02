@@ -1,1 +1,115 @@
-<p>help-support works!</p>
+<div class="help-page">
+
+  <header class="help-header">
+    <h2>Help &amp; support</h2>
+    <p>How the app works, what the permissions mean, and how to use WhatsApp.</p>
+  </header>
+
+  <section class="help-card">
+    <h3>Adding an expense</h3>
+
+    <ol class="steps">
+      <li>
+        <strong>On the website.</strong> Add Expense takes an amount, a
+        description, a date and a category. Pick an account under "Spend From"
+        and the amount comes out of that balance as well as going on the list;
+        leave it empty and the expense is only recorded.
+      </li>
+      <li>
+        <strong>From your phone.</strong> Connect WhatsApp in Settings, then
+        send a message like <code>250 coffee</code>. No signing in, no app.
+      </li>
+      <li>
+        <strong>Dated anything but today.</strong> If this account cannot
+        backdate, the entry waits for an admin to approve it and no money moves
+        until then.
+      </li>
+    </ol>
+  </section>
+
+  <section class="help-card">
+    <div class="card-head">
+      <h3>WhatsApp commands</h3>
+
+      <span class="pill" *ngIf="whatsapp" [class.on]="whatsapp.connected">
+        {{ whatsapp.connected ? 'Connected · ' + whatsapp.number : 'Not connected' }}
+      </span>
+    </div>
+
+    <p class="card-hint" *ngIf="whatsapp && !whatsapp.connected">
+      Connect your phone in <a routerLink="/settings">Settings</a> and these
+      start working.
+    </p>
+
+    <ul class="command-list">
+      <li *ngFor="let command of whatsappCommands">
+        <code>{{ command.send }}</code>
+        <span>{{ command.does }}</span>
+      </li>
+    </ul>
+
+    <p class="card-hint">
+      Account names are matched loosely, so <code>hdfc</code>,
+      <code>HDFC Bank</code> and <code>paytm</code> all work. If two of your
+      accounts share a name, the reply asks which one you meant.
+    </p>
+  </section>
+
+  <section class="help-card">
+    <h3>What the Settings toggles do</h3>
+
+    <dl class="definition-list">
+      <dt>See account balances</dt>
+      <dd>
+        Turn it off and every amount disappears for a normal user: the Balance
+        Management page, the figure after an expense, and the WhatsApp
+        <code>balance</code> reply. This is the point of the admin password.
+      </dd>
+
+      <dt>Spend from an account</dt>
+      <dd>Whether an expense may reduce a balance, or only be logged.</dd>
+
+      <dt>Backdate or post-date an expense</dt>
+      <dd>Without it, an entry dated other than today waits for approval.</dd>
+
+      <dt>See which account was used</dt>
+      <dd>Shows the source type and account columns in the expense list.</dd>
+
+      <dt>Remove an expense</dt>
+      <dd>Shows the delete button. Removing an entry puts back any money it took.</dd>
+    </dl>
+
+    <p class="card-hint">
+      The toggles describe a normal user. Signed in with your admin password you
+      always have everything, which is why there is nothing to set for yourself.
+    </p>
+  </section>
+
+  <section class="help-card">
+    <h3>Common questions</h3>
+
+    <ul class="faq-list">
+      <li *ngFor="let faq of faqs; let i = index" class="faq-item">
+        <button type="button" class="faq-question" [attr.aria-expanded]="openFaq === i"
+          (click)="toggleFaq(i)">
+          <span>{{ faq.question }}</span>
+          <span class="faq-marker" aria-hidden="true">{{ openFaq === i ? '−' : '+' }}</span>
+        </button>
+
+        <p class="faq-answer" *ngIf="openFaq === i">{{ faq.answer }}</p>
+      </li>
+    </ul>
+  </section>
+
+  <section class="help-card">
+    <h3>Still stuck?</h3>
+
+    <p class="card-hint">
+      Check that the API is running if a page says it cannot reach the server —
+      in development that is <code>npm run dev</code>. For anything else, the
+      quickest fix is usually to sign out and back in, which re-reads your
+      permissions.
+    </p>
+  </section>
+
+</div>

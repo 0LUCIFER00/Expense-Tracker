@@ -21,6 +21,20 @@
     </div>
 
     <div class="form-group">
+      <label for="category">Category</label>
+
+      <select id="category" formControlName="category">
+
+        <option value="">No category</option>
+
+        <option *ngFor="let name of categories" [value]="name">
+          {{ name }}
+        </option>
+
+      </select>
+    </div>
+
+    <div class="form-group">
       <label for="amount">Amount (₹)</label>
       <input id="amount" formControlName="amount" type="number" placeholder="Enter amount">
     </div>

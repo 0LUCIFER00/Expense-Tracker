@@ -4,6 +4,7 @@ import { asyncRoute } from '../http.mjs';
 import { effectivePermissions } from '../settings-store.mjs';
 import { removeExpense } from '../expense-store.mjs';
 import { HELP_TEXT, parseMessage } from '../whatsapp/parser.mjs';
+import { guessCategory } from '../categories.mjs';
 import {
   WHATSAPP_VERIFY_TOKEN,
   extractTextMessage,
@@ -300,22 +301,25 @@ async function addExpense(from, user, parsed, accounts) {
 
       const { rows } = await client.query(
         `insert into expenses (
-           user_id, amount, description, spent_on,
+           user_id, amount, description, spent_on, category,
            source_id, source_type, source_category,
            expense_access, update_permission, balance_updated,
            status, remarks, source_channel
          )
-         values ($1,$2,$3,current_date,$4,$5,$6,$7,$8,$9,'done',$10,'whatsapp')
-         returning id`,
+         values ($1,$2,$3,current_date,$4,$5,$6,$7,$8,$9,$10,'done',$11,'whatsapp')
+         returning id, category`,
         [
           user.id, parsed.amount, parsed.description,
+          // Nobody types a category from a phone, so it is read out of the
+          // description, and left empty when the words do not give it away.
+          guessCategory(parsed.description),
           source?.id ?? null, source?.type ?? null, source?.category ?? null,
           wantsDebit, permissions.canBackdate, debit,
           debit ? 'Added via WhatsApp and balance updated' : 'Added via WhatsApp'
         ]
       );
 
-      return { id: rows[0].id, debit, source, remaining };
+      return { id: rows[0].id, category: rows[0].category, debit, source, remaining };
     });
 
     if (result.insufficient) {
@@ -334,6 +338,7 @@ Nothing was recorded.`
     }
 
     const where = result.source ? ` · ${result.source.category}` : '';
+    const filedAs = result.category ? ` · ${result.category}` : '';
 
     // Naming the account is fine; quoting what is left in it is a balance.
     const after =
@@ -344,7 +349,7 @@ ${result.source.category} now ${money(result.remaining)}`
 
     return sendText(
       from,
-      `✅ ${money(parsed.amount)} · ${parsed.description}${where}${after}\n\nSend *undo* to remove it.`
+      `✅ ${money(parsed.amount)} · ${parsed.description}${where}${filedAs}${after}\n\nSend *undo* to remove it.`
     );
   } catch (error) {
     console.error('[whatsapp] add expense failed', error);

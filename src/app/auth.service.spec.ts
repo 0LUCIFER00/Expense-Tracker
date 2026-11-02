@@ -8,7 +8,13 @@ import { AuthService } from './auth.service';
 import { Session } from './shared/models';
 
 const SESSION: Session = {
-  user: { id: 'u1', name: 'Ada Lovelace', email: 'ada@example.com', hasAdminPassword: false },
+  user: {
+    id: 'u1',
+    name: 'Ada Lovelace',
+    email: 'ada@example.com',
+    hasAdminPassword: false,
+    createdAt: '2026-01-15T09:00:00.000Z'
+  },
   loginType: 'user'
 };
 
@@ -72,7 +78,7 @@ describe('AuthService', () => {
       auth.refreshSession().subscribe();
       http.expectOne('/api/auth/me').flush({
         ...SESSION,
-        user: { ...SESSION.user, hasAdminPassword: true }
+        user: { ...SESSION.user, hasAdminPassword: true, createdAt: '2026-01-15T09:00:00.000Z' }
       });
 
       expect(auth.session?.user.hasAdminPassword).toBeTrue();
@@ -175,11 +181,11 @@ describe('AuthService', () => {
 
       const request = http.expectOne('/api/auth/admin-password');
       expect(request.request.method).toBe('PUT');
-      request.flush({ hasAdminPassword: true });
+      request.flush({ hasAdminPassword: true, createdAt: '2026-01-15T09:00:00.000Z' });
 
       http.expectOne('/api/auth/me').flush({
         ...SESSION,
-        user: { ...SESSION.user, hasAdminPassword: true }
+        user: { ...SESSION.user, hasAdminPassword: true, createdAt: '2026-01-15T09:00:00.000Z' }
       });
 
       expect(auth.session?.user.hasAdminPassword).toBeTrue();

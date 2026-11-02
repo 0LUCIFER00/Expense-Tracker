@@ -44,3 +44,63 @@
 :host-context([data-theme='dark']) .btn-secondary:hover {
   background-color: #2e3853;
 }
+
+:host-context([data-theme='dark']) .page-error {
+  background-color: #3a1f22;
+  border-color: #6b2f33;
+  color: #f0b4b4;
+}
+
+:host-context([data-theme='dark']) .trend {
+  color: #a8b1c9;
+}
+
+:host-context([data-theme='dark']) .trend.up {
+  color: #e8926f;
+}
+
+:host-context([data-theme='dark']) .trend.down {
+  color: #6bd3a0;
+}
+
+:host-context([data-theme='dark']) .panel {
+  background-color: #1a2032;
+  border: 1px solid #2e3853;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+:host-context([data-theme='dark']) .panel-title,
+:host-context([data-theme='dark']) .category-total,
+:host-context([data-theme='dark']) .recent-amount,
+:host-context([data-theme='dark']) .account-balance {
+  color: #9db0ff;
+}
+
+:host-context([data-theme='dark']) .panel-note,
+:host-context([data-theme='dark']) .empty-state {
+  color: #a8b1c9;
+}
+
+:host-context([data-theme='dark']) .category-name,
+:host-context([data-theme='dark']) .recent-desc,
+:host-context([data-theme='dark']) .account-name,
+:host-context([data-theme='dark']) .empty-state h2 {
+  color: #d3daec;
+}
+
+:host-context([data-theme='dark']) .recent-meta,
+:host-context([data-theme='dark']) .account-type {
+  color: #8c96b3;
+}
+
+:host-context([data-theme='dark']) .category-track {
+  background-color: #2a3350;
+}
+
+:host-context([data-theme='dark']) .category-fill {
+  background-color: #5f87d8;
+}
+
+:host-context([data-theme='dark']) .recent-amount.pending {
+  color: #d9b85c;
+}

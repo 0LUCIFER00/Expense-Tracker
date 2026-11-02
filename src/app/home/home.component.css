@@ -97,6 +97,178 @@
   color: #777;
 }
 
+/* ---- trend, panels, lists ---- */
+
+.page-error {
+  max-width: 900px;
+  margin: 0 auto 1.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #f3b7b7;
+  border-radius: 8px;
+  background-color: #fdeaea;
+  color: #a33a3a;
+  text-align: center;
+}
+
+.trend {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* Up is worse for spending, so the colours are the reverse of the usual. */
+.trend.up {
+  color: #b04a2f;
+}
+
+.trend.down {
+  color: #1f7a4d;
+}
+
+/*
+ * Auto-fit again: one panel per row on a phone, two on a tablet, three on a
+ * wide laptop, without a breakpoint for each.
+ */
+.panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.panel {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  padding: clamp(1rem, 3vw, 1.5rem);
+  min-width: 0;
+}
+
+.panel-title {
+  margin: 0 0 1rem;
+  font-size: 1.05rem;
+  color: #2a3f9d;
+}
+
+.panel-note {
+  margin: 1rem 0 0;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.category-list,
+.recent-list,
+.account-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.category-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.category-name {
+  color: #444;
+  overflow-wrap: anywhere;
+}
+
+.category-total {
+  color: #2a3f9d;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.category-track {
+  height: 8px;
+  border-radius: 4px;
+  background-color: #eef2fb;
+  overflow: hidden;
+}
+
+.category-fill {
+  height: 100%;
+  border-radius: 4px;
+  background-color: #7cbbff;
+}
+
+.recent-list li,
+.account-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.recent-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.recent-desc {
+  color: #444;
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.recent-meta {
+  color: #808a9c;
+  font-size: 0.8rem;
+}
+
+.recent-amount {
+  color: #2a3f9d;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.recent-amount.pending {
+  color: #9a7b22;
+}
+
+.account-name {
+  color: #444;
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.account-type {
+  flex: 1 1 auto;
+  color: #808a9c;
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.account-balance {
+  color: #2a3f9d;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.empty-state {
+  max-width: 48ch;
+  margin: 2rem auto 0;
+  text-align: center;
+  color: #666;
+}
+
+.empty-state h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  color: #444;
+}
+
 @media (max-width: 480px) {
   .stats-section {
     grid-template-columns: 1fr 1fr;

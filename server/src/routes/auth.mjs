@@ -17,7 +17,10 @@ function publicUser(row) {
     id: row.id,
     name: row.name,
     email: row.email,
-    hasAdminPassword: Boolean(row.admin_password_hash)
+    hasAdminPassword: Boolean(row.admin_password_hash),
+    // "Member since" on the profile page. Absent from the rows that only
+    // needed enough to issue a session, hence the guard.
+    createdAt: row.created_at ?? null
   };
 }
 
@@ -56,7 +59,7 @@ authRouter.post('/register', asyncRoute(async (req, res) => {
     const { rows } = await client.query(
       `insert into users (name, email, password_hash, admin_password_hash)
        values ($1, $2, $3, $4)
-       returning id, name, email, admin_password_hash`,
+       returning id, name, email, admin_password_hash, created_at`,
       [name, email, passwordHash, adminHash]
     );
 
@@ -79,7 +82,7 @@ authRouter.post('/login', asyncRoute(async (req, res) => {
   const password = String(req.body?.password ?? '');
 
   const { rows } = await query(
-    `select id, name, email, password_hash, admin_password_hash
+    `select id, name, email, password_hash, admin_password_hash, created_at
        from users where email = $1`,
     [email || '']
   );
@@ -125,7 +128,7 @@ authRouter.get('/me', asyncRoute(async (req, res) => {
   }
 
   const { rows } = await query(
-    'select id, name, email, admin_password_hash from users where id = $1',
+    'select id, name, email, admin_password_hash, created_at from users where id = $1',
     [session.userId]
   );
 
@@ -135,6 +138,65 @@ authRouter.get('/me', asyncRoute(async (req, res) => {
   }
 
   res.json({ user: publicUser(rows[0]), loginType: session.loginType });
+}));
+
+/** Renames the account. The email is the identity, so it is not editable. */
+authRouter.patch('/profile', requireAuth, asyncRoute(async (req, res) => {
+  const name = String(req.body?.name ?? '').trim();
+
+  if (name.length < 3) {
+    return badRequest(res, 'Name must be at least 3 characters');
+  }
+
+  const { rows } = await query(
+    `update users set name = $1
+      where id = $2
+      returning id, name, email, admin_password_hash, created_at`,
+    [name, req.session.userId]
+  );
+
+  res.json({ user: publicUser(rows[0]) });
+}));
+
+/**
+ * Changes the account password.
+ *
+ * The current one is required even though the caller already holds a session:
+ * a borrowed, unlocked browser should not be enough to lock the owner out.
+ */
+authRouter.put('/password', requireAuth, asyncRoute(async (req, res) => {
+  const currentPassword = String(req.body?.currentPassword ?? '');
+  const newPassword = String(req.body?.newPassword ?? '');
+
+  if (newPassword.length < 6) {
+    return badRequest(res, 'New password must be at least 6 characters');
+  }
+
+  const { rows } = await query(
+    'select password_hash, admin_password_hash from users where id = $1',
+    [req.session.userId]
+  );
+
+  if (!rows[0] || !await verifyPassword(currentPassword, rows[0].password_hash)) {
+    return res.status(403).json({ error: 'Your current password is not correct' });
+  }
+
+  if (currentPassword === newPassword) {
+    return badRequest(res, 'The new password must be different');
+  }
+
+  // The two passwords are what tell a normal session from an admin one, so
+  // they must not become the same value.
+  if (await verifyPassword(newPassword, rows[0].admin_password_hash)) {
+    return badRequest(res, 'That is your admin password — pick a different one');
+  }
+
+  await query('update users set password_hash = $1 where id = $2', [
+    await hashPassword(newPassword),
+    req.session.userId
+  ]);
+
+  res.json({ changed: true });
 }));
 
 /** Creates or replaces the account's admin password. */

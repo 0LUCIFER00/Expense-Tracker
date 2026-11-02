@@ -1,0 +1,53 @@
+/*
+ * Dark theme overrides for this component.
+ *
+ * Scoped to [data-theme="dark"], so the light stylesheet beside this one
+ * stays exactly as it was. Kept separate to make that guarantee obvious.
+ */
+:host-context([data-theme='dark']) .help-header h2,
+:host-context([data-theme='dark']) .help-card h3,
+:host-context([data-theme='dark']) .steps strong,
+:host-context([data-theme='dark']) .definition-list dt,
+:host-context([data-theme='dark']) .faq-question {
+  color: #e7eaf3;
+}
+
+:host-context([data-theme='dark']) .help-header p,
+:host-context([data-theme='dark']) .card-hint,
+:host-context([data-theme='dark']) .steps,
+:host-context([data-theme='dark']) .command-list span,
+:host-context([data-theme='dark']) .definition-list dd,
+:host-context([data-theme='dark']) .faq-answer {
+  color: #a8b1c9;
+}
+
+:host-context([data-theme='dark']) .help-card {
+  background-color: #1a2032;
+  border-color: #2e3853;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+:host-context([data-theme='dark']) code {
+  background-color: #232b45;
+  color: #9db0ff;
+}
+
+:host-context([data-theme='dark']) .pill,
+:host-context([data-theme='dark']) .faq-marker {
+  background-color: #232b45;
+  color: #a8b1c9;
+}
+
+:host-context([data-theme='dark']) .pill.on {
+  background-color: #1d3b2a;
+  color: #6bd3a0;
+}
+
+:host-context([data-theme='dark']) .card-hint a,
+:host-context([data-theme='dark']) .faq-question:hover {
+  color: #9db0ff;
+}
+
+:host-context([data-theme='dark']) .faq-item {
+  border-bottom-color: #2e3853;
+}

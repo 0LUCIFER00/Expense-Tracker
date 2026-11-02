@@ -29,12 +29,14 @@ export class AddExpenseComponent implements OnInit {
 
   expenseForm: FormGroup = this.fb.group({
     source: [''],
+    category: [''],
     amount: ['', [Validators.required, Validators.min(1), Validators.max(100000)]],
     description: ['', Validators.required],
     date: [today(), Validators.required]
   });
 
   availableBalances: BalanceAccount[] = [];
+  categories: string[] = [];
 
   expenseAccess = false;
   updatePermission = false;
@@ -56,10 +58,12 @@ export class AddExpenseComponent implements OnInit {
   private reload(): void {
     forkJoin({
       balances: this.balanceService.list(),
+      categories: this.expenseService.listCategories(),
       settings: this.settingsService.load(true)
     }).subscribe({
-      next: ({ balances }) => {
+      next: ({ balances, categories }) => {
         this.availableBalances = balances.filter(balance => balance.saved);
+        this.categories = categories;
         this.applyPermissions();
       },
       error: error => {
@@ -135,6 +139,7 @@ export class AddExpenseComponent implements OnInit {
         amount: Number(form.amount),
         description: form.description,
         date: form.date,
+        category: form.category || null,
         sourceId: this.pendingUpdateBalance && form.source ? String(form.source) : null,
         updateBalance: this.pendingUpdateBalance,
         tzOffset: new Date().getTimezoneOffset()
@@ -158,6 +163,7 @@ export class AddExpenseComponent implements OnInit {
   private resetForm(): void {
     this.expenseForm.reset({
       source: '',
+      category: '',
       amount: '',
       description: '',
       date: today()
