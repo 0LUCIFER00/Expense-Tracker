@@ -208,8 +208,10 @@ async function undoLast(from, userId) {
     return sendText(
       from,
       `Removed ${money(removed.amount)} — ${removed.description}` +
-      (removed.refunded ? `
-Put back into ${removed.source_category}.` : '')
+      (removed.refunded
+        ? `
+${removed.source_category} now ${money(removed.balanceAfter)}.`
+        : '')
     );
   } catch (error) {
     console.error('[whatsapp] undo failed', error);
@@ -259,12 +261,20 @@ async function addExpense(from, user, parsed, accounts) {
       }
 
       const debit = wantsDebit && Boolean(source);
+      let remaining = null;
 
       if (debit) {
-        await client.query(
-          'update balances set balance = balance - $1 where id = $2',
+        // RETURNING gives the balance the database actually holds afterwards.
+        // Subtracting in JavaScript from the value read at SELECT time would
+        // report a stale figure whenever two messages are handled together.
+        const debited = await client.query(
+          `update balances set balance = balance - $1
+            where id = $2
+            returning balance`,
           [parsed.amount, source.id]
         );
+
+        remaining = debited.rows[0]?.balance ?? null;
       }
 
       const { rows } = await client.query(
@@ -283,8 +293,6 @@ async function addExpense(from, user, parsed, accounts) {
           debit ? 'Added via WhatsApp and balance updated' : 'Added via WhatsApp'
         ]
       );
-
-      const remaining = debit ? Number(source.balance) - parsed.amount : null;
 
       return { id: rows[0].id, debit, source, remaining };
     });

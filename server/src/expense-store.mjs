@@ -42,22 +42,27 @@ export function removeExpense(userId, { expenseId = null, lastFromChannel = null
     }
 
     let refunded = false;
+    let balanceAfter = null;
 
     // Only an entry that actually moved money gets one back. A pending entry
     // never debited anything, and a source account that has since been deleted
     // leaves source_id null, so there is nowhere to return it to.
     if (expense.balance_updated && expense.source_id) {
-      const { rowCount } = await client.query(
+      // RETURNING so callers can quote the resulting balance rather than
+      // recomputing it from a value read before the update.
+      const { rows: credited } = await client.query(
         `update balances set balance = balance + $1
-          where id = $2 and user_id = $3`,
+          where id = $2 and user_id = $3
+          returning balance`,
         [expense.amount, expense.source_id, userId]
       );
 
-      refunded = rowCount > 0;
+      refunded = credited.length > 0;
+      balanceAfter = credited[0]?.balance ?? null;
     }
 
     await client.query('delete from expenses where id = $1', [expense.id]);
 
-    return { ...expense, refunded };
+    return { ...expense, refunded, balanceAfter };
   });
 }
