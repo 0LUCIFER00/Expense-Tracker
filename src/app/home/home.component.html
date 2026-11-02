@@ -1,4 +1,4 @@
-<div class="dashboard" appFitsScreen>
+<div class="dashboard" [class.no-accounts]="!canSeeBalances" appFitsScreen>
 
   <p class="page-error" *ngIf="loadError">{{ loadError }}</p>
 
@@ -82,7 +82,7 @@
 
   <div class="dash-row">
 
-    <section class="card">
+    <section class="card categories-card">
       <h2 class="card-title">Where it went</h2>
       <p class="card-subtitle">{{ monthName }}, by category</p>
 
@@ -104,7 +104,7 @@
       </div>
     </section>
 
-    <section class="card">
+    <section class="card recent-card">
       <h2 class="card-title">Recent</h2>
 
       <p class="card-empty" *ngIf="!recent.length">
