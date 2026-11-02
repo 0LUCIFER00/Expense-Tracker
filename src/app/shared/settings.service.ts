@@ -6,8 +6,8 @@ import { AuthService } from '../auth.service';
 import { DEFAULT_SETTINGS, Settings } from './models';
 
 /**
- * The ten permission flags, plus the "what may the signed-in identity do"
- * questions derived from them. The server enforces all of this as well; the
+ * The normal user's permission flags, plus the "what may the signed-in identity
+ * do" questions derived from them. The server enforces all of this as well; the
  * answers here only decide what the UI bothers to render.
  */
 @Injectable({ providedIn: 'root' })
@@ -21,7 +21,7 @@ export class SettingsService {
 
   /** Drives the Balance Management link in the header. */
   readonly balanceAccess$: Observable<boolean> = this.settings$.pipe(
-    map(settings => this.pick(settings, 'balanceAdminAccess', 'balanceUserAccess'))
+    map(settings => this.auth.isAdmin || settings.balanceUserAccess)
   );
 
   private loaded = false;
@@ -55,24 +55,30 @@ export class SettingsService {
     this.settingsSubject.next({ ...DEFAULT_SETTINGS });
   }
 
-  private pick(settings: Settings, adminKey: keyof Settings, userKey: keyof Settings): boolean {
-    return this.auth.isAdmin ? settings[adminKey] : settings[userKey];
+  /** An admin always has everything; a normal user has what the flags allow. */
+  private allows(key: keyof Settings): boolean {
+    return this.auth.isAdmin || this.settings[key];
+  }
+
+  /** Whether any account balance may be shown on screen. */
+  get canSeeBalances(): boolean {
+    return this.allows('balanceUserAccess');
   }
 
   get canUpdateBalance(): boolean {
-    return this.pick(this.settings, 'expenseAdminAccess', 'expenseUserAccess');
+    return this.allows('expenseUserAccess');
   }
 
   /** May add an entry dated in the past or future without admin approval. */
   get canBackdate(): boolean {
-    return this.pick(this.settings, 'updatePermissionAdmin', 'updatePermissionUser');
+    return this.allows('updatePermissionUser');
   }
 
   get canViewSource(): boolean {
-    return this.pick(this.settings, 'viewPermissionAdmin', 'viewPermissionUser');
+    return this.allows('viewPermissionUser');
   }
 
   get canRemove(): boolean {
-    return this.pick(this.settings, 'removePermissionAdmin', 'removePermissionUser');
+    return this.allows('removePermissionUser');
   }
 }

@@ -26,114 +26,71 @@
         </ng-container>
     </p>
 
-    <div class="settings-header" *ngIf="isAdminSession">
-        <div></div>
-        <h3>Normal User</h3>
-        <h3>Admin User</h3>
-    </div>
+    <p class="settings-intro" *ngIf="isAdminSession">
+        What a normal user may do. Signed in with your admin password you always
+        have everything, so there is nothing to set for yourself.
+    </p>
 
     <div class="settings-card" *ngIf="isAdminSession">
 
         <div class="settings-row">
-            <div class="setting-label">Balance Management Visible to..</div>
+            <div class="setting-label">See account balances<span class="setting-note">Turn it off to hide every amount: the Balance Management page, the WhatsApp balance reply and the figure after an expense</span></div>
 
             <div class="setting-toggle">
-                <span class="toggle-caption">Normal User</span>
                 <label class="switch">
                     <input type="checkbox" [(ngModel)]="addBalanceUserAccess" (change)="onAccessChange()">
                     <span class="slider"></span>
                 </label>
             </div>
 
-            <div class="setting-toggle">
-                <span class="toggle-caption">Admin User</span>
-                <label class="switch">
-                    <input type="checkbox" [(ngModel)]="addBalanceAdminAccess" (change)="onAccessChange()">
-                    <span class="slider"></span>
-                </label>
-            </div>
         </div>
 
         <div class="settings-row">
-            <div class="setting-label">
-                Balance Update Access
-            </div>
+            <div class="setting-label">Spend from an account<span class="setting-note">Lets an expense reduce a balance, rather than only being logged</span></div>
 
             <div class="setting-toggle">
-                <span class="toggle-caption">Normal User</span>
                 <label class="switch">
                     <input type="checkbox" [(ngModel)]="addExpenseUserAccess" (change)="onAccessChange()">
                     <span class="slider"></span>
                 </label>
             </div>
 
-            <div class="setting-toggle">
-                <span class="toggle-caption">Admin User</span>
-                <label class="switch">
-                    <input type="checkbox" [(ngModel)]="addExpenseAdminAccess" (change)="onAccessChange()">
-                    <span class="slider"></span>
-                </label>
-            </div>
         </div>
 
         <div class="settings-row">
-            <div class="setting-label">Past & Future Date Update Permission</div>
+            <div class="setting-label">Backdate or post-date an expense<span class="setting-note">Without it, an entry dated other than today waits for an admin to approve it</span></div>
 
             <div class="setting-toggle">
-                <span class="toggle-caption">Normal User</span>
                 <label class="switch">
                     <input type="checkbox" [(ngModel)]="updatePermissionUser" (change)="onAccessChange()">
                     <span class="slider"></span>
                 </label>
             </div>
 
-            <div class="setting-toggle">
-                <span class="toggle-caption">Admin User</span>
-                <label class="switch">
-                    <input type="checkbox" [(ngModel)]="updatePermissionAdmin" (change)="onAccessChange()">
-                    <span class="slider"></span>
-                </label>
-            </div>
         </div>
 
         <div class="settings-row">
-            <div class="setting-label">View Expense Permission</div>
+            <div class="setting-label">See which account was used<span class="setting-note">Shows the source type and category columns in the expense list</span></div>
 
             <div class="setting-toggle">
-                <span class="toggle-caption">Normal User</span>
                 <label class="switch">
                     <input type="checkbox" [(ngModel)]="viewPermissionUser" (change)="onAccessChange()">
                     <span class="slider"></span>
                 </label>
             </div>
 
-            <div class="setting-toggle">
-                <span class="toggle-caption">Admin User</span>
-                <label class="switch">
-                    <input type="checkbox" [(ngModel)]="viewPermissionAdmin" (change)="onAccessChange()">
-                    <span class="slider"></span>
-                </label>
-            </div>
         </div>
 
         <div class="settings-row">
-            <div class="setting-label">Expense List Remove Permission</div>
+            <div class="setting-label">Remove an expense<span class="setting-note">Shows the delete button; removing one puts any debited money back</span></div>
 
             <div class="setting-toggle">
-                <span class="toggle-caption">Normal User</span>
                 <label class="switch">
                     <input type="checkbox" [(ngModel)]="removePermissionUser" (change)="onAccessChange()">
                     <span class="slider"></span>
                 </label>
             </div>
 
-            <div class="setting-toggle">
-                <span class="toggle-caption">Admin User</span>
-                <label class="switch">
-                    <input type="checkbox" [(ngModel)]="removePermissionAdmin" (change)="onAccessChange()">
-                    <span class="slider"></span>
-                </label>
-            </div>
         </div>
 
     </div>

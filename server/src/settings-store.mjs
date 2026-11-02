@@ -1,17 +1,19 @@
 import { query } from './db.mjs';
 
-/** API name (camelCase) -> column name. */
+/**
+ * API name (camelCase) -> column name.
+ *
+ * These describe the NORMAL user only. An admin session implicitly has every
+ * permission: the admin password is the owner's own second key, and the owner
+ * is who sets these flags, so an admin restricting itself could just undo it.
+ */
 export const FLAGS = {
+  /** May see account balances at all — the reason the admin password exists. */
   balanceUserAccess: 'balance_user_access',
-  balanceAdminAccess: 'balance_admin_access',
   expenseUserAccess: 'expense_user_access',
-  expenseAdminAccess: 'expense_admin_access',
   updatePermissionUser: 'update_permission_user',
-  updatePermissionAdmin: 'update_permission_admin',
   viewPermissionUser: 'view_permission_user',
-  viewPermissionAdmin: 'view_permission_admin',
-  removePermissionUser: 'remove_permission_user',
-  removePermissionAdmin: 'remove_permission_admin'
+  removePermissionUser: 'remove_permission_user'
 };
 
 export const COLUMNS = Object.values(FLAGS).join(', ');
@@ -39,8 +41,9 @@ export async function loadSettings(userId) {
 }
 
 /**
- * Collapses the ten flags down to what the signed-in identity may actually do.
- * The admin column applies when the session was opened with the admin password.
+ * What the signed-in identity may actually do.
+ *
+ * An admin gets everything; a normal user gets whatever the flags allow.
  */
 export async function effectivePermissions(session) {
   const settings = await loadSettings(session.userId);
@@ -48,9 +51,19 @@ export async function effectivePermissions(session) {
 
   return {
     settings,
-    canUpdateBalance: admin ? settings.expenseAdminAccess : settings.expenseUserAccess,
-    canBackdate: admin ? settings.updatePermissionAdmin : settings.updatePermissionUser,
-    canViewSource: admin ? settings.viewPermissionAdmin : settings.viewPermissionUser,
-    canRemove: admin ? settings.removePermissionAdmin : settings.removePermissionUser
+    isAdmin: admin,
+
+    /**
+     * Whether any account balance may be shown. Someone signing in as a normal
+     * user on a shared or public machine should not have their balances on
+     * screen, so this gates the amounts themselves — in the API, in the
+     * Balance Management page and in WhatsApp replies — not just the nav link.
+     */
+    canSeeBalances: admin || settings.balanceUserAccess,
+
+    canUpdateBalance: admin || settings.expenseUserAccess,
+    canBackdate: admin || settings.updatePermissionUser,
+    canViewSource: admin || settings.viewPermissionUser,
+    canRemove: admin || settings.removePermissionUser
   };
 }

@@ -19,19 +19,14 @@ export class SettingsComponent implements OnInit {
   private readonly whatsapp = inject(WhatsappService);
 
   addExpenseUserAccess = true;
-  addExpenseAdminAccess = true;
 
   addBalanceUserAccess = true;
-  addBalanceAdminAccess = true;
 
   updatePermissionUser = true;
-  updatePermissionAdmin = true;
 
   viewPermissionUser = true;
-  viewPermissionAdmin = true;
 
   removePermissionUser = true;
-  removePermissionAdmin = true;
 
   isEnabled = false;
   showPopup = false;
@@ -146,15 +141,10 @@ export class SettingsComponent implements OnInit {
 
   private applySettings(settings: Settings): void {
     this.addBalanceUserAccess = settings.balanceUserAccess;
-    this.addBalanceAdminAccess = settings.balanceAdminAccess;
     this.addExpenseUserAccess = settings.expenseUserAccess;
-    this.addExpenseAdminAccess = settings.expenseAdminAccess;
     this.updatePermissionUser = settings.updatePermissionUser;
-    this.updatePermissionAdmin = settings.updatePermissionAdmin;
     this.viewPermissionUser = settings.viewPermissionUser;
-    this.viewPermissionAdmin = settings.viewPermissionAdmin;
     this.removePermissionUser = settings.removePermissionUser;
-    this.removePermissionAdmin = settings.removePermissionAdmin;
   }
 
   onAccessChange(): void {
@@ -163,15 +153,10 @@ export class SettingsComponent implements OnInit {
     this.settingsService
       .update({
         balanceUserAccess: this.addBalanceUserAccess,
-        balanceAdminAccess: this.addBalanceAdminAccess,
         expenseUserAccess: this.addExpenseUserAccess,
-        expenseAdminAccess: this.addExpenseAdminAccess,
         updatePermissionUser: this.updatePermissionUser,
-        updatePermissionAdmin: this.updatePermissionAdmin,
         viewPermissionUser: this.viewPermissionUser,
-        viewPermissionAdmin: this.viewPermissionAdmin,
-        removePermissionUser: this.removePermissionUser,
-        removePermissionAdmin: this.removePermissionAdmin
+        removePermissionUser: this.removePermissionUser
       })
       .subscribe({
         next: settings => this.applySettings(settings),

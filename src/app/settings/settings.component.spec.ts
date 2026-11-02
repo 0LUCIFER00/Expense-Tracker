@@ -211,7 +211,7 @@ describe('SettingsComponent — who may edit permissions', () => {
 
     expect(host().querySelector('.settings-card')).toBeNull();
     expect(host().querySelectorAll('.settings-row').length).toBe(0);
-    expect(host().querySelector('.settings-header')).toBeNull();
+    expect(host().querySelector('.settings-intro')).toBeNull();
   });
 
   it('tells a normal user with an admin password how to get in', () => {
@@ -232,7 +232,8 @@ describe('SettingsComponent — who may edit permissions', () => {
 
     expect(host().querySelector('.settings-card')).not.toBeNull();
     expect(host().querySelectorAll('.settings-row').length).toBe(5);
-    expect(host().querySelector('.settings-header')).not.toBeNull();
+    expect(host().querySelectorAll('.setting-toggle input').length).toBe(5);
+    expect(host().querySelector('.settings-intro')).not.toBeNull();
     expect(host().querySelector('.permissions-note')).toBeNull();
   });
 

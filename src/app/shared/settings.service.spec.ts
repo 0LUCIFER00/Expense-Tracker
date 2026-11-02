@@ -74,45 +74,41 @@ describe('SettingsService', () => {
   });
 
   describe('permissions follow the signed-in identity', () => {
-    it('reads the user column for a user session', () => {
-      signIn('user');
-      loadWith(
-        allGranted({
-          expenseUserAccess: false,
-          updatePermissionUser: false,
-          viewPermissionUser: false,
-          removePermissionUser: false
-        })
-      );
+    const nothingGranted = {
+      balanceUserAccess: false,
+      expenseUserAccess: false,
+      updatePermissionUser: false,
+      viewPermissionUser: false,
+      removePermissionUser: false
+    };
 
+    it('applies the flags to a user session', () => {
+      signIn('user');
+      loadWith(allGranted(nothingGranted));
+
+      expect(settings.canSeeBalances).toBeFalse();
       expect(settings.canUpdateBalance).toBeFalse();
       expect(settings.canBackdate).toBeFalse();
       expect(settings.canViewSource).toBeFalse();
       expect(settings.canRemove).toBeFalse();
     });
 
-    it('reads the admin column for an admin session', () => {
+    // The flags describe the normal user; the admin password is the owner's
+    // own key, so an admin keeps everything whatever they are set to.
+    it('ignores the flags for an admin session', () => {
       signIn('admin');
-      loadWith(
-        allGranted({
-          // The user column is off; an admin must not be affected by it.
-          expenseUserAccess: false,
-          updatePermissionUser: false,
-          viewPermissionUser: false,
-          removePermissionUser: false,
-          removePermissionAdmin: false
-        })
-      );
+      loadWith(allGranted(nothingGranted));
 
+      expect(settings.canSeeBalances).toBeTrue();
       expect(settings.canUpdateBalance).toBeTrue();
       expect(settings.canBackdate).toBeTrue();
       expect(settings.canViewSource).toBeTrue();
-      expect(settings.canRemove).toBeFalse();
+      expect(settings.canRemove).toBeTrue();
     });
   });
 
   describe('balanceAccess$', () => {
-    it('follows the user toggle for a user session', () => {
+    it('follows the toggle for a user session', () => {
       signIn('user');
 
       const seen: boolean[] = [];
@@ -123,15 +119,15 @@ describe('SettingsService', () => {
       expect(seen[seen.length - 1]).toBeFalse();
     });
 
-    it('follows the admin toggle for an admin session', () => {
+    it('stays on for an admin session with the toggle off', () => {
       signIn('admin');
 
       const seen: boolean[] = [];
       settings.balanceAccess$.subscribe(value => seen.push(value));
 
-      loadWith(allGranted({ balanceAdminAccess: false, balanceUserAccess: true }));
+      loadWith(allGranted({ balanceUserAccess: false }));
 
-      expect(seen[seen.length - 1]).toBeFalse();
+      expect(seen[seen.length - 1]).toBeTrue();
     });
   });
 

@@ -98,7 +98,7 @@ async function handleMessage(message) {
       return sendText(from, `Hi ${user.name.split(' ')[0]} 👋\n\n${HELP_TEXT}`);
 
     case 'balance':
-      return sendBalances(from, accounts);
+      return sendBalances(from, user, accounts);
 
     case 'list':
       return sendToday(from, user.id);
@@ -156,7 +156,23 @@ async function linkNumber(from, code) {
   );
 }
 
-async function sendBalances(from, accounts) {
+async function sendBalances(from, user, accounts) {
+  const { canSeeBalances } = await effectivePermissions({
+    userId: user.id,
+    loginType: 'user'
+  });
+
+  // WhatsApp is linked to the account, not to an admin session, so it answers
+  // as the normal user. Without the balance permission it must not read them
+  // out either, or the admin password is bypassable from a phone.
+  if (!canSeeBalances) {
+    return sendText(
+      from,
+      'Balances are hidden for this account. Sign in on the website with your ' +
+      'admin password to see them.'
+    );
+  }
+
   if (accounts.length === 0) {
     return sendText(
       from,
@@ -205,14 +221,19 @@ async function undoLast(from, userId) {
       return sendText(from, 'Nothing to undo — you have not added anything here yet.');
     }
 
-    return sendText(
-      from,
-      `Removed ${money(removed.amount)} — ${removed.description}` +
-      (removed.refunded
+    const { canSeeBalances } = await effectivePermissions({ userId, loginType: 'user' });
+
+    let tail = '';
+
+    if (removed.refunded) {
+      tail = canSeeBalances
         ? `
 ${removed.source_category} now ${money(removed.balanceAfter)}.`
-        : '')
-    );
+        : `
+Put back into ${removed.source_category}.`;
+    }
+
+    return sendText(from, `Removed ${money(removed.amount)} — ${removed.description}${tail}`);
   } catch (error) {
     console.error('[whatsapp] undo failed', error);
     return sendText(from, 'Could not undo that, sorry. Try the website.');
@@ -300,13 +321,26 @@ async function addExpense(from, user, parsed, accounts) {
     if (result.insufficient) {
       return sendText(
         from,
-        `Not enough in ${result.source.category} — it has ${money(result.source.balance)}, ` +
-        `and that expense is ${money(parsed.amount)}.\n\nNothing was recorded.`
+        permissions.canSeeBalances
+          ? `Not enough in ${result.source.category} — it has ${money(result.source.balance)}, ` +
+            `and that expense is ${money(parsed.amount)}.
+
+Nothing was recorded.`
+          : `Not enough in ${result.source.category} for ${money(parsed.amount)}.` +
+            `
+
+Nothing was recorded.`
       );
     }
 
     const where = result.source ? ` · ${result.source.category}` : '';
-    const after = result.debit ? `\n${result.source.category} now ${money(result.remaining)}` : '';
+
+    // Naming the account is fine; quoting what is left in it is a balance.
+    const after =
+      result.debit && permissions.canSeeBalances
+        ? `
+${result.source.category} now ${money(result.remaining)}`
+        : '';
 
     return sendText(
       from,

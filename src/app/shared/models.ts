@@ -17,8 +17,11 @@ export interface BalanceAccount {
   id: string;
   type: string;
   category: string;
-  balance: number;
+  /** Null when the amount is withheld — see `hidden`. */
+  balance: number | null;
   saved: boolean;
+  /** True when the server withheld the amount rather than it being unknown. */
+  hidden: boolean;
 }
 
 export type ExpenseStatus = 'Done' | 'Pending / Waiting Admin';
@@ -54,28 +57,23 @@ export interface NewExpense {
   tzOffset: number;
 }
 
+/**
+ * What a NORMAL user may do. An admin session always has everything — the
+ * admin password is the owner's own second key, so restricting it is pointless.
+ */
 export interface Settings {
+  /** May see account balances at all. The reason the admin password exists. */
   balanceUserAccess: boolean;
-  balanceAdminAccess: boolean;
   expenseUserAccess: boolean;
-  expenseAdminAccess: boolean;
   updatePermissionUser: boolean;
-  updatePermissionAdmin: boolean;
   viewPermissionUser: boolean;
-  viewPermissionAdmin: boolean;
   removePermissionUser: boolean;
-  removePermissionAdmin: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   balanceUserAccess: true,
-  balanceAdminAccess: true,
   expenseUserAccess: true,
-  expenseAdminAccess: true,
   updatePermissionUser: true,
-  updatePermissionAdmin: true,
   viewPermissionUser: true,
-  viewPermissionAdmin: true,
-  removePermissionUser: true,
-  removePermissionAdmin: true
+  removePermissionUser: true
 };

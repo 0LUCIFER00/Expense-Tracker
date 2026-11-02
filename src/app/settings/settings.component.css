@@ -37,24 +37,19 @@
 
 /* Settings Table */
 
-.settings-header,
 .settings-row {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr;
+  grid-template-columns: 1fr auto;
   align-items: center;
 }
 
-.settings-header {
+.settings-intro {
   max-width: 950px;
-  margin: 0 auto;
-  padding: 0 20px 15px;
-}
-
-.settings-header h3 {
-  text-align: center;
-  color: #2f3b52;
+  margin: 0 auto 14px;
+  padding: 0 20px;
+  color: #5b6b88;
   font-size: 14px;
-  font-weight: 600;
+  line-height: 1.5;
 }
 
 .settings-card {
@@ -75,17 +70,13 @@
 
 .setting-toggle {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 6px;
+  justify-content: flex-end;
 }
 
-/* The column headings cover this on wide screens. */
-.toggle-caption {
-  display: none;
-  font-size: 12px;
-  font-weight: 600;
-  color: #5b6b88;
+/* .switch centres itself with auto margins; here the flex row does the work. */
+.setting-toggle .switch {
+  margin: 0;
 }
 
 .settings-row:hover {
@@ -97,10 +88,21 @@
 }
 
 .setting-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   font-size: 14px;
   font-weight: 600;
   color: #2f3b52;
   overflow-wrap: anywhere;
+}
+
+/* Says what the toggle actually changes, so the label can stay short. */
+.setting-note {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: #5b6b88;
 }
 
 /* Toggle Switch */
@@ -261,8 +263,7 @@ input:checked + .slider::before {
 
 /* Tablet: trim the padding before the layout has to change. */
 @media (max-width: 900px) {
-  .settings-row,
-  .settings-header {
+  .settings-row {
     padding-left: 14px;
     padding-right: 14px;
   }
@@ -274,10 +275,8 @@ input:checked + .slider::before {
 }
 
 /*
- * Phone: the three-column table stops fitting, so each row becomes a label on
- * its own line with the two toggles side by side underneath. Each toggle
- * carries its own caption, since the column headings are dropped here.
- * A tablet in portrait (768px) still fits the table, so this starts below that.
+ * Phone: the label and its note need the full width, so the toggle moves to a
+ * line of its own underneath, aligned left with the text it belongs to.
  */
 @media (max-width: 640px) {
   .settings-top-row {
@@ -290,22 +289,17 @@ input:checked + .slider::before {
     margin-left: 0;
   }
 
-  .settings-header {
-    display: none;
+  .settings-intro {
+    padding: 0 14px;
   }
 
   .settings-row {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 14px;
   }
 
-  .setting-label {
-    grid-column: 1 / -1;
-    text-align: center;
-  }
-
-  .toggle-caption {
-    display: block;
+  .setting-toggle {
+    justify-content: flex-start;
   }
 }
 

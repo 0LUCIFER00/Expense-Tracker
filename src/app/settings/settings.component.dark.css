@@ -18,8 +18,8 @@
   color: #a8b1c9;
 }
 
-:host-context([data-theme='dark']) .settings-header h3 {
-  color: #c9d2ea;
+:host-context([data-theme='dark']) .settings-intro {
+  color: #a8b1c9;
 }
 
 :host-context([data-theme='dark']) .settings-card {
@@ -40,8 +40,8 @@
   color: #d3daec;
 }
 
-:host-context([data-theme='dark']) .toggle-caption {
-  color: #8c96b3;
+:host-context([data-theme='dark']) .setting-note {
+  color: #a8b1c9;
 }
 
 :host-context([data-theme='dark']) .slider {
