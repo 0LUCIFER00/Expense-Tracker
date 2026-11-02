@@ -1,24 +1,26 @@
-
 .home-container {
-  padding: 2rem;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  min-height: 74.4vh;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: clamp(1rem, 4vw, 2rem);
 }
 
 .hero-section {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: clamp(1.5rem, 5vw, 3rem);
 }
 
 .hero-section h1 {
-  font-size: 2.5rem;
+  font-size: clamp(1.6rem, 5vw, 2.5rem);
+  line-height: 1.2;
   color: #2a3f9d;
 }
 
 .subtitle {
-  font-size: 1.2rem;
+  font-size: clamp(0.95rem, 2.5vw, 1.2rem);
   color: #666;
-  margin: 0.5rem 0 1.5rem;
+  margin: 0.5rem auto 1.5rem;
+  max-width: 55ch;
 }
 
 .btn-primary {
@@ -29,43 +31,49 @@
   font-size: 1rem;
   border-radius: 8px;
   cursor: pointer;
+  min-height: 44px;
 }
 
 .btn-primary:hover {
   background-color: #1c2978;
 }
 
+/*
+ * Auto-fit keeps one card per row on a phone, two on a tablet and four on a
+ * laptop without separate rules for each.
+ */
 .stats-section {
-  display: flex;
-  justify-content: space-around;
-  margin: 2rem 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 1rem;
-  flex-wrap: wrap;
+  margin: 2rem 0;
 }
 
 .card {
   background-color: white;
   border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  padding: 1.5rem;
-  min-width: 200px;
-  flex: 1;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  padding: clamp(1rem, 3vw, 1.5rem);
   text-align: center;
+  min-width: 0;
 }
 
 .card h2 {
   color: #444;
   margin-bottom: 0.5rem;
+  font-size: clamp(0.95rem, 2.2vw, 1.15rem);
+  overflow-wrap: anywhere;
 }
 
 .card p {
-  font-size: 1.3rem;
+  font-size: clamp(1.1rem, 3vw, 1.4rem);
   color: #2a3f9d;
+  overflow-wrap: anywhere;
 }
 
 .actions-section {
   text-align: center;
-  margin-top: 3rem;
+  margin-top: clamp(1.5rem, 5vw, 3rem);
 }
 
 .btn-secondary {
@@ -76,6 +84,7 @@
   border: 1px solid #2a3f9d;
   border-radius: 8px;
   cursor: pointer;
+  min-height: 44px;
 }
 
 .btn-secondary:hover {
@@ -86,4 +95,24 @@
   margin: 1rem 0;
   font-style: italic;
   color: #777;
+}
+
+@media (max-width: 480px) {
+  .stats-section {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin: 1.5rem 0;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    max-width: 320px;
+  }
+}
+
+@media (max-width: 360px) {
+  .stats-section {
+    grid-template-columns: 1fr;
+  }
 }

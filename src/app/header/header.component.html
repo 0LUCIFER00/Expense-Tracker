@@ -1,45 +1,56 @@
-<header class="header">
+<header class="header" #headerEl>
   <div class="logo">Expense Tracker</div>
-  <nav class="nav-links">
-    <a routerLink="/home">Home</a>
-    <a routerLink="/add-expense">Add Expense</a>
-    <a routerLink="/view-expenses">View Expenses</a>
-    <a *ngIf="showBalanceManagement" routerLink="/bal-mnt">Balance Management</a>
+
+  <nav class="nav-links" [class.open]="menuOpen" id="primary-nav">
+    <a routerLink="/home" (click)="closeMenu()">Home</a>
+    <a routerLink="/add-expense" (click)="closeMenu()">Add Expense</a>
+    <a routerLink="/view-expenses" (click)="closeMenu()">View Expenses</a>
+    <a *ngIf="showBalanceManagement" routerLink="/bal-mnt" (click)="closeMenu()">Balance Management</a>
+  </nav>
+
+  <div class="header-actions">
+
     <div class="profile-menu">
 
-    <button
-        class="profile-btn"
-        type="button"
+      <button class="profile-btn" type="button" aria-label="Account menu" [attr.aria-expanded]="showProfileMenu"
         (click)="toggleProfileMenu()">
 
         <span class="profile-icon">👤</span>
 
-    </button>
+      </button>
 
-    <div
-        class="profile-dropdown" #profileMenu
-        *ngIf="showProfileMenu">
+      <div class="profile-dropdown" #profileMenu *ngIf="showProfileMenu">
 
         <a routerLink="/profile" (click)="closeProfileMenu()">
-            👤 My Profile
+          👤 My Profile
         </a>
 
         <a routerLink="/settings" (click)="closeProfileMenu()">
-            ⚙️ Settings
+          ⚙️ Settings
         </a>
 
         <a routerLink="/help_support" (click)="closeProfileMenu()">
-            ❓ Help & Support
+          ❓ Help &amp; Support
         </a>
 
         <hr>
 
         <a href="javascript:void(0)" (click)="logout()">
-            🚪 Logout
+          🚪 Logout
         </a>
+
+      </div>
 
     </div>
 
-</div>
-  </nav>
+    <button class="menu-toggle" type="button" aria-label="Toggle navigation" aria-controls="primary-nav"
+      [attr.aria-expanded]="menuOpen" (click)="toggleMenu()">
+
+      <span class="menu-bar"></span>
+      <span class="menu-bar"></span>
+      <span class="menu-bar"></span>
+
+    </button>
+
+  </div>
 </header>

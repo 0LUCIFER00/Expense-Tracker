@@ -1,11 +1,16 @@
+:host {
+  display: block;
+  padding: 0 clamp(0.75rem, 4vw, 1rem);
+}
+
 .expense-form-container {
+  width: 100%;
   max-width: 500px;
-  margin: 0.7rem auto;
-  background: #ffffff;
+  margin: clamp(0.7rem, 3vw, 2rem) auto;
+  background: #fff;
   border-radius: 12px;
-  padding: 1.8rem;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: clamp(1.1rem, 4vw, 1.8rem);
+  box-shadow: 0 6px 20px #0000001a;
 }
 
 .expense-form-container h2 {
@@ -34,7 +39,7 @@
 .form-group select {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ccc;
+  border: 1px solid #d9e6ff;
   border-radius: 8px;
   font-size: 1rem;
   background-color: #fff;
@@ -87,19 +92,21 @@
 /* Submit Button */
 .button-group {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   margin-top: 1rem;
 }
 
 .expense-btn,
 .update-btn {
-  flex: 1;
+  flex: 1 1 180px;
+  min-height: 46px;
   padding: 0.9rem;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
-  color: white;
+  color: #fff;
   cursor: pointer;
   transition: 0.3s;
 }
@@ -134,13 +141,22 @@
 
 /* Responsive */
 @media (max-width: 600px) {
-  .expense-form-container {
-    margin: 1rem;
-    padding: 1.5rem;
+  .expense-form-container h2 {
+    font-size: 1.4rem;
   }
 
-  .expense-form-container h2 {
-    font-size: 1.5rem;
+  .button-group {
+    flex-direction: column;
+  }
+
+  /*
+   * flex-basis follows the main axis, so the 180px basis above would become a
+   * 180px-tall button once the group stacks.
+   */
+  .expense-btn,
+  .update-btn {
+    flex: 0 0 auto;
+    width: 100%;
   }
 }
 
@@ -149,4 +165,19 @@ select:disabled {
   color: #6c757d;
   cursor: not-allowed;
   opacity: 0.8;
+}
+.form-error,
+.form-success {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.form-error {
+  color: #d32f2f;
+}
+
+.form-success {
+  color: #198754;
 }

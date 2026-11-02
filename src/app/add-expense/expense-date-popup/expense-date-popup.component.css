@@ -1,7 +1,8 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  padding: 16px;
+  background: #00000073;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -9,12 +10,15 @@
 }
 
 .popup {
-  width: 420px;
-  background: white;
-  padding: 25px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90dvh;
+  overflow-y: auto;
+  background: #fff;
+  padding: clamp(18px, 5vw, 25px);
   border-radius: 12px;
   text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 20px #0003;
 }
 
 .popup h3 {
@@ -29,12 +33,20 @@
 
 .btn-group {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   justify-content: center;
 }
 
+@media (max-width: 420px) {
+  .btn-group {
+    flex-direction: column;
+  }
+}
+
 button {
   border: none;
+  min-height: 44px;
   padding: 10px 16px;
   border-radius: 6px;
   cursor: pointer;
@@ -47,10 +59,10 @@ button {
 
 .ok-btn {
   background: #1976d2;
-  color: white;
+  color: #fff;
 }
 
 .admin-btn {
   background: #28a745;
-  color: white;
+  color: #fff;
 }

@@ -1,25 +1,24 @@
-* {
-  box-sizing: border-box;
-}
+/*
+ * Layout note: the list scrolls with the page rather than inside a panel of a
+ * hardcoded height. The old `calc(100vh - 80px)` panel assumed a fixed header
+ * and footer, which broke as soon as the header wrapped or a phone's toolbars
+ * changed the viewport. On wide screens the column header sticks instead.
+ */
 
 .body {
   width: 100%;
-  padding: 1rem;
-  background-color: #d7d7d7;
-  height: calc(100vh - 80px);
-  overflow: hidden;
+  padding: clamp(0.5rem, 2vw, 1rem);
 }
 
 .filter-expense-section {
-  padding: 2rem;
+  width: 100%;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2rem);
+  padding-bottom: 0.6rem;
   background-color: #fdfdfd;
   border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin: 0rem auto;
-  font-family: 'Segoe UI', sans-serif;
-  padding-bottom: 0.6rem;
+  box-shadow: 0 2px 8px #0000001a;
   transition: max-width 0.3s ease, padding 0.3s ease;
-  width: 100%;
 }
 
 .filter-expense-section.full-view {
@@ -28,8 +27,9 @@
 
 .filter-expense-section.compact-view {
   max-width: 820px;
-  padding: 1.5rem;
 }
+
+/* ---- filter bar ---- */
 
 .filter-bar {
   display: flex;
@@ -45,6 +45,8 @@
 }
 
 .filter-bar select {
+  flex: 0 1 auto;
+  min-width: 0;
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
   border: 1px solid #ccc;
@@ -55,38 +57,73 @@
 
 .filter-bar select:focus {
   border-color: #7cbbff;
-  box-shadow: 0 0 0 2px rgba(124, 187, 255, 0.2);
+  box-shadow: 0 0 0 2px #7cbbff33;
 }
+
+.spend.blowing-box {
+  padding: 0.5rem 1rem;
+  margin-left: auto;
+  width: fit-content;
+  border-radius: 10px;
+  background: #7cbbff;
+  transition: transform 0.3s ease;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.spend.blowing-box:hover {
+  transform: scale(1.03);
+}
+
+/* ---- rows ---- */
 
 .expense-list {
   list-style: none;
   padding: 0;
-  margin: 1rem 0 0;
+  margin: 0.5rem 0 0;
 }
 
 .expense-row {
   display: grid;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.9rem 1rem;
+  padding: 0.5rem 0.8rem;
+  min-height: 30px;
   background-color: #f4f6fa;
-  margin-bottom: 0.7rem;
+  margin-bottom: 0.4rem;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px #0000000d;
 }
 
 .with-source-columns {
-  grid-template-columns: 100px 90px minmax(120px, 1.3fr) 130px 130px minmax(170px, 1.5fr) 50px;
+  grid-template-columns: 100px 90px minmax(120px, 1.3fr) 130px 130px minmax(170px, 1.5fr) 60px;
 }
 
 .without-source-columns {
-  grid-template-columns: 100px 90px minmax(180px, 1.5fr) minmax(180px, 1.5fr) 50px;
+  grid-template-columns: 100px 90px minmax(180px, 1.5fr) minmax(180px, 1.5fr) 60px;
+}
+
+.expense-header-list {
+  margin: 0.5rem 0 0;
+  position: sticky;
+  /* Clears the sticky app header so both stay visible while scrolling. */
+  top: 62px;
+  z-index: 5;
+}
+
+.expense-header-list .expense-row {
+  margin-bottom: 0;
 }
 
 .header-row {
-  background: rgb(124, 187, 255);
-  color: rgb(235, 235, 235);
+  background: #7cbbff;
+  color: #ebebeb;
   font-weight: 600;
+}
+
+.expense-data-scroll {
+  margin-top: 0.45rem;
+  padding-bottom: 0.5rem;
 }
 
 .expense-date,
@@ -98,10 +135,7 @@
   overflow-wrap: anywhere;
   word-break: break-word;
   line-height: 1.4;
-}
-
-.expense-date {
-  font-size: 0.95rem;
+  font-size: 0.8rem;
 }
 
 .expense-amount {
@@ -117,142 +151,6 @@
 .expense-category,
 .expense-status {
   color: #444;
-  font-size: 0.95rem;
-}
-
-.btn-danger {
-  color: white;
-  background: rgb(230, 62, 62);
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-weight: bold;
-  transition: transform 0.2s ease, background 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-danger:hover {
-  transform: scale(1.08);
-  background: rgb(210, 40, 40);
-}
-
-.spend.blowing-box {
-  padding: 0.5rem 1rem;
-  margin-left: auto;
-  width: fit-content;
-  border-radius: 10px;
-  background: rgb(124, 187, 255);
-  transition: transform 0.3s ease;
-  color: white;
-  white-space: nowrap;
-}
-
-.spend.blowing-box:hover {
-  transform: scale(1.03);
-}
-
-.expense-list li:has(.mid) {
-  background-color: #e0ebff;
-}
-
-.expense-list li:has(.hig) {
-  background-color: #c5daff;
-}
-
-.no-record {
-  text-align: center;
-  color: #666;
-  font-weight: 600;
-  margin-top: -15rem;
-}
-
-/* Tablet */
-@media (max-width: 900px) {
-  .filter-expense-section.full-view,
-  .filter-expense-section.compact-view {
-    max-width: 100%;
-    padding: 1.25rem;
-  }
-
-  .filter-bar {
-    align-items: flex-start;
-  }
-
-  .spend.blowing-box {
-    margin-left: 0;
-  }
-
-  .expense-row.with-source-columns,
-  .expense-row.without-source-columns {
-    grid-template-columns: 1fr 1fr;
-    gap: 0.6rem 1rem;
-    align-items: start;
-  }
-
-  .header-row {
-    display: none;
-  }
-
-  .expense-row span {
-    display: block;
-  }
-
-  .btn-danger {
-    margin-top: 0.25rem;
-  }
-}
-
-/* Mobile */
-@media (max-width: 600px) {
-  .body {
-    padding: 0.5rem;
-  }
-
-  .filter-expense-section {
-    margin: 1rem auto;
-    padding: 1rem;
-  }
-
-  .filter-bar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .filter-bar label {
-    margin-bottom: 0.25rem;
-  }
-
-  .filter-bar select {
-    width: 100%;
-  }
-
-  .spend.blowing-box {
-    width: 100%;
-    text-align: center;
-  }
-
-  .expense-row.with-source-columns,
-  .expense-row.without-source-columns {
-    grid-template-columns: 1fr;
-  }
-
-  .expense-row {
-    padding: 0.85rem;
-  }
-
-  .btn-danger {
-    width: 30px;
-    height: 30px;
-  }
-}
-
-.status-success {
-  color: #198754;
-  font-weight: 700;
 }
 
 .status-done {
@@ -260,142 +158,9 @@
   font-weight: 700;
 }
 
-.status-date {
-  color: #f59e0b;
-  font-weight: 700;
-}
-
 .status-pending {
   color: #dc3545;
   font-weight: 700;
-}
-
-.expense-header-list {
-  margin: 1rem 0 0;
-}
-
-.expense-header-list .expense-row {
-  margin-bottom: 0;
-}
-
-.expense-data-scroll {
-  max-height: 430px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 6px;
-  margin-top: 0.7rem;
-}
-
-/* Optional: better scrollbar */
-.expense-data-scroll::-webkit-scrollbar {
-  width: 8px;
-}
-
-.expense-data-scroll::-webkit-scrollbar-thumb {
-  background: #b8d8ff;
-  border-radius: 10px;
-}
-
-.expense-data-scroll::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 10px;
-}
-
-.body {
-  height: calc(100vh - 80px);
-  overflow: hidden;
-  padding: 0.5rem 1rem;
-}
-
-.filter-expense-section {
-  height: calc(100vh - 120px);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Header list should not scroll */
-.expense-header-list {
-  margin: 0.5rem 0 0;
-  flex-shrink: 0;
-}
-
-.expense-header-list .expense-row {
-  margin-bottom: 0;
-}
-
-/* Only data rows scroll */
-.expense-data-scroll {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 6px;
-  margin-top: 0.45rem;
-  padding-bottom: 0.5rem;
-}
-
-/* Decrease row size */
-.expense-row {
-  padding: 0.5rem 0.8rem;
-  margin-bottom: 0.4rem;
-  min-height: 30px;
-}
-
-/* Decrease font size little */
-.expense-date,
-.expense-amount,
-.expense-desc,
-.expense-type,
-.expense-category,
-.expense-status {
-  font-size: 0.8rem;
-}
-
-/* Decrease delete button */
-.btn-danger {
-  width: 26px;
-  height: 26px;
-  font-size: 0.8rem;
-}
-
-/* Better scrollbar */
-.expense-data-scroll::-webkit-scrollbar {
-  width: 7px;
-}
-
-.expense-data-scroll::-webkit-scrollbar-thumb {
-  background: #9dccff;
-  border-radius: 10px;
-}
-
-.expense-data-scroll::-webkit-scrollbar-track {
-  background: #eef4ff;
-}
-
-.action-buttons {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.btn-success {
-  color: white;
-  background: #198754;
-  border: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-weight: bold;
-  transition: transform 0.2s ease, background 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-success:hover {
-  transform: scale(1.08);
-  background: #146c43;
 }
 
 .sortable {
@@ -406,4 +171,168 @@
 .sortable:hover {
   color: #1f3f8f;
   text-decoration: underline;
+}
+
+/* ---- actions ---- */
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-danger,
+.btn-success {
+  color: #fff;
+  border: none;
+  width: 26px;
+  height: 26px;
+  font-size: 0.8rem;
+  border-radius: 50%;
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform 0.2s ease, background 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.btn-danger {
+  background: #e63e3e;
+}
+
+.btn-danger:hover {
+  transform: scale(1.08);
+  background: #d22828;
+}
+
+.btn-success {
+  background: #198754;
+}
+
+.btn-success:hover {
+  transform: scale(1.08);
+  background: #146c43;
+}
+
+.no-record {
+  text-align: center;
+  color: #666;
+  font-weight: 600;
+  padding: 2.5rem 1rem;
+}
+
+/* ================= Tablet ================= */
+/*
+ * The seven-column table stops fitting here, so every row turns into a card
+ * and each value carries its own label (the column header is dropped).
+ */
+@media (max-width: 900px) {
+  .filter-expense-section.full-view,
+  .filter-expense-section.compact-view {
+    max-width: 100%;
+  }
+
+  .expense-header-list {
+    display: none;
+  }
+
+  .expense-row.with-source-columns,
+  .expense-row.without-source-columns {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 1rem;
+    align-items: start;
+    padding: 0.85rem;
+  }
+
+  .expense-row > span[data-label] {
+    display: grid;
+    grid-template-columns: minmax(70px, auto) 1fr;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .expense-row > span[data-label]::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #666;
+  }
+
+  .expense-date,
+  .expense-amount,
+  .expense-desc,
+  .expense-type,
+  .expense-category,
+  .expense-status {
+    font-size: 0.85rem;
+  }
+
+  .action-buttons {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    border-top: 1px solid #e2e8f5;
+    padding-top: 0.6rem;
+  }
+
+  .btn-danger,
+  .btn-success {
+    width: 34px;
+    height: 34px;
+    font-size: 0.9rem;
+  }
+}
+
+/* ================= Phone ================= */
+@media (max-width: 600px) {
+  .filter-bar {
+    align-items: stretch;
+  }
+
+  .filter-bar select {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .spend.blowing-box {
+    width: 100%;
+    margin-left: 0;
+    text-align: center;
+  }
+
+  .expense-row.with-source-columns,
+  .expense-row.without-source-columns {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+
+  .filter-expense-section {
+    border-radius: 8px;
+  }
+}
+
+@media (max-width: 400px) {
+  .body {
+    padding: 0.5rem 0.4rem;
+  }
+
+  .filter-expense-section {
+    padding: 0.85rem 0.7rem;
+  }
+}
+
+.list-notice,
+.list-error {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.list-notice {
+  color: #5b6b88;
+}
+
+.list-error {
+  color: #d32f2f;
 }

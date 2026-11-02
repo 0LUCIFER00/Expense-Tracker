@@ -1,10 +1,52 @@
-*{
-    margin: 0;
-    padding: 0;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
-body {
-  background: linear-gradient(to bottom right, #e7edff, #e3e3e3);
+
+* {
   margin: 0;
   padding: 0;
-  height:100vh;
+}
+
+html {
+  /* Stop iOS/Android inflating text in landscape. */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: linear-gradient(to bottom right, #e7edff, #e3e3e3);
+  background-attachment: fixed;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+  /* The shell in app.component.css owns the height; a fixed 100vh here would
+     clip content whenever a page grows past one screen. */
+  min-height: 100vh;
+
+  /* Nothing should ever scroll sideways on a phone. */
+  overflow-x: hidden;
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Form controls do not inherit the page font by default. */
+input,
+select,
+button,
+textarea {
+  font-family: inherit;
+}
+
+/* Anything below 16px makes iOS Safari zoom in when the field is focused. */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }

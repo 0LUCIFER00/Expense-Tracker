@@ -1,6 +1,9 @@
 <div class="body">
   <div class="filter-expense-section" [ngClass]="canViewSourceDetails ? 'full-view' : 'compact-view'">
 
+    <p class="list-notice" *ngIf="noticeMessage">{{ noticeMessage }}</p>
+    <p class="list-error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
     <div class="filter-bar">
       <label for="yearFilter">Filter by Year:</label>
       <select id="yearFilter" (change)="onFilterYear($event)">
@@ -56,19 +59,19 @@
       <li *ngFor="let e of expenses" class="expense-row"
         [ngClass]="canViewSourceDetails ? 'with-source-columns' : 'without-source-columns'">
 
-        <span class="expense-date">{{ e.date | date:'MM/dd/yy' }}</span>
-        <span class="expense-amount">₹{{ e.amount }}</span>
-        <span class="expense-desc">{{ e.description }}</span>
+        <span class="expense-date" data-label="Date">{{ e.date | date:'MM/dd/yy' }}</span>
+        <span class="expense-amount" data-label="Amount">₹{{ e.amount }}</span>
+        <span class="expense-desc" data-label="Description">{{ e.description }}</span>
 
-        <span class="expense-type" *ngIf="canViewSourceDetails">
+        <span class="expense-type" data-label="Source Type" *ngIf="canViewSourceDetails">
           {{ e.sourceType || '-' }}
         </span>
 
-        <span class="expense-category" *ngIf="canViewSourceDetails">
+        <span class="expense-category" data-label="Category" *ngIf="canViewSourceDetails">
           {{ e.sourceCategory || '-' }}
         </span>
 
-        <span class="expense-status" [ngClass]="e.status === 'Done' ? 'status-done' : 'status-pending'">
+        <span class="expense-status" data-label="Status" [ngClass]="e.status === 'Done' ? 'status-done' : 'status-pending'">
           {{ e.status }}
         </span>
 
@@ -79,7 +82,7 @@
             ✓
           </button>
 
-          <button type="button" class="btn-danger" (click)="onDelete(e)">
+          <button *ngIf="canRemoveExpenses" type="button" class="btn-danger" (click)="onDelete(e)">
             X
           </button>
 

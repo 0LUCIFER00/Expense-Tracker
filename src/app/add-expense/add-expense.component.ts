@@ -1,26 +1,40 @@
-import { Component, OnInit } from '@angular/core';
-import {
-  FormGroup,
-  FormBuilder,
-  Validators,
-  ReactiveFormsModule,
-} from '@angular/forms';
-import { ExpenseService } from '../shared/expense.service';
 import { CommonModule } from '@angular/common';
-import { UserService } from '../shared/user.service';
+import { Component, OnInit, inject } from '@angular/core';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators
+} from '@angular/forms';
+import { forkJoin } from 'rxjs';
+import { BalanceService } from '../shared/balance.service';
+import { ExpenseService } from '../shared/expense.service';
+import { SettingsService } from '../shared/settings.service';
+import { BalanceAccount } from '../shared/models';
+import { parseLocalDate, today } from '../shared/date-utils';
 import { ExpenseDatePopupComponent } from './expense-date-popup/expense-date-popup.component';
-import { Expense } from '../shared/expense.model';
 
 @Component({
   selector: 'app-add-expense',
   standalone: true,
   imports: [ReactiveFormsModule, CommonModule, ExpenseDatePopupComponent],
   templateUrl: './add-expense.component.html',
-  styleUrl: './add-expense.component.css',
+  styleUrl: './add-expense.component.css'
 })
 export class AddExpenseComponent implements OnInit {
-  expenseForm: FormGroup;
-  availableBalances: any[] = [];
+  private readonly fb = inject(FormBuilder);
+  private readonly expenseService = inject(ExpenseService);
+  private readonly balanceService = inject(BalanceService);
+  private readonly settingsService = inject(SettingsService);
+
+  expenseForm: FormGroup = this.fb.group({
+    source: [''],
+    amount: ['', [Validators.required, Validators.min(1), Validators.max(100000)]],
+    description: ['', Validators.required],
+    date: [today(), Validators.required]
+  });
+
+  availableBalances: BalanceAccount[] = [];
 
   expenseAccess = false;
   updatePermission = false;
@@ -28,60 +42,44 @@ export class AddExpenseComponent implements OnInit {
   showDatePopup = false;
   popupType: 'past' | 'future' = 'past';
 
-  pendingExpenseAccess = false;
-  pendingFormValue: any = null;
-  pendingSelectedBalance: any = null;
-  pendingBalances: any[] = [];
+  submitting = false;
+  errorMessage = '';
+  successMessage = '';
 
-  constructor(
-    private fb: FormBuilder,
-    private expenseService: ExpenseService,
-    private userService: UserService
-  ) {
-    const today = new Date().toISOString().split('T')[0];
+  /** Set aside while the date-confirmation popup is open. */
+  private pendingUpdateBalance = false;
 
-    this.expenseForm = this.fb.group({
-      source: [''],
-      amount: [
-        '',
-        [Validators.required, Validators.min(1), Validators.max(100000)],
-      ],
-      description: ['', Validators.required],
-      date: [today, Validators.required],
+  ngOnInit(): void {
+    this.reload();
+  }
+
+  private reload(): void {
+    forkJoin({
+      balances: this.balanceService.list(),
+      settings: this.settingsService.load(true)
+    }).subscribe({
+      next: ({ balances }) => {
+        this.availableBalances = balances.filter(balance => balance.saved);
+        this.applyPermissions();
+      },
+      error: error => {
+        this.errorMessage = error.message;
+      }
     });
   }
 
-  ngOnInit() {
-    this.loadBalances();
-    this.loadAccessSettings();
-  }
+  private applyPermissions(): void {
+    this.expenseAccess = this.settingsService.canUpdateBalance;
+    this.updatePermission = this.settingsService.canBackdate;
 
-  loadAccessSettings() {
-    const settings = this.userService.getSettingsAccess();
-
-    const loginType = localStorage.getItem('loginType');
-    const isAdmin = loginType === 'admin';
-
-    this.expenseAccess = isAdmin
-      ? settings.expenseAdminAccess
-      : settings.expenseUserAccess;
-
-    this.updatePermission = isAdmin
-      ? settings.updatePermissionAdmin
-      : settings.updatePermissionUser;
+    const source = this.expenseForm.get('source');
 
     if (this.expenseAccess) {
-      this.expenseForm.get('source')?.enable();
+      source?.enable();
     } else {
-      this.expenseForm.get('source')?.disable();
-      this.expenseForm.get('source')?.setValue('');
+      source?.disable();
+      source?.setValue('');
     }
-  }
-
-  loadBalances() {
-    const balances = JSON.parse(localStorage.getItem('balances') || '[]');
-
-    this.availableBalances = balances.filter((item: any) => item.saved);
   }
 
   isMainFormInvalid(): boolean {
@@ -92,172 +90,79 @@ export class AddExpenseComponent implements OnInit {
     );
   }
 
-  onSubmit(expenseAccessButton: boolean) {
-    if (this.isMainFormInvalid()) {
+  onSubmit(updateBalance: boolean): void {
+    if (this.isMainFormInvalid() || this.submitting) {
       return;
     }
 
-    const formValue = this.expenseForm.getRawValue();
-    const amount = Number(formValue.amount);
+    this.errorMessage = '';
+    this.pendingUpdateBalance = updateBalance && this.expenseAccess;
 
-    const shouldUpdateBalance = expenseAccessButton && this.expenseAccess;
+    const selected = parseLocalDate(this.expenseForm.getRawValue().date);
+    const now = new Date();
 
-    let selectedBalance: any = null;
-    let balances: any[] = [];
+    selected.setHours(0, 0, 0, 0);
+    now.setHours(0, 0, 0, 0);
 
-    if (shouldUpdateBalance) {
-      balances = JSON.parse(localStorage.getItem('balances') || '[]');
-
-      selectedBalance = balances.find(
-        (item: any) => item.id == formValue.source
-      );
-
-      if (!selectedBalance) {
-        alert('Please select a valid balance account.');
-        return;
-      }
-
-      if (Number(selectedBalance.balance) < amount) {
-        alert('Insufficient balance.');
-        return;
-      }
-    }
-
-    const selectedDate = new Date(formValue.date);
-    const today = new Date();
-
-    selectedDate.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-
-    this.pendingExpenseAccess = shouldUpdateBalance;
-    this.pendingFormValue = formValue;
-    this.pendingSelectedBalance = selectedBalance;
-    this.pendingBalances = balances;
-
-    const isToday = selectedDate.getTime() === today.getTime();
-
-    if (isToday) {
-      this.saveDoneExpense();
+    if (selected.getTime() === now.getTime()) {
+      this.save();
       return;
     }
 
-    if (selectedDate < today) {
-      this.popupType = 'past';
-      this.showDatePopup = true;
-      return;
-    }
-
-    if (selectedDate > today) {
-      this.popupType = 'future';
-      this.showDatePopup = true;
-      return;
-    }
+    // Anything other than today needs confirming. Whether it then settles or
+    // queues for an admin is the server's call, from the same permission.
+    this.popupType = selected < now ? 'past' : 'future';
+    this.showDatePopup = true;
   }
 
-  closeDatePopup() {
+  closeDatePopup(): void {
     this.showDatePopup = false;
   }
 
-  addFromPopup() {
+  /** Both popup buttons post the same thing; only the wording differs. */
+  confirmFromPopup(): void {
     this.showDatePopup = false;
-
-    if (this.updatePermission) {
-      this.saveDoneExpense();
-    } else {
-      this.savePendingExpense();
-    }
+    this.save();
   }
 
-  adminPermissionFromPopup() {
-    this.showDatePopup = false;
-    this.savePendingExpense();
+  private save(): void {
+    const form = this.expenseForm.getRawValue();
+
+    this.submitting = true;
+
+    this.expenseService
+      .create({
+        amount: Number(form.amount),
+        description: form.description,
+        date: form.date,
+        sourceId: this.pendingUpdateBalance && form.source ? String(form.source) : null,
+        updateBalance: this.pendingUpdateBalance,
+        tzOffset: new Date().getTimezoneOffset()
+      })
+      .subscribe({
+        next: expense => {
+          this.submitting = false;
+          this.successMessage =
+            expense.status === 'Done'
+              ? 'Expense added.'
+              : 'Sent to an admin for approval.';
+          this.resetForm();
+        },
+        error: error => {
+          this.submitting = false;
+          this.errorMessage = error.message;
+        }
+      });
   }
 
-  saveDoneExpense() {
-    const formValue = this.pendingFormValue;
-    const amount = Number(formValue.amount);
-
-    const selectedBalance = this.pendingSelectedBalance;
-    const balances = this.pendingBalances;
-
-    if (this.pendingExpenseAccess && selectedBalance) {
-      selectedBalance.balance = Number(selectedBalance.balance) - amount;
-      localStorage.setItem('balances', JSON.stringify(balances));
-    }
-
-    const expenseData: Expense = {
-      id: Date.now(),
-      ...formValue,
-
-      sourceId: selectedBalance?.id || null,
-      sourceType: selectedBalance?.type || null,
-      sourceCategory: selectedBalance?.category || null,
-
-      amount: amount,
-
-      expenseAccess: this.pendingExpenseAccess,
-      updatePermission: this.updatePermission,
-
-      balanceUpdated: this.pendingExpenseAccess,
-
-      status: 'Done',
-      remarks: this.pendingExpenseAccess
-        ? 'Added and balance updated'
-        : 'Added in list',
-
-      isPendingApproval: false,
-      createdAt: new Date().toISOString(),
-    };
-
-    this.expenseService.addExpense(expenseData);
-    this.resetForm();
-  }
-
-  savePendingExpense() {
-    const formValue = this.pendingFormValue;
-    const amount = Number(formValue.amount);
-
-    const selectedBalance = this.pendingSelectedBalance;
-
-    const expenseData: Expense = {
-      id: Date.now(),
-      ...formValue,
-
-      sourceId: selectedBalance?.id || null,
-      sourceType: selectedBalance?.type || null,
-      sourceCategory: selectedBalance?.category || null,
-
-      amount: amount,
-
-      expenseAccess: this.pendingExpenseAccess,
-      updatePermission: false,
-
-      balanceUpdated: false,
-
-      status: 'Pending / Waiting Admin',
-      remarks: this.pendingExpenseAccess
-        ? 'Wait for admin to add and update balance'
-        : 'Wait for admin to add',
-
-      isPendingApproval: true,
-      createdAt: new Date().toISOString(),
-    };
-
-    this.expenseService.addPendingExpense(expenseData);
-    this.resetForm();
-  }
-
-  resetForm() {
-    const currentDate = new Date().toISOString().split('T')[0];
-
+  private resetForm(): void {
     this.expenseForm.reset({
       source: '',
       amount: '',
       description: '',
-      date: currentDate,
+      date: today()
     });
 
-    this.loadBalances();
-    this.loadAccessSettings();
+    this.reload();
   }
 }

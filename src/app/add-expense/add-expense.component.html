@@ -1,6 +1,9 @@
 <div class="expense-form-container">
   <h2>Add New Expense</h2>
 
+  <p class="form-error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <p class="form-success" *ngIf="successMessage">{{ successMessage }}</p>
+
   <form [formGroup]="expenseForm" class="expense-form">
 
     <div class="form-group">
@@ -36,13 +39,13 @@
 
       <!-- Show Add Expense when source is not selected -->
       <button *ngIf="!expenseAccess || !expenseForm.get('source')?.value" type="button" class="expense-btn"
-        [disabled]="isMainFormInvalid()" (click)="onSubmit(false)">
+        [disabled]="isMainFormInvalid() || submitting" (click)="onSubmit(false)">
         Add Expense
       </button>
 
       <!-- Show Add & Update Balance only after selecting Spend From -->
       <button *ngIf="expenseAccess && expenseForm.get('source')?.value" type="button" class="update-btn"
-        [disabled]="isMainFormInvalid()" (click)="onSubmit(true)">
+        [disabled]="isMainFormInvalid() || submitting" (click)="onSubmit(true)">
         Add & Update Balance
       </button>
 
@@ -52,5 +55,5 @@
 </div>
 
 <app-expense-date-popup *ngIf="showDatePopup" [popupType]="popupType" [canAddDirectly]="updatePermission"
-  (cancel)="closeDatePopup()" (add)="addFromPopup()" (adminPermission)="adminPermissionFromPopup()">
+  (cancel)="closeDatePopup()" (add)="confirmFromPopup()" (adminPermission)="confirmFromPopup()">
 </app-expense-date-popup>

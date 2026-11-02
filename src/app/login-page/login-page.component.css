@@ -1,35 +1,15 @@
-* {
-  box-sizing: border-box;
-}
-
 .login-page {
-  min-height: 91.8vh;
-  background: linear-gradient(to right, #e8f3ff, #badaff);
+  display: flex;
+  background: linear-gradient(to right,#e8f3ff,#badaff);
   font-family: Arial, sans-serif;
 }
 
-
-.logo {
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.nav-links a {
-  color: white;
-  text-decoration: none;
-  margin-left: 24px;
-  font-weight: 500;
-}
-
-.nav-links a:hover {
-  text-decoration: underline;
-}
-
 .login-container {
+  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 60px 20px;
+  padding: clamp(24px, 6vw, 60px) clamp(14px, 4vw, 20px);
 }
 
 .login-card {
@@ -38,7 +18,7 @@
   background: #f9f8ff;
   padding: 35px 30px;
   border-radius: 14px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 20px #0000001f;
   text-align: center;
 }
 
@@ -98,7 +78,7 @@
 
 .form-group input:focus {
   border-color: #1e88e5;
-  box-shadow: 0 0 4px rgba(30, 136, 229, 0.4);
+  box-shadow: 0 0 4px #1e88e566;
 }
 
 .error {
@@ -110,9 +90,10 @@
 
 button {
   width: 100%;
+  min-height: 46px;
   padding: 12px;
   background-color: #2f49b7;
-  color: white;
+  color: #fff;
   border: none;
   border-radius: 8px;
   font-size: 17px;
@@ -144,4 +125,26 @@ button:disabled {
 
 .footer-text a:hover {
   text-decoration: underline;
+}
+@media (max-width: 480px) {
+  .login-card {
+    padding: 26px 18px;
+    border-radius: 12px;
+  }
+
+  .login-card h1 {
+    font-size: 26px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    margin-bottom: 18px;
+  }
+}
+
+/* 16px minimum stops iOS Safari zooming when a field takes focus. */
+@media (max-width: 768px) {
+  .form-group input {
+    font-size: 16px;
+  }
 }

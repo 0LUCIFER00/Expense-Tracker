@@ -1,5 +1,7 @@
 <div class="settings-page">
 
+    <p class="page-error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
     <div class="settings-top-row">
         <h2 class="settings-title">Settings</h2>
 
@@ -13,26 +15,43 @@
         </div>
     </div>
 
-    <div class="settings-header">
+    <p class="permissions-note" *ngIf="!isAdminSession">
+        <ng-container *ngIf="hasAdminPassword">
+            Permissions are managed by the admin. Sign out and sign in with your
+            admin password to change them.
+        </ng-container>
+        <ng-container *ngIf="!hasAdminPassword">
+            Turn on <strong>Create admin access</strong> above to set an admin password.
+            You can then sign in with it to control what a normal user may do.
+        </ng-container>
+    </p>
+
+    <div class="settings-header" *ngIf="isAdminSession">
         <div></div>
         <h3>Normal User</h3>
         <h3>Admin User</h3>
     </div>
 
-    <div class="settings-card">
+    <div class="settings-card" *ngIf="isAdminSession">
 
         <div class="settings-row">
-            <div class="setting-label">Balance Management Visiable to..</div>
+            <div class="setting-label">Balance Management Visible to..</div>
 
-            <label class="switch">
-                <input type="checkbox" [(ngModel)]="addBalanceUserAccess" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
-                <span class="slider"></span>
-            </label>
+            <div class="setting-toggle">
+                <span class="toggle-caption">Normal User</span>
+                <label class="switch">
+                    <input type="checkbox" [(ngModel)]="addBalanceUserAccess" (change)="onAccessChange()">
+                    <span class="slider"></span>
+                </label>
+            </div>
 
-            <label class="switch">
-                <input type="checkbox" [(ngModel)]="addBalanceAdminAccess" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
-                <span class="slider"></span>
-            </label>
+            <div class="setting-toggle">
+                <span class="toggle-caption">Admin User</span>
+                <label class="switch">
+                    <input type="checkbox" [(ngModel)]="addBalanceAdminAccess" (change)="onAccessChange()">
+                    <span class="slider"></span>
+                </label>
+            </div>
         </div>
 
         <div class="settings-row">
@@ -40,58 +59,157 @@
                 Balance Update Access
             </div>
 
-            <label class="switch">
-                <input type="checkbox" [(ngModel)]="addExpenseUserAccess" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
-                <span class="slider"></span>
-            </label>
+            <div class="setting-toggle">
+                <span class="toggle-caption">Normal User</span>
+                <label class="switch">
+                    <input type="checkbox" [(ngModel)]="addExpenseUserAccess" (change)="onAccessChange()">
+                    <span class="slider"></span>
+                </label>
+            </div>
 
-            <label class="switch">
-                <input type="checkbox" [(ngModel)]="addExpenseAdminAccess" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
-                <span class="slider"></span>
-            </label>
+            <div class="setting-toggle">
+                <span class="toggle-caption">Admin User</span>
+                <label class="switch">
+                    <input type="checkbox" [(ngModel)]="addExpenseAdminAccess" (change)="onAccessChange()">
+                    <span class="slider"></span>
+                </label>
+            </div>
         </div>
 
         <div class="settings-row">
             <div class="setting-label">Past & Future Date Update Permission</div>
 
-            <label class="switch">
-                <input type="checkbox" [(ngModel)]="updatePermissionUser" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
-                <span class="slider"></span>
-            </label>
+            <div class="setting-toggle">
+                <span class="toggle-caption">Normal User</span>
+                <label class="switch">
+                    <input type="checkbox" [(ngModel)]="updatePermissionUser" (change)="onAccessChange()">
+                    <span class="slider"></span>
+                </label>
+            </div>
 
-            <label class="switch">
-                <input type="checkbox" [(ngModel)]="updatePermissionAdmin" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
-                <span class="slider"></span>
-            </label>
+            <div class="setting-toggle">
+                <span class="toggle-caption">Admin User</span>
+                <label class="switch">
+                    <input type="checkbox" [(ngModel)]="updatePermissionAdmin" (change)="onAccessChange()">
+                    <span class="slider"></span>
+                </label>
+            </div>
         </div>
 
         <div class="settings-row">
             <div class="setting-label">View Expense Permission</div>
 
-            <label class="switch">
-                <input type="checkbox" [(ngModel)]="viewPermissionUser" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
-                <span class="slider"></span>
-            </label>
+            <div class="setting-toggle">
+                <span class="toggle-caption">Normal User</span>
+                <label class="switch">
+                    <input type="checkbox" [(ngModel)]="viewPermissionUser" (change)="onAccessChange()">
+                    <span class="slider"></span>
+                </label>
+            </div>
 
-            <label class="switch">
-                <input type="checkbox" [(ngModel)]="viewPermissionAdmin" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
-                <span class="slider"></span>
-            </label>
+            <div class="setting-toggle">
+                <span class="toggle-caption">Admin User</span>
+                <label class="switch">
+                    <input type="checkbox" [(ngModel)]="viewPermissionAdmin" (change)="onAccessChange()">
+                    <span class="slider"></span>
+                </label>
+            </div>
         </div>
 
         <div class="settings-row">
             <div class="setting-label">Expense List Remove Permission</div>
 
-            <label class="switch">
-                <input type="checkbox" [(ngModel)]="removePermissionUser" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
-                <span class="slider"></span>
-            </label>
+            <div class="setting-toggle">
+                <span class="toggle-caption">Normal User</span>
+                <label class="switch">
+                    <input type="checkbox" [(ngModel)]="removePermissionUser" (change)="onAccessChange()">
+                    <span class="slider"></span>
+                </label>
+            </div>
 
-            <label class="switch">
-                <input type="checkbox" [(ngModel)]="removePermissionAdmin" (change)="onAccessChange()"> <!-- [disabled]="!hasAdminPassword" --> >
-                <span class="slider"></span>
-            </label>
+            <div class="setting-toggle">
+                <span class="toggle-caption">Admin User</span>
+                <label class="switch">
+                    <input type="checkbox" [(ngModel)]="removePermissionAdmin" (change)="onAccessChange()">
+                    <span class="slider"></span>
+                </label>
+            </div>
         </div>
+
+    </div>
+
+
+    <div class="whatsapp-card" *ngIf="whatsappStatus">
+
+        <div class="whatsapp-head">
+            <h3>Add expenses over WhatsApp</h3>
+            <span class="whatsapp-state" [class.on]="whatsappStatus.connected">
+                {{ whatsappStatus.connected ? 'Connected' : 'Not connected' }}
+            </span>
+        </div>
+
+        <p class="whatsapp-hint" *ngIf="!whatsappStatus.available">
+            The server has no WhatsApp credentials configured yet, so this cannot be
+            switched on.
+        </p>
+
+        <ng-container *ngIf="whatsappStatus.available">
+
+            <p class="whatsapp-hint" *ngIf="whatsappStatus.connected">
+                Messages from <strong>{{ whatsappStatus.number }}</strong> are added to this
+                account. Send <strong>250 coffee paytm</strong> to record an expense, or
+                <strong>help</strong> for the full list.
+            </p>
+
+            <p class="whatsapp-hint" *ngIf="!whatsappStatus.connected && !whatsappCode">
+                Connect your phone and you can add an expense by sending a message, without
+                signing in.
+            </p>
+
+            <div class="whatsapp-code" *ngIf="whatsappCode && !whatsappStatus.connected">
+
+                <p *ngIf="whatsappChatUrl">
+                    Tap below to open WhatsApp with the message ready, then just press send:
+                </p>
+
+                <p *ngIf="!whatsappChatUrl">
+                    Send this message to
+                    <strong *ngIf="whatsappBusinessNumber">+{{ whatsappBusinessNumber }}</strong>
+                    <strong *ngIf="!whatsappBusinessNumber">our WhatsApp number</strong>
+                    from the phone you want to link:
+                </p>
+
+                <code>link {{ whatsappCode }}</code>
+
+                <p class="whatsapp-expiry">Expires in {{ whatsappCodeMinutes }} minutes.</p>
+
+                <div class="whatsapp-actions">
+                    <a *ngIf="whatsappChatUrl" class="whatsapp-btn" [href]="whatsappChatUrl"
+                        target="_blank" rel="noopener">
+                        Open WhatsApp
+                    </a>
+
+                    <button type="button" class="whatsapp-btn ghost" (click)="onRefreshWhatsapp()">
+                        I've sent it — check now
+                    </button>
+                </div>
+            </div>
+
+            <p class="whatsapp-error" *ngIf="whatsappError">{{ whatsappError }}</p>
+
+            <div class="whatsapp-actions">
+                <button type="button" class="whatsapp-btn" *ngIf="!whatsappStatus.connected"
+                    [disabled]="whatsappBusy" (click)="onConnectWhatsapp()">
+                    {{ whatsappCode ? 'Get a new code' : 'Connect WhatsApp' }}
+                </button>
+
+                <button type="button" class="whatsapp-btn danger" *ngIf="whatsappStatus.connected"
+                    [disabled]="whatsappBusy" (click)="onDisconnectWhatsapp()">
+                    Disconnect
+                </button>
+            </div>
+
+        </ng-container>
 
     </div>
 
@@ -127,6 +245,12 @@
         <div class="error-message" *ngIf="confirmPassword && adminPassword !== confirmPassword">
 
             Passwords do not match
+
+        </div>
+
+        <div class="error-message" *ngIf="setPasswordError">
+
+            {{ setPasswordError }}
 
         </div>
 
@@ -169,6 +293,12 @@
             <label>Admin Password</label>
             <input type="password" [(ngModel)]="adminCancelPassword" class="form-control"
                 placeholder="Enter admin password">
+        </div>
+
+        <div class="error-message" *ngIf="cancelPasswordError">
+
+            {{ cancelPasswordError }}
+
         </div>
 
         <div class="btn-group">

@@ -1,142 +1,45 @@
-import { Injectable } from '@angular/core';
-import { Expense } from './expense.model';
+import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+import { ApiService } from './api.service';
+import { Expense, NewExpense } from './models';
 
-@Injectable({
-  providedIn: 'root'
-})
+export interface RemovedExpense {
+  id: string;
+  /** True when a balance was credited back. */
+  refunded: boolean;
+  sourceCategory: string | null;
+}
+
+@Injectable({ providedIn: 'root' })
 export class ExpenseService {
-  private expenses: Expense[] = [];
-  private pendingExpenses: Expense[] = [];
-  private alterExpenses: Expense[] = [];
+  private readonly api = inject(ApiService);
 
-  constructor() {
-    const storedExpenses = localStorage.getItem('expenses');
-    const storedPendingExpenses = localStorage.getItem('pendingExpenses');
-
-    this.expenses = storedExpenses ? JSON.parse(storedExpenses) : [];
-    this.pendingExpenses = storedPendingExpenses ? JSON.parse(storedPendingExpenses) : [];
+  /** Settled and pending entries, oldest first. */
+  list(): Observable<Expense[]> {
+    return this.api.get<Expense[]>('/expenses');
   }
 
-  private saveExpenses() {
-    localStorage.setItem('expenses', JSON.stringify(this.expenses));
+  /**
+   * The server decides whether this settles or queues for approval, based on
+   * the date and the account's permissions.
+   */
+  create(expense: NewExpense): Observable<Expense> {
+    return this.api.post<Expense>('/expenses', expense);
   }
 
-  private savePendingExpenses() {
-    localStorage.setItem('pendingExpenses', JSON.stringify(this.pendingExpenses));
+  approve(id: string): Observable<Expense> {
+    return this.api.post<Expense>(`/expenses/${id}/approve`);
   }
 
-  getExpenses(): Expense[] {
-  this.alterExpenses = [
-    ...this.expenses,
-    ...this.pendingExpenses
-  ];
-
-  return this.alterExpenses;
-}
-
-  getPendingExpenses(): Expense[] {
-    return this.pendingExpenses;
+  /** Deleting an entry that debited an account also puts the money back. */
+  remove(id: string): Observable<RemovedExpense> {
+    return this.api.delete<RemovedExpense>(`/expenses/${id}`);
   }
 
-  forTotal(expenses: Expense[]) {
+  /** Only settled entries count towards a total. */
+  totalOf(expenses: Expense[]): number {
     return expenses
-      .filter(e => e.status === 'Done')
-      .reduce((sum, e) => sum + Number(e.amount), 0);
+      .filter(expense => expense.status === 'Done')
+      .reduce((sum, expense) => sum + Number(expense.amount), 0);
   }
-
-  addExpense(expense: Expense) {
-    this.expenses.push(expense);
-    this.saveExpenses();
-  }
-
-  addPendingExpense(expense: Expense) {
-    this.pendingExpenses.push(expense);
-    this.savePendingExpenses();
-  }
-
-  deleteExpense(expense: Expense) {
-    if (expense.isPendingApproval) {
-      this.pendingExpenses = this.pendingExpenses.filter(e => e.id !== expense.id);
-      this.savePendingExpenses();
-    } else {
-      this.expenses = this.expenses.filter(e => e.id !== expense.id);
-      this.saveExpenses();
-    }
-  }
-
-  filterByMonth(month: number): Expense[] {
-    return this.alterExpenses.filter(
-      e => new Date(e.date).getMonth() === month
-    );
-  }
-
-  filterByYear(year: number): Expense[] {
-    this.alterExpenses = this.getExpenses().filter(
-      e => new Date(e.date).getFullYear() === year
-    );
-
-    return this.alterExpenses;
-  }
-
-  alterExpen() {
-    return this.alterExpenses;
-  }
-  
-  approvePendingExpense(expense: Expense): boolean {
-  const pendingExpense = this.pendingExpenses.find(
-    (e: Expense) => e.id === expense.id
-  );
-
-  if (!pendingExpense) {
-    return false;
-  }
-
-  if (pendingExpense.expenseAccess) {
-    const balances = JSON.parse(localStorage.getItem('balances') || '[]');
-
-    const selectedBalance = balances.find(
-      (b: any) => b.id == pendingExpense.sourceId
-    );
-
-    if (!selectedBalance) {
-      alert('Balance account not found.');
-      return false;
-    }
-
-    if (Number(selectedBalance.balance) < Number(pendingExpense.amount)) {
-      alert('Insufficient balance.');
-      return false;
-    }
-
-    selectedBalance.balance =
-      Number(selectedBalance.balance) - Number(pendingExpense.amount);
-
-    localStorage.setItem('balances', JSON.stringify(balances));
-  }
-
-  const approvedExpense: Expense = {
-    ...pendingExpense,
-    status: 'Done',
-    balanceUpdated: !!pendingExpense.expenseAccess,
-    updatePermission: true,
-    isPendingApproval: false,
-    remarks: pendingExpense.expenseAccess
-      ? 'Added and balance updated by admin'
-      : 'Added in list by admin'
-  };
-
-  // Add to normal expenses array
-  this.expenses.push(approvedExpense);
-
-  // Remove from pending array
-  this.pendingExpenses = this.pendingExpenses.filter(
-    (e: Expense) => e.id !== expense.id
-  );
-
-  // Save both arrays
-  localStorage.setItem('expenses', JSON.stringify(this.expenses));
-  localStorage.setItem('pendingExpenses', JSON.stringify(this.pendingExpenses));
-
-  return true;
-}
 }

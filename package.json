@@ -1,12 +1,22 @@
 {
-  "name": "task-1",
+  "name": "expense-tracker",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "test:ci": "ng test --watch=false --browsers=ChromeHeadless",
+    "build:pages": "ng build --base-href /Expense-Tracker/ && node scripts/publish-docs.mjs",
+    "api": "node server/src/index.mjs",
+    "api:dev": "node --watch server/src/index.mjs",
+    "db:migrate": "node server/scripts/migrate.mjs",
+    "db:status": "node server/scripts/migrate.mjs --status",
+    "db:check": "node server/scripts/check-connection.mjs",
+    "test:api": "node --test server/test/*.test.mjs",
+    "wa:check": "node server/scripts/check-whatsapp.mjs",
+    "dev": "concurrently -n api,web -c cyan,green \"npm:api:dev\" \"npm:start\""
   },
   "private": true,
   "dependencies": {
@@ -17,7 +27,12 @@
     "@angular/platform-browser": "^19.2.0",
     "@angular/platform-browser-dynamic": "^19.2.0",
     "@angular/router": "^19.2.0",
-    "bootstrap": "^5.3.6",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
@@ -28,6 +43,7 @@
     "@angular/compiler-cli": "^19.2.0",
     "@types/jasmine": "~5.1.0",
     "angular-cli-ghpages": "^3.1.0",
+    "concurrently": "^9.1.2",
     "jasmine-core": "~5.6.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",

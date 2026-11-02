@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../auth.service';
-import { UserService } from '../shared/user.service';
+import { SettingsService } from '../shared/settings.service';
+import { ApiError } from '../shared/api.service';
 
 @Component({
   selector: 'app-login-page',
@@ -12,37 +14,36 @@ import { UserService } from '../shared/user.service';
   templateUrl: './login-page.component.html',
   styleUrl: './login-page.component.css'
 })
-export class LoginPageComponent implements OnInit {
-  loginForm: FormGroup;
-  successMessage: string = '';
-  accessMessage: string = '';
-  addBalanceUserAccess = true;
-  addBalanceAdminAccess = true
-  addExpenseUserAccess = true;
-  addExpenseAdminAccess = true;
-  private messageTimeout: any;
+export class LoginPageComponent implements OnInit, OnDestroy {
+  private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly authService = inject(AuthService);
+  private readonly settingsService = inject(SettingsService);
 
-  constructor(
-    private fb: FormBuilder,
-    private router: Router,
-    private route: ActivatedRoute,
-    private authService: AuthService,
-    private userService: UserService
-  ) {
-    this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
-    });
-  }
+  loginForm: FormGroup = this.fb.group({
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', [Validators.required, Validators.minLength(6)]]
+  });
+
+  successMessage = '';
+  accessMessage = '';
+  submitting = false;
+
+  private messageTimeout: ReturnType<typeof setTimeout> | undefined;
+  private redirectTimeout: ReturnType<typeof setTimeout> | undefined;
+  private readonly subscriptions = new Subscription();
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe(params => {
-      if (params['message']) {
+    this.subscriptions.add(
+      this.route.queryParams.subscribe(params => {
+        if (!params['message']) {
+          return;
+        }
+
         this.accessMessage = params['message'];
 
-        if (this.messageTimeout) {
-          clearTimeout(this.messageTimeout);
-        }
+        clearTimeout(this.messageTimeout);
 
         this.messageTimeout = setTimeout(() => {
           this.accessMessage = '';
@@ -51,61 +52,49 @@ export class LoginPageComponent implements OnInit {
             queryParams: {}
           });
         }, 1000);
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    clearTimeout(this.messageTimeout);
+    clearTimeout(this.redirectTimeout);
+    this.subscriptions.unsubscribe();
+  }
+
+  onSubmit(): void {
+    if (this.loginForm.invalid || this.submitting) {
+      this.loginForm.markAllAsTouched();
+      return;
+    }
+
+    const { email, password } = this.loginForm.value;
+
+    this.submitting = true;
+    this.accessMessage = '';
+
+    this.authService.login(email, password).subscribe({
+      next: () => {
+        // Pull the permission matrix in before leaving, so the header renders
+        // the right links on arrival.
+        this.settingsService.load(true).subscribe({
+          next: () => this.goHome(),
+          error: () => this.goHome()
+        });
+      },
+      error: (error: ApiError) => {
+        this.submitting = false;
+        this.accessMessage = error.message;
       }
-
-      const settings = this.userService.getSettingsAccess();
-
-      this.addBalanceUserAccess = settings.balanceUserAccess;
-      this.addBalanceAdminAccess = settings.balanceAdminAccess;
-      this.addExpenseUserAccess = settings.expenseUserAccess;
-      this.addExpenseAdminAccess = settings.expenseAdminAccess;
     });
   }
 
-onSubmit(): void {
+  private goHome(): void {
+    this.submitting = false;
+    this.successMessage = 'Login successful! Redirecting to home...';
 
-  if(this.loginForm.invalid) {
-  this.loginForm.markAllAsTouched();
-  return;
-}
-
-const email = this.loginForm.value.email;
-const password = this.loginForm.value.password;
-
-const user = this.userService.getUserByEmail(email);
-
-if (
-  !user ||
-  (user.password !== password &&
-    user.adminPassword !== password)
-) {
-  this.accessMessage = 'Invalid email or password';
-  return;
-}
-
-const isAdminLogin = user.adminPassword === password;
-if (isAdminLogin || this.addBalanceUserAccess) {
-  this.userService.balanceManagementAccess(true);
-} else {
-  this.userService.balanceManagementAccess(false);
-}
-localStorage.setItem(
-  'loginType',
-  isAdminLogin ? 'admin' : 'user'
-);
-
-localStorage.setItem(
-  'currentUser',
-  JSON.stringify(user)
-);
-
-this.authService.login();
-
-this.successMessage =
-  'Login successful! Redirecting to home...';
-
-setTimeout(() => {
-  this.router.navigate(['/home']);
-}, 1000);
+    this.redirectTimeout = setTimeout(() => {
+      this.router.navigate(['/home']);
+    }, 1000);
   }
 }

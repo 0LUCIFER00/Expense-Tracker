@@ -1,0 +1,27 @@
+/*
+ * App shell: header, content, footer stacked in a column that always fills at
+ * least the viewport. The footer sits at the bottom through flex rather than
+ * position: fixed, so pages no longer need to subtract a guessed footer height
+ * from 100vh and nothing overlaps on short or landscape screens.
+ */
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+
+  /* dvh tracks the collapsing mobile browser toolbars; ignored where unsupported. */
+  min-height: 100dvh;
+}
+
+.app-main {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Routed components are siblings of <router-outlet>, not children of it. */
+.app-main > *:not(router-outlet) {
+  flex: 1 0 auto;
+  min-width: 0;
+}

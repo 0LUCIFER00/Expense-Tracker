@@ -2,16 +2,9 @@
 
     <div class="header-row">
         <h2 class="header">Balance Management</h2>
-
-        <!-- <div class="toggle-section">
-            <p class="description">Make admin can only access</p>
-
-            <label class="switch">
-                <input type="checkbox" [(ngModel)]="isEnabled" (change)="onToggleChange()">
-                <span class="slider"></span>
-            </label>
-        </div> -->
     </div>
+
+    <p class="page-error" *ngIf="errorMessage">{{ errorMessage }}</p>
 
     <div class="balance-container">
 
@@ -51,9 +44,6 @@
                     </option>
 
                 </select>
-                <!-- <div class="field-error" *ngIf="!item.category">
-                    Please select a value
-                </div> -->
             </div>
 
 
@@ -63,28 +53,22 @@
                 <input type="number" [(ngModel)]="item.balance" (input)="onBalanceRowChange(item)"
                     placeholder="Enter balance">
             </div>
-            <!-- <div class="field-error" *ngIf="item.balance !== null && item.balance <= 0">
-                Enter a valid amount
-            </div> -->
 
             <div class="balance-actions">
 
-                <button type="button" class="add-balance-btn" *ngIf="i === balances.length - 1" (click)="addRow()">
+                <button type="button" class="add-balance-btn" *ngIf="i === balances.length - 1"
+                    [disabled]="item.busy" (click)="addRow()">
                     +
                 </button>
 
-                <button type="button" class="delete-balance-btn" *ngIf="balances.length > 1" (click)="removeRow(i)">
+                <button type="button" class="delete-balance-btn" *ngIf="balances.length > 1"
+                    [disabled]="item.busy" (click)="removeRow(i)">
                     ×
                 </button>
 
-                <button type="button" class="save-balance-btn" [disabled]="
-    item.saved ||
-    !item.type ||
-    !item.category ||
-    item.balance === null ||
-    item.balance === '' ||
-    item.balance <= 0
-  " (click)="saveBalanceRow(item)">
+                <button type="button" class="save-balance-btn"
+                    [disabled]="item.saved || item.busy || !isRowComplete(item)"
+                    (click)="saveBalanceRow(item)">
                     ✓
                 </button>
 

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnDestroy, inject } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -11,7 +11,8 @@ import {
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
-import { UserService } from '../shared/user.service';
+import { SettingsService } from '../shared/settings.service';
+import { ApiError } from '../shared/api.service';
 
 @Component({
   selector: 'app-register-page',
@@ -20,26 +21,31 @@ import { UserService } from '../shared/user.service';
   templateUrl: './register-page.component.html',
   styleUrl: './register-page.component.css'
 })
-export class RegisterPageComponent {
-  registerForm: FormGroup;
-  successMessage: string = '';
+export class RegisterPageComponent implements OnDestroy {
+  private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
+  private readonly settingsService = inject(SettingsService);
 
-  constructor(
-    private fb: FormBuilder,
-    private router: Router,
-    private authService: AuthService,
-    private userService: UserService
-  ) {
-    this.registerForm = this.fb.group(
-      {
-        name: ['', [Validators.required, Validators.minLength(3)]],
-        email: ['', [Validators.required, Validators.email]],
-        password: ['', [Validators.required, Validators.minLength(6)]],
-        confirmPassword: ['', [Validators.required]],
-        adminPassword: ['']
-      },
-      { validators: this.passwordMatchValidator() }
-    );
+  registerForm: FormGroup = this.fb.group(
+    {
+      name: ['', [Validators.required, Validators.minLength(3)]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      confirmPassword: ['', [Validators.required]],
+      adminPassword: ['']
+    },
+    { validators: this.passwordMatchValidator() }
+  );
+
+  successMessage = '';
+  errorMessage = '';
+  submitting = false;
+
+  private redirectTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  ngOnDestroy(): void {
+    clearTimeout(this.redirectTimeout);
   }
 
   passwordMatchValidator(): ValidatorFn {
@@ -52,30 +58,38 @@ export class RegisterPageComponent {
   }
 
   onSubmit(): void {
-  if (this.registerForm.valid) {
+    if (this.registerForm.invalid || this.submitting) {
+      this.registerForm.markAllAsTouched();
+      return;
+    }
 
-    const user = {
-      name: this.registerForm.value.name,
-      email: this.registerForm.value.email,
-      password: this.registerForm.value.password,
-      adminPassword: this.registerForm.value.adminPassword
-    };
+    const { name, email, password, adminPassword } = this.registerForm.value;
 
-    this.userService.registerUser(user);
+    this.submitting = true;
+    this.errorMessage = '';
 
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    this.authService
+      .register({ name, email, password, adminPassword: adminPassword || undefined })
+      .subscribe({
+        next: () => {
+          this.settingsService.load(true).subscribe({
+            next: () => this.goHome(),
+            error: () => this.goHome()
+          });
+        },
+        error: (error: ApiError) => {
+          this.submitting = false;
+          this.errorMessage = error.message;
+        }
+      });
+  }
 
-    this.authService.login();
+  private goHome(): void {
+    this.submitting = false;
+    this.successMessage = 'Registration successful! Redirecting to home...';
 
-    this.successMessage =
-      'Registration successful! Redirecting to home...';
-
-    setTimeout(() => {
+    this.redirectTimeout = setTimeout(() => {
       this.router.navigate(['/home']);
     }, 1000);
-
-  } else {
-    this.registerForm.markAllAsTouched();
   }
-}
 }

@@ -1,8 +1,21 @@
-import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { UserService } from '../shared/user.service';
+import { BalanceService } from '../shared/balance.service';
+import { BalanceAccount } from '../shared/models';
+
+/**
+ * A row on screen. `id` is null until the row has been saved to the server,
+ * which is what decides between a create and an update.
+ */
+interface BalanceRow {
+  id: string | null;
+  type: string;
+  category: string;
+  balance: number | null;
+  saved: boolean;
+  busy: boolean;
+}
 
 @Component({
   selector: 'app-bal-mnt',
@@ -11,61 +24,24 @@ import { UserService } from '../shared/user.service';
   templateUrl: './bal-mnt.component.html',
   styleUrl: './bal-mnt.component.css'
 })
-export class BalMntComponent {
+export class BalMntComponent implements OnInit, OnDestroy {
+  private readonly balanceService = inject(BalanceService);
 
   popupVisible = false;
   popupValue = '';
-  selectedItem: any = null;
+  selectedItem: BalanceRow | null = null;
 
-  currentUserName = '';
+  balances: BalanceRow[] = [this.createBalanceRow()];
 
-  ngOnInit() {
-
-    const savedBalances = localStorage.getItem('balances');
-
-    if (savedBalances) {
-      const parsedBalances = JSON.parse(savedBalances);
-
-      this.balances = parsedBalances.length > 0
-        ? parsedBalances
-        : [this.createBalanceRow()];
-    }
-  }
-
-  constructor(private router: Router, private userService: UserService) { }
-
-
-
-
-
-  balances = [
-    this.createBalanceRow()
-  ];
-
-  createBalanceRow() {
-    return {
-      id: Date.now() + Math.random(),
-      type: 'Hand Cash',
-      category: '',
-      balance: null,
-      saved: false
-    };
-  }
-
+  loading = true;
+  errorMessage = '';
   toastMessage = '';
 
+  private toastTimeout: ReturnType<typeof setTimeout> | undefined;
 
-  handCashOptions = [
-    'Personal',
-    'General'
-  ];
+  handCashOptions = ['Personal', 'General'];
 
-  walletOptions = [
-    'Google Pay',
-    'PhonePe',
-    'Paytm',
-    'Amazon Pay'
-  ];
+  walletOptions = ['Google Pay', 'PhonePe', 'Paytm', 'Amazon Pay'];
 
   bankOptions = [
     'State Bank of India',
@@ -76,12 +52,67 @@ export class BalMntComponent {
     'Axis Bank'
   ];
 
-  customOption = '';
-
-  addRow() {
-    this.balances.push(this.createBalanceRow());
+  ngOnInit(): void {
+    this.load();
   }
 
+  ngOnDestroy(): void {
+    clearTimeout(this.toastTimeout);
+  }
+
+  private load(): void {
+    this.balanceService.list().subscribe({
+      next: accounts => {
+        this.balances = accounts.length
+          ? accounts.map(account => this.toRow(account))
+          : [this.createBalanceRow()];
+
+        this.rememberCustomOptions(accounts);
+        this.loading = false;
+      },
+      error: error => {
+        this.errorMessage = error.message;
+        this.loading = false;
+      }
+    });
+  }
+
+  /** Keeps a saved category selectable even if it was added on another device. */
+  private rememberCustomOptions(accounts: BalanceAccount[]): void {
+    for (const account of accounts) {
+      const options = this.getOptions(account.type);
+
+      if (account.category && !options.includes(account.category)) {
+        options.push(account.category);
+      }
+    }
+  }
+
+  private toRow(account: BalanceAccount): BalanceRow {
+    return {
+      id: account.id,
+      type: account.type,
+      category: account.category,
+      balance: account.balance,
+      saved: true,
+      busy: false
+    };
+  }
+
+  createBalanceRow(): BalanceRow {
+    return {
+      id: null,
+      type: 'Hand Cash',
+      category: '',
+      balance: null,
+      saved: false,
+      busy: false
+    };
+  }
+
+  addRow(): void {
+    this.balances.push(this.createBalanceRow());
+  }
 
   getOptions(type: string): string[] {
     switch (type) {
@@ -99,145 +130,130 @@ export class BalMntComponent {
     }
   }
 
-  openAddOptionPopup(item: any) {
+  openAddOptionPopup(item: BalanceRow): void {
     this.selectedItem = item;
     this.popupValue = '';
     this.popupVisible = true;
   }
 
-  saveNewOption() {
+  saveNewOption(): void {
+    const value = this.popupValue.trim();
 
-    if (!this.popupValue.trim()) {
+    if (!value || !this.selectedItem) {
       return;
     }
 
-    switch (this.selectedItem.type) {
+    const options = this.getOptions(this.selectedItem.type);
 
-      case 'Hand Cash':
-        this.handCashOptions.push(this.popupValue);
-        break;
-
-      case 'Wallet':
-        this.walletOptions.push(this.popupValue);
-        break;
-
-      case 'Bank Account':
-        this.bankOptions.push(this.popupValue);
-        break;
+    if (!options.includes(value)) {
+      options.push(value);
     }
 
-    this.selectedItem.category = this.popupValue;
+    this.selectedItem.category = value;
+    this.selectedItem.saved = false;
 
     this.popupVisible = false;
     this.popupValue = '';
   }
 
-  onTypeChange(item: any) {
+  onTypeChange(item: BalanceRow): void {
     item.category = '';
   }
 
-  onCategoryChange(item: any) {
-
+  onCategoryChange(item: BalanceRow): void {
     if (item.category === 'other') {
+      item.category = '';
       this.openAddOptionPopup(item);
     }
-
   }
 
-  addCustomOption(item: any) {
-
-    if (!this.customOption.trim()) {
-      return;
-    }
-
-    switch (item.type) {
-
-      case 'Hand Cash':
-        this.handCashOptions.push(this.customOption);
-        break;
-
-      case 'Wallet':
-        this.walletOptions.push(this.customOption);
-        break;
-
-      case 'Bank Account':
-        this.bankOptions.push(this.customOption);
-        break;
-    }
-
-    item.category = this.customOption;
-    this.customOption = '';
-  }
-
-  onBalanceRowChange(item: any) {
+  onBalanceRowChange(item: BalanceRow): void {
     item.saved = false;
   }
 
-  saveBalanceRow(item: any) {
-
-  if (
-    !item.type ||
-    !item.category ||
-    item.balance === null ||
-    item.balance === '' ||
-    item.balance <= 0
-  ) {
-    this.showToast('Please fill all fields');
-    return;
+  isRowComplete(item: BalanceRow): boolean {
+    return Boolean(
+      item.type &&
+      item.category &&
+      item.balance !== null &&
+      String(item.balance) !== '' &&
+      Number(item.balance) > 0
+    );
   }
 
-  item.saved = true;
+  saveBalanceRow(item: BalanceRow): void {
+    if (!this.isRowComplete(item)) {
+      this.showToast('Please fill all fields');
+      return;
+    }
 
-  let savedBalances = JSON.parse(
-    localStorage.getItem('balances') || '[]'
-  );
+    const payload = {
+      type: item.type,
+      category: item.category,
+      balance: Number(item.balance)
+    };
 
-  const index = savedBalances.findIndex(
-    (row: any) => row.id === item.id
-  );
+    item.busy = true;
 
-  if (index !== -1) {
-    savedBalances[index] = item;
-  } else {
-    savedBalances.push(item);
+    const request = item.id
+      ? this.balanceService.update(item.id, payload)
+      : this.balanceService.create(payload);
+
+    request.subscribe({
+      next: saved => {
+        item.id = saved.id;
+        item.balance = saved.balance;
+        item.saved = true;
+        item.busy = false;
+        this.showToast('Data saved');
+      },
+      error: error => {
+        item.busy = false;
+        this.showToast(error.message);
+      }
+    });
   }
 
-  localStorage.setItem(
-    'balances',
-    JSON.stringify(savedBalances)
-  );
+  removeRow(index: number): void {
+    const item = this.balances[index];
 
-  this.showToast('Data saved');
-}
+    const dropLocally = () => {
+      this.balances.splice(index, 1);
 
-  removeRow(index: number) {
-  const deletedItem = this.balances[index];
+      if (this.balances.length === 0) {
+        this.balances.push(this.createBalanceRow());
+      }
+    };
 
-  this.balances.splice(index, 1);
+    // A row that was never saved only exists on screen.
+    if (!item.id) {
+      dropLocally();
+      return;
+    }
 
-  let savedBalances = JSON.parse(
-    localStorage.getItem('balances') || '[]'
-  );
+    item.busy = true;
 
-  savedBalances = savedBalances.filter(
-    (row: any) => row.id !== deletedItem.id
-  );
-
-  localStorage.setItem('balances', JSON.stringify(savedBalances));
-
-  if (this.balances.length === 0) {
-    this.balances.push(this.createBalanceRow());
+    this.balanceService.remove(item.id).subscribe({
+      next: () => {
+        dropLocally();
+        this.showToast('Data deleted');
+      },
+      error: error => {
+        item.busy = false;
+        this.showToast(error.message);
+      }
+    });
   }
 
-  this.showToast('Data deleted');
-}
-
-  showToast(message: string) {
+  showToast(message: string): void {
     this.toastMessage = message;
 
-    setTimeout(() => {
+    // Without clearing the previous timer, a toast raised within 2s of the last
+    // one is wiped out early by the older timeout.
+    clearTimeout(this.toastTimeout);
+
+    this.toastTimeout = setTimeout(() => {
       this.toastMessage = '';
     }, 2000);
   }
-
 }

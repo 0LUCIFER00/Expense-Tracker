@@ -1,21 +1,33 @@
-import { Component, OnInit } from '@angular/core';
-import { Expense } from '../shared/expense.model';
 import { CommonModule } from '@angular/common';
-import { ExpenseService } from '../shared/expense.service';
-import { TotalSummaryComponent } from '../total-summary/total-summary.component';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { UserService } from '../shared/user.service';
+import { forkJoin } from 'rxjs';
+import { Expense } from '../shared/models';
+import { ExpenseService } from '../shared/expense.service';
+import { SettingsService } from '../shared/settings.service';
+import { parseLocalDate } from '../shared/date-utils';
+import { TotalSummaryComponent } from '../total-summary/total-summary.component';
 
 @Component({
   selector: 'app-expense-list',
   standalone: true,
   imports: [CommonModule, TotalSummaryComponent, FormsModule],
   templateUrl: './expense-list.component.html',
-  styleUrl: './expense-list.component.css',
+  styleUrl: './expense-list.component.css'
 })
 export class ExpenseListComponent implements OnInit {
+  private readonly expenseService = inject(ExpenseService);
+  private readonly settingsService = inject(SettingsService);
+
+  /** Everything the server returned; `expenses` is the filtered view of it. */
+  private allExpenses: Expense[] = [];
+
   expenses: Expense[] = [];
   total = 0;
+
+  loading = true;
+  errorMessage = '';
+  noticeMessage = '';
 
   currentYear = new Date().getFullYear();
   recentYearsCount = 5;
@@ -24,8 +36,8 @@ export class ExpenseListComponent implements OnInit {
   selectedYear = 0;
 
   canApprovePending = false;
-
   canViewSourceDetails = false;
+  canRemoveExpenses = false;
 
   sortColumn: keyof Expense | null = null;
   sortDirection: 'asc' | 'desc' | 'default' = 'default';
@@ -34,9 +46,9 @@ export class ExpenseListComponent implements OnInit {
     { value: 0, label: 'All' },
     ...Array.from({ length: this.recentYearsCount }, (_, i) => ({
       value: this.currentYear - i,
-      label: (this.currentYear - i).toString(),
+      label: (this.currentYear - i).toString()
     })),
-    { value: -1, label: '< 5 Years' },
+    { value: -1, label: '< 5 Years' }
   ];
 
   months = [
@@ -52,91 +64,95 @@ export class ExpenseListComponent implements OnInit {
     { value: 9, label: 'September' },
     { value: 10, label: 'October' },
     { value: 11, label: 'November' },
-    { value: 12, label: 'December' },
+    { value: 12, label: 'December' }
   ];
 
-  constructor(
-    private expenseService: ExpenseService,
-    private userService: UserService
-  ) { }
-
   ngOnInit(): void {
-    this.setViewPermission();
-    this.applyFilters();
+    this.reload();
+  }
+
+  private reload(): void {
+    forkJoin({
+      expenses: this.expenseService.list(),
+      settings: this.settingsService.load(true)
+    }).subscribe({
+      next: ({ expenses }) => {
+        this.allExpenses = expenses;
+        this.setViewPermission();
+        this.applyFilters();
+        this.loading = false;
+      },
+      error: error => {
+        this.errorMessage = error.message;
+        this.loading = false;
+      }
+    });
   }
 
   setViewPermission(): void {
-    const loginType = localStorage.getItem('loginType');
-    const settings = this.userService.getSettingsAccess();
-
-    if (loginType === 'admin') {
-      this.canViewSourceDetails = settings.viewPermissionAdmin;
-      this.canApprovePending = settings.updatePermissionAdmin;
-    } else {
-      this.canViewSourceDetails = settings.viewPermissionUser;
-      this.canApprovePending = settings.updatePermissionUser;
-    }
+    this.canViewSourceDetails = this.settingsService.canViewSource;
+    this.canApprovePending = this.settingsService.canBackdate;
+    this.canRemoveExpenses = this.settingsService.canRemove;
   }
 
   onApprovePending(expense: Expense): void {
-    const approved = this.expenseService.approvePendingExpense(expense);
+    this.expenseService.approve(expense.id).subscribe({
+      next: () => this.reload(),
+      error: error => {
+        this.errorMessage = error.message;
+      }
+    });
+  }
 
-    if (approved) {
-      this.applyFilters();
-    }
+  onDelete(expense: Expense): void {
+    this.expenseService.remove(expense.id).subscribe({
+      next: removed => {
+        // Say so when money went back, otherwise the balance silently changing
+        // looks like a second bug.
+        this.noticeMessage = removed.refunded
+          ? `Removed. ₹${expense.amount} put back into ${removed.sourceCategory}.`
+          : 'Removed.';
+
+        this.reload();
+      },
+      error: error => {
+        this.errorMessage = error.message;
+      }
+    });
   }
 
   onFilterMonth(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    this.selectedMonth = Number(target.value);
+    this.selectedMonth = Number((event.target as HTMLSelectElement).value);
     this.applyFilters();
   }
 
   onFilterYear(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    this.selectedYear = Number(target.value);
+    this.selectedYear = Number((event.target as HTMLSelectElement).value);
     this.applyFilters();
   }
 
   applyFilters(): void {
-    let filteredExpenses = this.expenseService.getExpenses();
+    let filtered = [...this.allExpenses];
 
     if (this.selectedMonth !== 0) {
-      filteredExpenses = filteredExpenses.filter(
-        (expense) => new Date(expense.date).getMonth() === this.selectedMonth - 1
+      filtered = filtered.filter(
+        expense => parseLocalDate(expense.date).getMonth() === this.selectedMonth - 1
       );
     }
 
     if (this.selectedYear === -1) {
       const limitYear = this.currentYear - this.recentYearsCount + 1;
-      filteredExpenses = filteredExpenses.filter(
-        (expense) => new Date(expense.date).getFullYear() < limitYear
+      filtered = filtered.filter(
+        expense => parseLocalDate(expense.date).getFullYear() < limitYear
       );
     } else if (this.selectedYear !== 0) {
-      filteredExpenses = filteredExpenses.filter(
-        (expense) => new Date(expense.date).getFullYear() === this.selectedYear
+      filtered = filtered.filter(
+        expense => parseLocalDate(expense.date).getFullYear() === this.selectedYear
       );
     }
 
-    this.expenses = this.applySorting(filteredExpenses);
-    this.total = this.expenseService.forTotal(this.expenses);
-  }
-
-  onDelete(expense: Expense): void {
-    this.expenseService.deleteExpense(expense);
-    this.applyFilters();
-  }
-
-  getExpenseStatus(expense: Expense): string {
-    return expense.status || 'Pending / Waiting Admin';
-  }
-
-  getStatusClass(expense: Expense): string {
-    if (expense.status === 'Done') {
-      return 'status-done';
-    }
-
-    return 'status-pending';
+    this.expenses = this.applySorting(filtered);
+    this.total = this.expenseService.totalOf(this.expenses);
   }
 
   onSort(column: keyof Expense): void {
@@ -156,26 +172,25 @@ export class ExpenseListComponent implements OnInit {
   }
 
   applySorting(expenses: Expense[]): Expense[] {
-    // Default user-added order
+    // Default is the order the entries were created in.
     if (!this.sortColumn || this.sortDirection === 'default') {
-      return expenses.sort((a, b) => {
-        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : Number(a.id || 0);
-        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : Number(b.id || 0);
-
-        return aTime - bTime;
-      });
+      return [...expenses].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
     }
 
-    return expenses.sort((a: any, b: any) => {
-      let valueA = a[this.sortColumn as string];
-      let valueB = b[this.sortColumn as string];
+    const column = this.sortColumn;
 
-      if (this.sortColumn === 'date') {
-        valueA = new Date(valueA).getTime();
-        valueB = new Date(valueB).getTime();
+    return [...expenses].sort((a: any, b: any) => {
+      let valueA = a[column as string];
+      let valueB = b[column as string];
+
+      if (column === 'date') {
+        valueA = parseLocalDate(valueA).getTime();
+        valueB = parseLocalDate(valueB).getTime();
       }
 
-      if (this.sortColumn === 'amount') {
+      if (column === 'amount') {
         valueA = Number(valueA);
         valueB = Number(valueB);
       }

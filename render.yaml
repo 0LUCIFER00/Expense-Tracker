@@ -1,0 +1,48 @@
+# Render blueprint: one web service running the Express API, which also serves
+# the built Angular app. That gives a single permanent HTTPS URL for both the
+# site and the WhatsApp webhook.
+#
+# Secrets are NOT here. sync: false means Render prompts for the value and
+# stores it in the dashboard, so nothing sensitive is committed.
+services:
+  - type: web
+    name: expense-tracker
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+
+    # --include=dev because the Angular CLI is a devDependency and Render sets
+    # NODE_ENV=production, which would otherwise skip it.
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run api
+
+    # Render pings this; it also tells you at a glance whether the database is
+    # reachable from the deployed service.
+    healthCheckPath: /api/health
+
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: NODE_ENV
+        value: production
+
+      # Aiven connection string.
+      - key: DATABASE_URL
+        sync: false
+
+      # Signs the session cookie. Generate once and keep it stable, or every
+      # deploy signs everyone out.
+      - key: JWT_SECRET
+        generateValue: true
+
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_VERIFY_TOKEN
+        sync: false
+      - key: WHATSAPP_APP_SECRET
+        sync: false
+      - key: WHATSAPP_BUSINESS_NUMBER
+        sync: false

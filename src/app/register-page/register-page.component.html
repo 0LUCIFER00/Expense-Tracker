@@ -5,6 +5,7 @@
       <p class="subtitle">Create your account to manage expenses</p>
 
       <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
+      <p class="form-error" *ngIf="errorMessage">{{ errorMessage }}</p>
 
       <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
         <div class="form-group">
@@ -65,7 +66,7 @@
           </small>
         </div>
 
-        <button type="submit" [disabled]="registerForm.invalid">Register</button>
+        <button type="submit" [disabled]="registerForm.invalid || submitting">Register</button>
       </form>
 
       <p class="footer-text">
