@@ -4,16 +4,16 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { Expense } from '../shared/models';
 import { ExpenseService, UNCATEGORISED } from '../shared/expense.service';
+import { downloadCsv } from '../shared/csv';
 import { SettingsService } from '../shared/settings.service';
 import { parseLocalDate } from '../shared/date-utils';
-import { TotalSummaryComponent } from '../total-summary/total-summary.component';
 
 @Component({
   selector: 'app-expense-list',
   standalone: true,
-  imports: [CommonModule, TotalSummaryComponent, FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './expense-list.component.html',
-  styleUrls: ['./expense-list.component.css', './expense-list.component.dark.css']
+  styleUrl: './expense-list.component.css'
 })
 export class ExpenseListComponent implements OnInit {
   private readonly expenseService = inject(ExpenseService);
@@ -283,21 +283,11 @@ export class ExpenseListComponent implements OnInit {
       return cells;
     });
 
-    const csv = [headers, ...rows]
-      .map(row => row.map(toCsvCell).join(','))
-      .join(CRLF);
-
-    // The BOM is what makes Excel read it as UTF-8 rather than as the local
-    // code page, which otherwise mangles the rupee sign and any non-ASCII note.
-    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `expenses-${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-
-    URL.revokeObjectURL(url);
+    downloadCsv(
+      `expenses-${new Date().toISOString().slice(0, 10)}.csv`,
+      headers,
+      rows
+    );
   }
 
   getSortIcon(column: keyof Expense): string {
@@ -315,25 +305,4 @@ export class ExpenseListComponent implements OnInit {
 
     return '';
   }
-}
-
-/** Excel only reads a CSV as UTF-8 when it starts with a byte-order mark. */
-const BOM = '﻿';
-
-/** CSV's own line ending, which Excel is least likely to argue with. */
-const CRLF = '\r\n';
-
-/** The characters that force a cell to be quoted: comma, quote, CR, LF. */
-const NEEDS_QUOTING = /[",\r\n]/;
-
-/**
- * Quotes a value for CSV.
- *
- * A description is free text, so it can contain the delimiter, a quote or a
- * newline; each would otherwise shift every later column of that row.
- */
-function toCsvCell(value: string): string {
-  const text = String(value ?? '');
-
-  return NEEDS_QUOTING.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }

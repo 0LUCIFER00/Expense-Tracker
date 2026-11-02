@@ -1,115 +1,149 @@
-<div class="home-container">
-  <header class="hero-section">
-    <h1>
-      <ng-container *ngIf="firstName">Welcome back, {{ firstName }}</ng-container>
-      <ng-container *ngIf="!firstName">Welcome to Expense Tracker</ng-container>
-    </h1>
-    <p class="subtitle">Track your spending. Control your budget. Master your finances.</p>
-    <p class="date">Today : {{ today | date: 'fullDate' }}</p>
-    <button class="btn-primary" routerLink="/add-expense">➕Add New Expense</button>
-  </header>
+<div class="dashboard">
 
   <p class="page-error" *ngIf="loadError">{{ loadError }}</p>
 
-  <section class="stats-section">
-    <div class="card">
-      <h2>Total Entries</h2>
-      <p>{{ totalExpenses }}</p>
-    </div>
-    <div class="card">
-      <h2>Total Spent</h2>
-      <p>₹{{ totalSpent }}</p>
-    </div>
-    <div class="card">
-      <h2>This Month Expenses</h2>
-      <p>₹{{ currentMonthSpent }}</p>
+  <div class="dash-row">
 
-      <!-- Only meaningful once there is a previous month to compare against. -->
-      <span class="trend" *ngIf="monthChange !== null"
-        [class.up]="monthChange > 0" [class.down]="monthChange < 0">
-        {{ monthChange > 0 ? '▲' : monthChange < 0 ? '▼' : '=' }}
-        {{ monthChange === 0 ? 'same as' : (monthChange > 0 ? '+' : '') + monthChange + '% vs' }}
-        last month
-      </span>
-    </div>
-    <div class="card">
-      <h2>Last Month Expenses</h2>
-      <p>₹{{ lastMonthSpent }}</p>
-    </div>
-  </section>
+    <!-- The headline: what this month has cost, and how that compares. -->
+    <section class="card headline-card">
+      <div class="headline-top">
+        <p class="today">{{ today | date: 'EEEE, d MMMM' }}</p>
 
-  <div class="panels">
+        <a class="primary-action" routerLink="/add-expense">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Add expense
+        </a>
+      </div>
 
-    <section class="panel" *ngIf="categoryBars.length">
-      <h2 class="panel-title">Where this month went</h2>
+      <p class="headline-figure tnum">₹{{ currentMonthSpent | number }}</p>
 
-      <ul class="category-list">
-        <li *ngFor="let bar of categoryBars">
-          <div class="category-head">
-            <span class="category-name">{{ bar.category }}</span>
-            <span class="category-total">₹{{ bar.total }}</span>
-          </div>
+      <p class="headline-caption">
+        <span>spent in {{ monthName }}</span>
 
-          <!-- Decorative: the figure beside it already states the value. -->
-          <div class="category-track" aria-hidden="true">
-            <div class="category-fill" [style.width.%]="bar.share"></div>
-          </div>
-        </li>
-      </ul>
-    </section>
+        <span class="delta" *ngIf="monthDifference" [class.more]="spentMore"
+          [class.less]="!spentMore">
+          ₹{{ monthDifference | number }}
+          {{ spentMore ? 'more' : 'less' }} than {{ lastMonthName }}
+        </span>
 
-    <section class="panel" *ngIf="recent.length">
-      <h2 class="panel-title">Recent activity</h2>
-
-      <ul class="recent-list">
-        <li *ngFor="let expense of recent">
-          <div class="recent-main">
-            <span class="recent-desc">{{ expense.description }}</span>
-            <span class="recent-meta">
-              {{ expense.date | date: 'd MMM' }}
-              <ng-container *ngIf="expense.category"> · {{ expense.category }}</ng-container>
-            </span>
-          </div>
-
-          <span class="recent-amount" [class.pending]="expense.isPendingApproval">
-            ₹{{ expense.amount }}
-          </span>
-        </li>
-      </ul>
-
-      <p class="panel-note" *ngIf="pendingCount">
-        {{ pendingCount }}
-        {{ pendingCount === 1 ? 'entry is' : 'entries are' }}
-        waiting for an admin to approve.
+        <span class="delta flat" *ngIf="!monthDifference && lastMonthSpent">
+          the same as {{ lastMonthName }}
+        </span>
       </p>
+
+      <div class="headline-stats">
+        <!-- An amount, so it waits on the same permission as the rest of them. -->
+        <div *ngIf="canSeeBalances">
+          <p class="stat-label">Held across accounts</p>
+          <p class="stat-value tnum">₹{{ accountsTotal | number }}</p>
+        </div>
+
+        <div>
+          <p class="stat-label">Daily average</p>
+          <p class="stat-value tnum">₹{{ dailyAverage | number }}</p>
+        </div>
+
+        <div>
+          <p class="stat-label">Entries this month</p>
+          <p class="stat-value tnum">{{ monthEntries }}</p>
+        </div>
+      </div>
     </section>
 
-    <!-- Hidden entirely when balances are, rather than showing empty rows. -->
-    <section class="panel" *ngIf="canSeeBalances && accounts.length">
-      <h2 class="panel-title">Your accounts</h2>
+    <section class="card accounts-card" *ngIf="canSeeBalances">
+      <h2 class="card-title">Where your money is</h2>
 
-      <ul class="account-list">
-        <li *ngFor="let account of accounts">
-          <span class="account-name">{{ account.category }}</span>
-          <span class="account-type">{{ account.type }}</span>
-          <span class="account-balance">₹{{ account.balance }}</span>
-        </li>
-      </ul>
+      <p class="card-empty" *ngIf="!accountRows.length">
+        No accounts yet. Add one and your balances appear here.
+      </p>
 
-      <p class="panel-note">Across all accounts: <strong>₹{{ accountsTotal }}</strong></p>
+      <div class="account-row" *ngFor="let row of accountRows">
+        <div class="account-head">
+          <span class="account-name">{{ row.account.category }}</span>
+          <span class="account-amount tnum">₹{{ row.account.balance | number }}</span>
+        </div>
+
+        <span class="account-kind">{{ row.account.type }}</span>
+
+        <!-- Decorative: the amount beside it already states the value. -->
+        <span class="account-track" aria-hidden="true">
+          <span class="account-fill" [style.width.%]="row.share"></span>
+        </span>
+      </div>
+
+      <a class="card-link" routerLink="/bal-mnt">Manage accounts</a>
     </section>
 
   </div>
 
-  <div class="empty-state" *ngIf="!loading && !totalExpenses && !loadError">
-    <h2>Nothing recorded yet</h2>
-    <p>
-      Add your first expense, or send one over WhatsApp once you have connected
-      your phone in Settings.
-    </p>
+  <div class="dash-row">
+
+    <section class="card">
+      <h2 class="card-title">Where it went</h2>
+      <p class="card-subtitle">{{ monthName }}, by category</p>
+
+      <p class="card-empty" *ngIf="!categoryBars.length">
+        Nothing recorded this month yet.
+      </p>
+
+      <div class="category-row" *ngFor="let bar of categoryBars">
+        <span class="category-name">{{ bar.category }}</span>
+
+        <span class="category-track" aria-hidden="true">
+          <span class="category-fill" [attr.data-tone]="bar.tone"
+            [style.width.%]="bar.share"></span>
+        </span>
+
+        <span class="category-amount tnum">₹{{ bar.total | number }}</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Recent</h2>
+
+      <p class="card-empty" *ngIf="!recent.length">
+        Your last few expenses will show up here.
+      </p>
+
+      <div class="recent-row" *ngFor="let item of recent">
+        <span class="recent-date tnum">{{ item.date | date: 'd MMM' }}</span>
+
+        <span class="recent-what">
+          {{ item.description }}
+          <span class="recent-meta" *ngIf="item.category || item.sourceCategory">
+            ·
+            {{ item.sourceCategory || item.category }}
+          </span>
+        </span>
+
+        <span class="recent-amount tnum" [class.pending]="item.isPendingApproval">
+          ₹{{ item.amount | number }}
+        </span>
+      </div>
+
+      <a class="card-link" routerLink="/view-expenses">See all expenses</a>
+    </section>
+
   </div>
 
-  <section class="actions-section">
-    <button class="btn-secondary" routerLink="/view-expenses">📊View All Expenses</button>
+  <!-- Only while there is something to do about it. -->
+  <section class="card whatsapp-strip" *ngIf="whatsapp?.available && !whatsapp?.connected">
+    <span class="whatsapp-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="21" height="21">
+        <path d="M21 11.6a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-5A8.5 8.5 0 1 1 21 11.6Z" />
+      </svg>
+    </span>
+
+    <div class="whatsapp-text">
+      <p class="whatsapp-title">Add from WhatsApp without signing in</p>
+      <p class="whatsapp-body">
+        Send <strong>250 coffee paytm</strong> and it is recorded against that account.
+      </p>
+    </div>
+
+    <a class="secondary-action" routerLink="/settings">Connect</a>
   </section>
+
 </div>

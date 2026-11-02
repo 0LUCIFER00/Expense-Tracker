@@ -1,183 +1,350 @@
+/*
+ * Add expense, as the design draws it: the form taking most of the width with a
+ * narrow column of context beside it. Colours come from the tokens in
+ * styles.css, so this one stylesheet serves both themes.
+ */
+
 :host {
   display: block;
-  padding: 0 clamp(0.75rem, 4vw, 1rem);
+  color: var(--ink);
 }
 
-.expense-form-container {
-  width: 100%;
-  max-width: 500px;
-  margin: clamp(0.7rem, 3vw, 2rem) auto;
-  background: #fff;
-  border-radius: 12px;
-  padding: clamp(1.1rem, 4vw, 1.8rem);
-  box-shadow: 0 6px 20px #0000001a;
-}
-
-.expense-form-container h2 {
-  text-align: center;
-  color: #2a3f9d;
-  margin-bottom: 1rem;
-}
-
-/* Common Form Group */
-.form-group,
-.expense-form .form-group {
-  margin-bottom: 1rem;
-}
-
-.form-group label,
-.expense-form label {
-  display: block;
-  margin-bottom: 0.4rem;
-  font-weight: 600;
-  color: #444;
-}
-
-/* Inputs and Select */
-.form-group input,
-.expense-form input,
-.form-group select {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #d9e6ff;
-  border-radius: 8px;
-  font-size: 1rem;
-  background-color: #fff;
-  box-sizing: border-box;
-  transition: all 0.3s ease;
-}
-
-/* Custom Select Dropdown */
-.form-group select {
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-
-  background-image:
-    linear-gradient(45deg, transparent 50%, #5b6b88 50%),
-    linear-gradient(135deg, #5b6b88 50%, transparent 50%);
-
-  background-position:
-    calc(100% - 18px) calc(50% - 3px),
-    calc(100% - 12px) calc(50% - 3px);
-
-  background-size: 6px 6px;
-  background-repeat: no-repeat;
-
-  padding-right: 45px;
-}
-
-/* Focus */
-.form-group input:focus,
-.expense-form input:focus,
-.form-group select:focus {
-  border-color: #2a3f9d;
-  outline: none;
-  box-shadow: 0 0 5px rgba(42, 63, 157, 0.3);
-}
-
-/* Hover */
-.form-group select:hover,
-.form-group input:hover,
-.expense-form input:hover {
-  border-color: #8db4ff;
-}
-
-/* Placeholder option */
-.form-group select option[value=""] {
-  color: #9ca3af;
-}
-
-/* Submit Button */
-.button-group {
+.add-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 4vw, 2rem) clamp(1rem, 3vw, 1.5rem) 3rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 1rem;
+  gap: 2rem;
+  align-items: flex-start;
 }
 
-.expense-btn,
-.update-btn {
-  flex: 1 1 180px;
-  min-height: 46px;
-  padding: 0.9rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #fff;
-  cursor: pointer;
-  transition: 0.3s;
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
 }
 
-.expense-btn {
-  background-color: #2a3f9d;
+/*
+ * flex: 999 takes nearly all the spare width while both columns are on one
+ * line; 460px is the width below which the form drops to its own.
+ */
+.form-card {
+  flex: 999 1 460px;
+  min-width: 0;
+  padding: clamp(1.25rem, 3vw, 1.875rem);
 }
 
-.expense-btn:hover:not(:disabled) {
-  background-color: #1c2978;
+.form-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: var(--accent-ink);
 }
 
-.update-btn {
-  background-color: #28a745;
+.form-subtitle {
+  margin: 0 0 1.625rem;
+  font-size: 0.8125rem;
+  color: var(--ink-3);
 }
 
-.update-btn:hover:not(:disabled) {
-  background-color: #218838;
-}
-
-.expense-btn:disabled,
-.update-btn:disabled {
-  background-color: #aaa;
-  cursor: not-allowed;
-}
-
-/* Validation */
-.expense-form input.ng-invalid.ng-touched,
-.form-group select.ng-invalid.ng-touched {
-  border-color: #dc3545;
-}
-
-/* Responsive */
-@media (max-width: 600px) {
-  .expense-form-container h2 {
-    font-size: 1.4rem;
-  }
-
-  .button-group {
-    flex-direction: column;
-  }
-
-  /*
-   * flex-basis follows the main axis, so the 180px basis above would become a
-   * 180px-tall button once the group stacks.
-   */
-  .expense-btn,
-  .update-btn {
-    flex: 0 0 auto;
-    width: 100%;
-  }
-}
-
-select:disabled {
-  background-color: #f1f3f5;
-  color: #6c757d;
-  cursor: not-allowed;
-  opacity: 0.8;
-}
 .form-error,
 .form-success {
-  text-align: center;
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 10px;
+  margin: 0 0 1.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
 }
 
 .form-error {
-  color: #d32f2f;
+  border: 1px solid var(--bad);
+  background-color: var(--bad-soft);
+  color: var(--bad-ink);
 }
 
 .form-success {
-  color: #198754;
+  border: 1px solid var(--good);
+  background-color: var(--good-soft);
+  color: var(--good-ink);
+}
+
+/* ---- fields ---- */
+
+.field-label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.field-hint {
+  margin: 0 0 0.625rem;
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+
+.field-note {
+  margin: 0 0 1.375rem;
+  font-size: 0.75rem;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+.field-note.good {
+  color: var(--good-ink);
+}
+
+/* The amount is the point of the page, so it gets its own oversized field. */
+.amount-field {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 1.375rem;
+  padding: 0 1rem;
+  border: 1px solid var(--field-border);
+  border-radius: 10px;
+  background-color: var(--field-bg);
+}
+
+.amount-field:focus-within {
+  border-color: var(--focus-border);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.amount-prefix {
+  font-size: 1.625rem;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+
+.amount-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.875rem 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 1.875rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--accent-ink);
+}
+
+.text-field {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 1.375rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--field-border);
+  border-radius: 10px;
+  background-color: var(--field-bg);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  color: var(--ink);
+}
+
+.text-field:focus {
+  outline: none;
+  border-color: var(--focus-border);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.text-field:disabled {
+  background-color: var(--sunken);
+  color: var(--ink-3);
+}
+
+/* A note under a field replaces that field's own bottom margin. */
+.text-field + .field-note,
+.text-field + .field-note + .field-note {
+  margin-top: -1rem;
+}
+
+.category-field {
+  margin: 0 0 1.375rem;
+  padding: 0;
+  border: 0;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  min-height: 38px;
+  padding: 0 0.9375rem;
+  border: 1px solid var(--field-border);
+  border-radius: 999px;
+  background-color: var(--surface);
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--focus-border);
+}
+
+.chip.on {
+  border-color: var(--accent);
+  background-color: var(--accent);
+  color: #fff;
+}
+
+/* ---- the two buttons ---- */
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.btn-good,
+.btn-ghost {
+  min-height: 48px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-good {
+  flex: 1 1 200px;
+  border: 0;
+  background-color: var(--good);
+  color: #fff;
+}
+
+.btn-ghost {
+  flex: 1 1 160px;
+  border: 1px solid var(--accent);
+  background-color: var(--surface);
+  color: var(--accent-ink);
+}
+
+.btn-good:disabled,
+.btn-ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-good:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background-color: var(--accent-soft);
+}
+
+/* ---- the column beside it ---- */
+
+.add-aside {
+  flex: 1 1 300px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.add-aside .card {
+  padding: 1.375rem 1.5rem;
+}
+
+.card-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.after-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.after-row.last {
+  padding: 0.625rem 0 0;
+  border-bottom: none;
+}
+
+.after-label {
+  font-size: 0.875rem;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.after-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.after-row.last .after-value {
+  color: var(--good-ink);
+}
+
+/* Overdrawn, so the expense would be refused. */
+.after-row.last .after-value.short {
+  color: var(--bad-ink);
+}
+
+.add-aside .field-note {
+  margin: 0.875rem 0 0;
+}
+
+.aside-body {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.command {
+  margin: 0;
+  padding: 0.75rem 0.875rem;
+  border: 1px dashed var(--focus-border);
+  border-radius: 10px;
+  background-color: var(--sunken);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--accent-ink);
+  overflow-wrap: anywhere;
+}
+
+.card-link {
+  display: inline-block;
+  margin-top: 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+
+.card-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 420px) {
+  .add-page {
+    gap: 1.25rem;
+  }
+
+  .btn-good,
+  .btn-ghost {
+    flex: 1 1 100%;
+  }
 }

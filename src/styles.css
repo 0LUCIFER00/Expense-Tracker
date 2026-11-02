@@ -17,7 +17,7 @@ html {
 body {
   background: linear-gradient(to bottom right, #e7edff, #e3e3e3);
   background-attachment: fixed;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: Manrope, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 
   /* The shell in app.component.css owns the height; a fixed 100vh here would
      clip content whenever a page grows past one screen. */
@@ -52,6 +52,63 @@ textarea {
 }
 
 /*
+ * Design tokens.
+ *
+ * The light values are the design's own, taken from its artboards. Every page
+ * draws its surfaces, text, fields and accents from these, so a card on the
+ * dashboard and a card on the profile page are the same card — and so the dark
+ * theme is one block of overrides below rather than a copy of every rule.
+ *
+ * Custom properties pierce Angular's style encapsulation, which component
+ * classes do not, so this is the one place that can set them for every page.
+ */
+:root {
+  --surface: #ffffff;
+  --surface-border: transparent;
+  --sunken: #f6f8fc;
+  --shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+
+  --ink: #333333;
+  --ink-2: #666666;
+  --ink-3: #777777;
+
+  --accent: #2a3f9d;
+  --accent-hover: #1c2978;
+  --accent-soft: #e6eaff;
+  --accent-ink: #1c2978;
+
+  --field-border: #d9e6ff;
+  --field-bg: #ffffff;
+  --rule: #eef2fb;
+  --rule-strong: #d9e6ff;
+
+  --focus-ring: rgba(124, 187, 255, 0.4);
+  --focus-border: #7cbbff;
+
+  --good: #198754;
+  --good-ink: #11704a;
+  --good-soft: #e2f2ea;
+
+  --bad: #e63e3e;
+  --bad-ink: #b3261e;
+  --bad-soft: #fbe9e7;
+
+  --warn-ink: #8a4b00;
+  --warn-soft: #fff0e0;
+
+  /* The table header strip on the expenses page. */
+  --table-head: #7cbbff;
+  --table-head-ink: #ffffff;
+
+  /* The bar ramp, lightest last, used for the category breakdown. */
+  --ramp-1: #2a3f9d;
+  --ramp-2: #4a62d8;
+  --ramp-3: #6f8dff;
+  --ramp-4: #9db0ff;
+  --ramp-5: #c3cdf7;
+}
+
+/*
  * Dark theme.
  *
  * Additive only: every rule here is scoped to [data-theme="dark"], so the
@@ -63,6 +120,50 @@ textarea {
  *   sunken  #232b45      ink-3    #7a84a0
  *   border  #2e3853      accent   #7f9bff
  */
+html[data-theme='dark'] {
+  --surface: #1a2032;
+  --surface-border: #2e3853;
+  --sunken: #232b45;
+  --shadow: none;
+
+  --ink: #e7eaf3;
+  --ink-2: #a8b1c9;
+  --ink-3: #7a84a0;
+
+  --accent: #3b52c4;
+  --accent-hover: #4a62d8;
+  --accent-soft: #2b3a63;
+  --accent-ink: #9db0ff;
+
+  --field-border: #2e3853;
+  --field-bg: #232b45;
+  --rule: #232b45;
+  --rule-strong: #2e3853;
+
+  --focus-ring: rgba(127, 155, 255, 0.25);
+  --focus-border: #7f9bff;
+
+  --good: #2f9e63;
+  --good-ink: #6bd3a0;
+  --good-soft: #11291f;
+
+  --bad: #e05a52;
+  --bad-ink: #ff8a80;
+  --bad-soft: #2d1816;
+
+  --warn-ink: #d9b85c;
+  --warn-soft: #2e2415;
+
+  --table-head: #2b3a63;
+  --table-head-ink: #e7eaf3;
+
+  --ramp-1: #9db0ff;
+  --ramp-2: #7f9bff;
+  --ramp-3: #6f8dff;
+  --ramp-4: #4a62d8;
+  --ramp-5: #3b52c4;
+}
+
 html[data-theme='dark'] body {
   background: #0f1420;
   color: #e7eaf3;
@@ -70,4 +171,170 @@ html[data-theme='dark'] body {
 
 html[data-theme='dark'] {
   color-scheme: dark;
+}
+
+/* Figures line up column-wise instead of jittering as the digits change. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Reaches a screen reader, not the screen: names an icon-only control. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/*
+ * Shared primitives.
+ *
+ * The dialog and button treatments are identical on Settings, Profile and
+ * Balance Management, and repeating them put one component stylesheet over its
+ * size budget. They live here instead; a component that needs a variant still
+ * overrides them, because Angular's emulated encapsulation adds an attribute to
+ * its own selectors and so outranks these.
+ */
+
+.et-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.45);
+  overflow-y: auto;
+}
+
+.et-popup {
+  width: 100%;
+  max-width: 420px;
+  background-color: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  padding: 1.5rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+.et-popup h3 {
+  margin: 0 0 0.375rem;
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.et-popup-body {
+  margin: 0 0 1.25rem;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+.et-popup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.et-popup-actions > * {
+  flex: 1 1 auto;
+}
+
+.et-field-label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.et-field {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--field-border);
+  border-radius: 10px;
+  background-color: var(--field-bg);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  color: var(--ink);
+}
+
+.et-field:focus {
+  outline: none;
+  border-color: var(--focus-border);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.et-field:disabled,
+.et-field[readonly] {
+  background-color: var(--sunken);
+  color: var(--ink-3);
+}
+
+.et-field-error {
+  margin: -0.5rem 0 1rem;
+  font-size: 0.8125rem;
+  color: var(--bad-ink);
+}
+
+.et-btn-primary,
+.et-btn-ghost,
+.et-btn-danger {
+  min-height: 44px;
+  padding: 0 1.25rem;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.et-btn-primary {
+  border: 0;
+  background-color: var(--accent);
+  color: #fff;
+}
+
+.et-btn-primary:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+  color: #fff;
+}
+
+.et-btn-ghost {
+  border: 1px solid var(--field-border);
+  background-color: var(--surface);
+  color: var(--ink-2);
+}
+
+.et-btn-ghost:hover:not(:disabled) {
+  border-color: var(--focus-border);
+  color: var(--accent-ink);
+}
+
+.et-btn-danger {
+  border: 1px solid var(--bad);
+  background-color: var(--surface);
+  color: var(--bad-ink);
+}
+
+.et-btn-danger:hover:not(:disabled) {
+  background-color: var(--bad-soft);
+}
+
+.et-btn-primary:disabled,
+.et-btn-ghost:disabled,
+.et-btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

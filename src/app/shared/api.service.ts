@@ -43,9 +43,13 @@ export class ApiService {
       .pipe(catchError(toApiError));
   }
 
-  delete<T>(path: string): Observable<T> {
+  /**
+   * @param body sent as the request body, which DELETE allows. Needed where the
+   *   server asks for a password before destroying something.
+   */
+  delete<T>(path: string, body?: unknown): Observable<T> {
     return this.http
-      .delete<T>(this.base + path, { withCredentials: true })
+      .delete<T>(this.base + path, { withCredentials: true, body })
       .pipe(catchError(toApiError));
   }
 }

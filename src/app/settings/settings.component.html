@@ -1,277 +1,313 @@
 <div class="settings-page">
 
-    <p class="page-error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <div class="page-head">
+    <h1 class="page-title">Settings</h1>
 
-    <div class="settings-top-row">
-        <h2 class="settings-title">Settings</h2>
+    <span class="chip" [class.admin]="isAdminSession">
+      {{ isAdminSession ? 'Signed in as admin' : 'Signed in as user' }}
+    </span>
+  </div>
 
-        <div class="toggle-section">
-            <p class="description">Create admin access</p>
+  <p class="page-subtitle">
+    A normal user sees only “Create admin access”; the permissions appear once you
+    sign in with the admin password.
+  </p>
 
-            <label class="switch">
-                <input type="checkbox" [(ngModel)]="isEnabled" (change)="onToggleChange()">
-                <span class="slider"></span>
-            </label>
-        </div>
+  <p class="page-error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <section class="card">
+
+    <div class="admin-row">
+      <div class="admin-text">
+        <h2 class="card-title">Admin access</h2>
+        <p class="card-body">
+          A second password on this account that unlocks the permissions below
+        </p>
+      </div>
+
+      <label class="switch">
+        <input type="checkbox" [(ngModel)]="isEnabled" (change)="onToggleChange()">
+        <span class="slider"></span>
+        <span class="sr-only">Create admin access</span>
+      </label>
     </div>
 
     <p class="permissions-note" *ngIf="!isAdminSession">
-        <ng-container *ngIf="hasAdminPassword">
-            Permissions are managed by the admin. Sign out and sign in with your
-            admin password to change them.
-        </ng-container>
-        <ng-container *ngIf="!hasAdminPassword">
-            Turn on <strong>Create admin access</strong> above to set an admin password.
-            You can then sign in with it to control what a normal user may do.
-        </ng-container>
+      <ng-container *ngIf="hasAdminPassword">
+        Permissions are managed by the admin. Sign out and sign in with your admin
+        password to change them.
+      </ng-container>
+      <ng-container *ngIf="!hasAdminPassword">
+        Turn on <strong>Create admin access</strong> above to set an admin password.
+        You can then sign in with it to control what a normal user may do.
+      </ng-container>
     </p>
 
-    <p class="settings-intro" *ngIf="isAdminSession">
-        What a normal user may do. Signed in with your admin password you always
-        have everything, so there is nothing to set for yourself.
-    </p>
+    <ng-container *ngIf="isAdminSession">
 
-    <div class="settings-card" *ngIf="isAdminSession">
+      <div class="matrix-head">
+        <span></span>
+        <span>Normal user</span>
+      </div>
 
-        <div class="settings-row">
-            <div class="setting-label">See account balances<span class="setting-note">Turn it off to hide every amount: the Balance Management page, the WhatsApp balance reply and the figure after an expense</span></div>
-
-            <div class="setting-toggle">
-                <label class="switch">
-                    <input type="checkbox" [(ngModel)]="addBalanceUserAccess" (change)="onAccessChange()">
-                    <span class="slider"></span>
-                </label>
-            </div>
-
+      <div class="settings-row">
+        <div class="setting-label">
+          <span class="setting-name">See account balances</span>
+          <span class="setting-note">
+            Turn it off to hide every amount: the Balance Management page, the
+            WhatsApp balance reply and the figure after an expense
+          </span>
         </div>
 
-        <div class="settings-row">
-            <div class="setting-label">Spend from an account<span class="setting-note">Lets an expense reduce a balance, rather than only being logged</span></div>
+        <div class="setting-toggle">
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="addBalanceUserAccess" (change)="onAccessChange()">
+            <span class="slider"></span>
+            <span class="sr-only">See account balances</span>
+          </label>
+        </div>
+      </div>
 
-            <div class="setting-toggle">
-                <label class="switch">
-                    <input type="checkbox" [(ngModel)]="addExpenseUserAccess" (change)="onAccessChange()">
-                    <span class="slider"></span>
-                </label>
-            </div>
-
+      <div class="settings-row">
+        <div class="setting-label">
+          <span class="setting-name">Spend from an account</span>
+          <span class="setting-note">
+            Lets an expense reduce a balance, rather than only being logged
+          </span>
         </div>
 
-        <div class="settings-row">
-            <div class="setting-label">Backdate or post-date an expense<span class="setting-note">Without it, an entry dated other than today waits for an admin to approve it</span></div>
+        <div class="setting-toggle">
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="addExpenseUserAccess" (change)="onAccessChange()">
+            <span class="slider"></span>
+            <span class="sr-only">Spend from an account</span>
+          </label>
+        </div>
+      </div>
 
-            <div class="setting-toggle">
-                <label class="switch">
-                    <input type="checkbox" [(ngModel)]="updatePermissionUser" (change)="onAccessChange()">
-                    <span class="slider"></span>
-                </label>
-            </div>
-
+      <div class="settings-row">
+        <div class="setting-label">
+          <span class="setting-name">Backdate or post-date an expense</span>
+          <span class="setting-note">
+            Without it, an entry dated other than today waits for an admin to approve it
+          </span>
         </div>
 
-        <div class="settings-row">
-            <div class="setting-label">See which account was used<span class="setting-note">Shows the source type and category columns in the expense list</span></div>
+        <div class="setting-toggle">
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="updatePermissionUser" (change)="onAccessChange()">
+            <span class="slider"></span>
+            <span class="sr-only">Backdate or post-date an expense</span>
+          </label>
+        </div>
+      </div>
 
-            <div class="setting-toggle">
-                <label class="switch">
-                    <input type="checkbox" [(ngModel)]="viewPermissionUser" (change)="onAccessChange()">
-                    <span class="slider"></span>
-                </label>
-            </div>
-
+      <div class="settings-row">
+        <div class="setting-label">
+          <span class="setting-name">See which account was used</span>
+          <span class="setting-note">
+            Shows the account column in the expense list
+          </span>
         </div>
 
-        <div class="settings-row">
-            <div class="setting-label">Remove an expense<span class="setting-note">Shows the delete button; removing one puts any debited money back</span></div>
+        <div class="setting-toggle">
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="viewPermissionUser" (change)="onAccessChange()">
+            <span class="slider"></span>
+            <span class="sr-only">See which account was used</span>
+          </label>
+        </div>
+      </div>
 
-            <div class="setting-toggle">
-                <label class="switch">
-                    <input type="checkbox" [(ngModel)]="removePermissionUser" (change)="onAccessChange()">
-                    <span class="slider"></span>
-                </label>
-            </div>
-
+      <div class="settings-row">
+        <div class="setting-label">
+          <span class="setting-name">Remove an expense</span>
+          <span class="setting-note">
+            Shows the delete button; removing one puts any debited money back
+          </span>
         </div>
 
+        <div class="setting-toggle">
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="removePermissionUser" (change)="onAccessChange()">
+            <span class="slider"></span>
+            <span class="sr-only">Remove an expense</span>
+          </label>
+        </div>
+      </div>
+
+      <p class="card-note">
+        Each row says what it does in plain words. Signed in with your admin
+        password you always have everything, so there is nothing to set for yourself.
+      </p>
+
+    </ng-container>
+
+  </section>
+
+  <section class="card whatsapp-card" *ngIf="whatsappStatus">
+
+    <div class="whatsapp-head">
+      <span class="whatsapp-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20">
+          <path d="M21 11.6a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-5A8.5 8.5 0 1 1 21 11.6Z" />
+        </svg>
+      </span>
+
+      <h2 class="card-title">Add expenses over WhatsApp</h2>
+
+      <span class="chip" [class.on]="whatsappStatus.connected">
+        {{ whatsappStatus.connected ? 'Connected' : 'Not connected' }}
+      </span>
     </div>
 
+    <p class="card-body" *ngIf="!whatsappStatus.available">
+      The server has no WhatsApp credentials configured yet, so this cannot be
+      switched on.
+    </p>
 
-    <div class="whatsapp-card" *ngIf="whatsappStatus">
+    <ng-container *ngIf="whatsappStatus.available">
 
-        <div class="whatsapp-head">
-            <h3>Add expenses over WhatsApp</h3>
-            <span class="whatsapp-state" [class.on]="whatsappStatus.connected">
-                {{ whatsappStatus.connected ? 'Connected' : 'Not connected' }}
-            </span>
-        </div>
+      <p class="card-body" *ngIf="whatsappStatus.connected">
+        Messages from <strong class="tnum">{{ whatsappStatus.number }}</strong> are
+        added to this account.
+      </p>
 
-        <p class="whatsapp-hint" *ngIf="!whatsappStatus.available">
-            The server has no WhatsApp credentials configured yet, so this cannot be
-            switched on.
+      <p class="card-body" *ngIf="!whatsappStatus.connected && !whatsappCode">
+        Connect your phone and you can add an expense by sending a message, without
+        signing in.
+      </p>
+
+      <div class="command-row">
+        <span class="command tnum">250 coffee hdfc</span>
+        <span class="command tnum">balance</span>
+        <span class="command tnum">today</span>
+        <span class="command tnum">undo</span>
+      </div>
+
+      <div class="link-code" *ngIf="whatsappCode && !whatsappStatus.connected">
+        <p *ngIf="whatsappChatUrl">
+          Tap below to open WhatsApp with the message ready, then just press send:
         </p>
 
-        <ng-container *ngIf="whatsappStatus.available">
+        <p *ngIf="!whatsappChatUrl">
+          Send this message to
+          <strong *ngIf="whatsappBusinessNumber">+{{ whatsappBusinessNumber }}</strong>
+          <strong *ngIf="!whatsappBusinessNumber">our WhatsApp number</strong>
+          from the phone you want to link:
+        </p>
 
-            <p class="whatsapp-hint" *ngIf="whatsappStatus.connected">
-                Messages from <strong>{{ whatsappStatus.number }}</strong> are added to this
-                account. Send <strong>250 coffee paytm</strong> to record an expense, or
-                <strong>help</strong> for the full list.
-            </p>
+        <p class="command tnum code">link {{ whatsappCode }}</p>
 
-            <p class="whatsapp-hint" *ngIf="!whatsappStatus.connected && !whatsappCode">
-                Connect your phone and you can add an expense by sending a message, without
-                signing in.
-            </p>
+        <p class="card-note">Expires in {{ whatsappCodeMinutes }} minutes.</p>
+      </div>
 
-            <div class="whatsapp-code" *ngIf="whatsappCode && !whatsappStatus.connected">
+      <p class="page-error" *ngIf="whatsappError">{{ whatsappError }}</p>
 
-                <p *ngIf="whatsappChatUrl">
-                    Tap below to open WhatsApp with the message ready, then just press send:
-                </p>
+      <div class="whatsapp-actions">
+        <a *ngIf="whatsappChatUrl && !whatsappStatus.connected" class="et-btn-primary"
+          [href]="whatsappChatUrl" target="_blank" rel="noopener">
+          Open WhatsApp
+        </a>
 
-                <p *ngIf="!whatsappChatUrl">
-                    Send this message to
-                    <strong *ngIf="whatsappBusinessNumber">+{{ whatsappBusinessNumber }}</strong>
-                    <strong *ngIf="!whatsappBusinessNumber">our WhatsApp number</strong>
-                    from the phone you want to link:
-                </p>
+        <button type="button" class="et-btn-primary" *ngIf="!whatsappStatus.connected"
+          [disabled]="whatsappBusy" (click)="onConnectWhatsapp()">
+          {{ whatsappCode ? 'Get a new code' : 'Connect WhatsApp' }}
+        </button>
 
-                <code>link {{ whatsappCode }}</code>
+        <button type="button" class="et-btn-ghost" *ngIf="whatsappCode && !whatsappStatus.connected"
+          (click)="onRefreshWhatsapp()">
+          I've sent it — check now
+        </button>
 
-                <p class="whatsapp-expiry">Expires in {{ whatsappCodeMinutes }} minutes.</p>
+        <button type="button" class="et-btn-danger" *ngIf="whatsappStatus.connected"
+          [disabled]="whatsappBusy" (click)="onDisconnectWhatsapp()">
+          Disconnect
+        </button>
 
-                <div class="whatsapp-actions">
-                    <a *ngIf="whatsappChatUrl" class="whatsapp-btn" [href]="whatsappChatUrl"
-                        target="_blank" rel="noopener">
-                        Open WhatsApp
-                    </a>
+        <a class="card-link" routerLink="/help_support">What else can I send?</a>
+      </div>
 
-                    <button type="button" class="whatsapp-btn ghost" (click)="onRefreshWhatsapp()">
-                        I've sent it — check now
-                    </button>
-                </div>
-            </div>
+    </ng-container>
 
-            <p class="whatsapp-error" *ngIf="whatsappError">{{ whatsappError }}</p>
-
-            <div class="whatsapp-actions">
-                <button type="button" class="whatsapp-btn" *ngIf="!whatsappStatus.connected"
-                    [disabled]="whatsappBusy" (click)="onConnectWhatsapp()">
-                    {{ whatsappCode ? 'Get a new code' : 'Connect WhatsApp' }}
-                </button>
-
-                <button type="button" class="whatsapp-btn danger" *ngIf="whatsappStatus.connected"
-                    [disabled]="whatsappBusy" (click)="onDisconnectWhatsapp()">
-                    Disconnect
-                </button>
-            </div>
-
-        </ng-container>
-
-    </div>
+  </section>
 
 </div>
 
 <!-- Enable Admin Access Popup -->
-<div class="overlay" *ngIf="showPopup">
+<div class="et-overlay" *ngIf="showPopup">
+  <div class="et-popup">
+    <h3>Create admin access</h3>
 
-    <div class="popup">
+    <p class="et-popup-body">
+      This becomes a second password for the same account. Sign in with it to
+      manage what a normal user may do.
+    </p>
 
-        <h3>Balance Management</h3>
-
-        <p class="warning-text">
-            Are you sure you want to hide this section for the current user?
-        </p>
-
-        <div class="form-group">
-            <label>Current User</label>
-            <input type="text" [value]="currentUserName" readonly class="form-control">
-        </div>
-
-        <div class="form-group">
-            <label>Admin Password</label>
-            <input type="password" [(ngModel)]="adminPassword" class="form-control" placeholder="Enter admin password">
-        </div>
-
-        <div class="form-group">
-            <label>Confirm Admin Password</label>
-            <input type="password" [(ngModel)]="confirmPassword" class="form-control"
-                placeholder="Confirm admin password">
-        </div>
-
-        <div class="error-message" *ngIf="confirmPassword && adminPassword !== confirmPassword">
-
-            Passwords do not match
-
-        </div>
-
-        <div class="error-message" *ngIf="setPasswordError">
-
-            {{ setPasswordError }}
-
-        </div>
-
-        <div class="btn-group">
-
-            <button type="button" class="cancel-btn" (click)="onCancel()">
-                Cancel
-            </button>
-
-            <button type="button" class="ok-btn" (click)="onOk()"
-                [disabled]="!adminPassword || adminPassword !== confirmPassword">
-
-                OK
-
-            </button>
-
-        </div>
-
+    <div class="form-group">
+      <label for="popupUser">Current user</label>
+      <input id="popupUser" type="text" [value]="currentUserName" readonly class="et-field">
     </div>
 
+    <div class="form-group">
+      <label for="popupAdminPassword">Admin password</label>
+      <input id="popupAdminPassword" type="password" class="et-field" [(ngModel)]="adminPassword"
+        placeholder="At least 6 characters">
+    </div>
+
+    <div class="form-group">
+      <label for="popupConfirmPassword">Confirm admin password</label>
+      <input id="popupConfirmPassword" type="password" class="et-field"
+        [(ngModel)]="confirmPassword" placeholder="Repeat the admin password">
+    </div>
+
+    <p class="et-field-error" *ngIf="confirmPassword && adminPassword !== confirmPassword">
+      Passwords do not match
+    </p>
+
+    <p class="et-field-error" *ngIf="setPasswordError">{{ setPasswordError }}</p>
+
+    <div class="et-popup-actions">
+      <button type="button" class="et-btn-ghost" (click)="onCancel()">Cancel</button>
+
+      <button type="button" class="et-btn-primary" (click)="onOk()"
+        [disabled]="!adminPassword || adminPassword !== confirmPassword">
+        Create
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- Disable Admin Access Popup -->
-<div class="overlay" *ngIf="showChancelPopup">
+<div class="et-overlay" *ngIf="showChancelPopup">
+  <div class="et-popup">
+    <h3>Remove admin access</h3>
 
-    <div class="popup">
+    <p class="et-popup-body">
+      Every permission goes back to granted, because with no admin there is nobody
+      left who could change them.
+    </p>
 
-        <h3>Balance Management</h3>
-
-        <p class="warning-text">
-            Are you sure you want to disable this section for the current user?
-        </p>
-
-        <div class="form-group">
-            <label>Current User</label>
-            <input type="text" [value]="currentUserName" readonly class="form-control">
-        </div>
-
-        <div class="form-group">
-            <label>Admin Password</label>
-            <input type="password" [(ngModel)]="adminCancelPassword" class="form-control"
-                placeholder="Enter admin password">
-        </div>
-
-        <div class="error-message" *ngIf="cancelPasswordError">
-
-            {{ cancelPasswordError }}
-
-        </div>
-
-        <div class="btn-group">
-
-            <button type="button" class="cancel-btn" (click)="onCancelCancel()">
-                Cancel
-            </button>
-
-            <button type="button" class="ok-btn" (click)="onOkCancel()" [disabled]="!adminCancelPassword">
-
-                OK
-
-            </button>
-
-        </div>
-
+    <div class="form-group">
+      <label for="cancelUser">Current user</label>
+      <input id="cancelUser" type="text" [value]="currentUserName" readonly class="et-field">
     </div>
 
+    <div class="form-group">
+      <label for="cancelAdminPassword">Admin password</label>
+      <input id="cancelAdminPassword" type="password" class="et-field"
+        [(ngModel)]="adminCancelPassword" placeholder="Enter the admin password">
+    </div>
+
+    <p class="et-field-error" *ngIf="cancelPasswordError">{{ cancelPasswordError }}</p>
+
+    <div class="et-popup-actions">
+      <button type="button" class="et-btn-ghost" (click)="onCancelCancel()">Cancel</button>
+
+      <button type="button" class="et-btn-danger" (click)="onOkCancel()"
+        [disabled]="!adminCancelPassword">
+        Remove
+      </button>
+    </div>
+  </div>
 </div>

@@ -1,71 +1,121 @@
-<div class="expense-form-container">
-  <h2>Add New Expense</h2>
+<div class="add-page">
 
-  <p class="form-error" *ngIf="errorMessage">{{ errorMessage }}</p>
-  <p class="form-success" *ngIf="successMessage">{{ successMessage }}</p>
+  <form [formGroup]="expenseForm" class="card form-card">
 
-  <form [formGroup]="expenseForm" class="expense-form">
+    <h1 class="form-title">Add an expense</h1>
+    <p class="form-subtitle">Amount first — the rest can wait</p>
 
-    <div class="form-group">
-      <label for="source">Spend From</label>
+    <p class="form-error" *ngIf="errorMessage">{{ errorMessage }}</p>
+    <p class="form-success" *ngIf="successMessage">{{ successMessage }}</p>
 
-      <select id="source" formControlName="source" [attr.disabled]="!expenseAccess ? true : null">
-
-        <option value="">Select Account</option>
-
-        <option *ngFor="let item of availableBalances" [value]="item.id">
-          {{ item.type }} - {{ item.category }}
-        </option>
-
-      </select>
+    <label class="field-label" for="amount">Amount</label>
+    <div class="amount-field">
+      <span class="amount-prefix tnum" aria-hidden="true">₹</span>
+      <input id="amount" class="amount-input tnum" formControlName="amount" type="text"
+        inputmode="decimal" placeholder="0">
     </div>
 
-    <div class="form-group">
-      <label for="category">Category</label>
+    <label class="field-label" for="description">What was it for</label>
+    <input id="description" class="text-field" formControlName="description" type="text"
+      placeholder="Coffee, auto fare, groceries…">
 
-      <select id="category" formControlName="category">
+    <fieldset class="category-field">
+      <legend class="field-label">Category</legend>
+      <p class="field-hint">Groups your spending, so the dashboard can show where it goes.</p>
 
-        <option value="">No category</option>
+      <div class="chip-row">
+        <button type="button" class="chip" [class.on]="!expenseForm.get('category')?.value"
+          (click)="onPickCategory('')">
+          None
+        </button>
 
-        <option *ngFor="let name of categories" [value]="name">
+        <button type="button" class="chip" *ngFor="let name of categories"
+          [class.on]="expenseForm.get('category')?.value === name" (click)="onPickCategory(name)">
           {{ name }}
-        </option>
+        </button>
+      </div>
+    </fieldset>
 
-      </select>
-    </div>
+    <label class="field-label" for="source">Spend from</label>
+    <select id="source" class="text-field" formControlName="source"
+      [attr.disabled]="!expenseAccess ? true : null">
 
-    <div class="form-group">
-      <label for="amount">Amount (₹)</label>
-      <input id="amount" formControlName="amount" type="number" placeholder="Enter amount">
-    </div>
+      <option value="">Don't take it from an account</option>
 
-    <div class="form-group">
-      <label for="description">Description</label>
-      <input id="description" formControlName="description" placeholder="What did you spend on?">
-    </div>
+      <option *ngFor="let item of availableBalances" [value]="item.id">
+        {{ item.category }}<ng-container *ngIf="item.balance !== null"> — ₹{{ item.balance | number }}</ng-container>
+      </option>
 
-    <div class="form-group">
-      <label for="date">Date</label>
-      <input id="date" formControlName="date" type="date">
-    </div>
+    </select>
 
-    <div class="button-group">
+    <p class="field-note good" *ngIf="expenseAccess && canSeeBalances">
+      Balance shown beside each account, so you pick with the figure in front of you
+    </p>
 
-      <!-- Show Add Expense when source is not selected -->
-      <button *ngIf="!expenseAccess || !expenseForm.get('source')?.value" type="button" class="expense-btn"
-        [disabled]="isMainFormInvalid() || submitting" (click)="onSubmit(false)">
-        Add Expense
+    <p class="field-note" *ngIf="!expenseAccess">
+      This account may only log expenses, not spend from a balance.
+    </p>
+
+    <label class="field-label" for="date">Date</label>
+    <input id="date" class="text-field" formControlName="date" type="date">
+
+    <div class="form-actions">
+      <button type="button" class="btn-good" *ngIf="expenseAccess"
+        [disabled]="isMainFormInvalid() || submitting || !expenseForm.get('source')?.value"
+        (click)="onSubmit(true)">
+        Add and update balance
       </button>
 
-      <!-- Show Add & Update Balance only after selecting Spend From -->
-      <button *ngIf="expenseAccess && expenseForm.get('source')?.value" type="button" class="update-btn"
-        [disabled]="isMainFormInvalid() || submitting" (click)="onSubmit(true)">
-        Add & Update Balance
+      <button type="button" class="btn-ghost" [disabled]="isMainFormInvalid() || submitting"
+        (click)="onSubmit(false)">
+        Log only
       </button>
-
     </div>
 
+    <p class="field-note">
+      Two buttons instead of one that changes label — both choices visible, neither
+      hidden behind a selection.
+    </p>
   </form>
+
+  <aside class="add-aside">
+
+    <!-- Only once an account is chosen, and only if its figure may be shown. -->
+    <section class="card" *ngIf="selectedAccount && canSeeBalances">
+      <h2 class="card-title">After this expense</h2>
+
+      <div class="after-row">
+        <span class="after-label">{{ selectedAccount.category }} now</span>
+        <span class="after-value tnum">₹{{ selectedAccount.balance | number }}</span>
+      </div>
+
+      <div class="after-row last">
+        <span class="after-label">will be</span>
+        <span class="after-value tnum" [class.short]="balanceAfter !== null && balanceAfter < 0">
+          {{ balanceAfter === null ? '—' : '₹' + (balanceAfter | number) }}
+        </span>
+      </div>
+
+      <p class="field-note" *ngIf="balanceAfter !== null && balanceAfter < 0">
+        That is more than the account holds, so it would be refused.
+      </p>
+
+      <p class="field-note" *ngIf="balanceAfter === null || balanceAfter >= 0">
+        Shown before you commit, not only in the confirmation afterwards
+      </p>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Faster, from your phone</h2>
+      <p class="aside-body">The same expense over WhatsApp, no sign-in:</p>
+
+      <p class="command tnum">{{ sampleCommand }}</p>
+
+      <a class="card-link" routerLink="/help_support">All the commands</a>
+    </section>
+
+  </aside>
+
 </div>
 
 <app-expense-date-popup *ngIf="showDatePopup" [popupType]="popupType" [canAddDirectly]="updatePermission"

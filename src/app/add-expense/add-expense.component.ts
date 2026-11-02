@@ -13,13 +13,14 @@ import { SettingsService } from '../shared/settings.service';
 import { BalanceAccount } from '../shared/models';
 import { parseLocalDate, today } from '../shared/date-utils';
 import { ExpenseDatePopupComponent } from './expense-date-popup/expense-date-popup.component';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-add-expense',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule, ExpenseDatePopupComponent],
+  imports: [ReactiveFormsModule, CommonModule, RouterModule, ExpenseDatePopupComponent],
   templateUrl: './add-expense.component.html',
-  styleUrls: ['./add-expense.component.css', './add-expense.component.dark.css']
+  styleUrl: './add-expense.component.css'
 })
 export class AddExpenseComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
@@ -40,6 +41,7 @@ export class AddExpenseComponent implements OnInit {
 
   expenseAccess = false;
   updatePermission = false;
+  canSeeBalances = false;
 
   showDatePopup = false;
   popupType: 'past' | 'future' = 'past';
@@ -75,6 +77,7 @@ export class AddExpenseComponent implements OnInit {
   private applyPermissions(): void {
     this.expenseAccess = this.settingsService.canUpdateBalance;
     this.updatePermission = this.settingsService.canBackdate;
+    this.canSeeBalances = this.settingsService.canSeeBalances;
 
     const source = this.expenseForm.get('source');
 
@@ -84,6 +87,56 @@ export class AddExpenseComponent implements OnInit {
       source?.disable();
       source?.setValue('');
     }
+  }
+
+  /** The account chosen under "Spend from", or null while none is. */
+  get selectedAccount(): BalanceAccount | null {
+    const id = this.expenseForm.get('source')?.value;
+
+    return id ? this.availableBalances.find(account => account.id === id) ?? null : null;
+  }
+
+  /**
+   * What the chosen account would hold once this expense is taken out.
+   *
+   * Null while there is nothing to work it out from — no account, no amount, or
+   * a balance this session may not see.
+   */
+  get balanceAfter(): number | null {
+    const account = this.selectedAccount;
+    const amount = Number(this.expenseForm.get('amount')?.value);
+
+    if (!account || account.balance === null || !Number.isFinite(amount) || amount <= 0) {
+      return null;
+    }
+
+    return Math.round((Number(account.balance) - amount) * 100) / 100;
+  }
+
+  /** A WhatsApp message that would file the expense being typed. */
+  get sampleCommand(): string {
+    const amount = Number(this.expenseForm.get('amount')?.value);
+    const description = String(this.expenseForm.get('description')?.value ?? '').trim();
+
+    const words = [
+      Number.isFinite(amount) && amount > 0 ? String(amount) : '250',
+      description ? description.split(/\s+/)[0].toLowerCase() : 'coffee'
+    ];
+
+    // The account's own name is what the parser matches on, so the example
+    // uses the chosen one rather than a made-up bank.
+    const account = this.selectedAccount;
+
+    if (account) {
+      words.push(account.category.split(/\s+/)[0].toLowerCase());
+    }
+
+    return words.join(' ');
+  }
+
+  /** The category chips are a picker over the same form control as before. */
+  onPickCategory(name: string): void {
+    this.expenseForm.get('category')?.setValue(name);
   }
 
   isMainFormInvalid(): boolean {

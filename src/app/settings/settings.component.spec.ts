@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
+import { provideRouter } from '@angular/router';
 import { SettingsComponent } from './settings.component';
 import { AuthService } from '../auth.service';
 import { SettingsService } from '../shared/settings.service';
@@ -60,6 +61,7 @@ describe('SettingsComponent — WhatsApp section', () => {
     TestBed.configureTestingModule({
       imports: [SettingsComponent],
       providers: [
+        provideRouter([]),
         { provide: AuthService, useValue: auth },
         { provide: SettingsService, useValue: settings },
         { provide: WhatsappService, useValue: whatsapp }
@@ -80,14 +82,14 @@ describe('SettingsComponent — WhatsApp section', () => {
 
     expect(text()).toContain('no WhatsApp credentials');
     expect(
-      (fixture.nativeElement as HTMLElement).querySelector('.whatsapp-btn')
+      (fixture.nativeElement as HTMLElement).querySelector('.et-btn-primary')
     ).toBeNull();
   });
 
   it('offers to connect when available but not linked', () => {
     setUp({ available: true, connected: false, number: null, businessNumber: '919000000000' });
 
-    const button = (fixture.nativeElement as HTMLElement).querySelector('.whatsapp-btn');
+    const button = (fixture.nativeElement as HTMLElement).querySelector('.et-btn-primary');
 
     expect(button?.textContent).toContain('Connect WhatsApp');
     expect(text()).not.toContain('Disconnect');
@@ -96,7 +98,7 @@ describe('SettingsComponent — WhatsApp section', () => {
   it('shows the link code to send, and keeps it out of view until asked', () => {
     setUp({ available: true, connected: false, number: null, businessNumber: '919000000000' });
 
-    expect((fixture.nativeElement as HTMLElement).querySelector('.whatsapp-code')).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.link-code')).toBeNull();
 
     component.onConnectWhatsapp();
     fixture.detectChanges();
@@ -111,9 +113,9 @@ describe('SettingsComponent — WhatsApp section', () => {
 
     expect(text()).toContain('••••• 3210');
     expect(text()).toContain('Connected');
-    expect((fixture.nativeElement as HTMLElement).querySelector('.whatsapp-code')).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.link-code')).toBeNull();
     expect(
-      (fixture.nativeElement as HTMLElement).querySelector('.whatsapp-btn.danger')?.textContent
+      (fixture.nativeElement as HTMLElement).querySelector('.et-btn-danger')?.textContent
     ).toContain('Disconnect');
   });
 
@@ -198,6 +200,7 @@ describe('SettingsComponent — who may edit permissions', () => {
     TestBed.configureTestingModule({
       imports: [SettingsComponent],
       providers: [
+        provideRouter([]),
         { provide: AuthService, useValue: auth },
         { provide: SettingsService, useValue: settings },
         { provide: WhatsappService, useValue: whatsapp }
@@ -215,9 +218,8 @@ describe('SettingsComponent — who may edit permissions', () => {
   it('hides the permission matrix from a normal user', () => {
     build('user', true);
 
-    expect(host().querySelector('.settings-card')).toBeNull();
     expect(host().querySelectorAll('.settings-row').length).toBe(0);
-    expect(host().querySelector('.settings-intro')).toBeNull();
+    expect(host().querySelector('.matrix-head')).toBeNull();
   });
 
   it('tells a normal user with an admin password how to get in', () => {
@@ -230,24 +232,23 @@ describe('SettingsComponent — who may edit permissions', () => {
     build('user', false);
 
     expect(host().textContent).toContain('Create admin access');
-    expect(host().querySelector('.settings-card')).toBeNull();
+    expect(host().querySelectorAll('.settings-row').length).toBe(0);
   });
 
   it('shows the full matrix to an admin session', () => {
     build('admin', true);
 
-    expect(host().querySelector('.settings-card')).not.toBeNull();
     expect(host().querySelectorAll('.settings-row').length).toBe(5);
     expect(host().querySelectorAll('.setting-toggle input').length).toBe(5);
-    expect(host().querySelector('.settings-intro')).not.toBeNull();
+    expect(host().querySelector('.matrix-head')).not.toBeNull();
     expect(host().querySelector('.permissions-note')).toBeNull();
   });
 
   it('always offers the create-admin toggle, whichever identity is signed in', () => {
     build('user', false);
-    expect(host().querySelector('.toggle-section input')).not.toBeNull();
+    expect(host().querySelector('.admin-row input')).not.toBeNull();
 
     build('admin', true);
-    expect(host().querySelector('.toggle-section input')).not.toBeNull();
+    expect(host().querySelector('.admin-row input')).not.toBeNull();
   });
 });

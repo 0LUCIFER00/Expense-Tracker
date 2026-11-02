@@ -1,207 +1,173 @@
 /*
- * Light theme. The dark overrides live in help-support.component.dark.css,
- * scoped to [data-theme="dark"], so nothing here changes between themes.
+ * Help & Support, as the design draws it: the WhatsApp commands as a two-column
+ * list, the questions as an accordion, and the account's own state beside them.
+ * Colours come from the tokens in styles.css, so this one stylesheet serves
+ * both themes.
  */
 
 :host {
   display: block;
-  padding: clamp(1rem, 4vw, 2rem);
+  color: var(--ink);
 }
 
 .help-page {
-  max-width: 820px;
+  max-width: 1000px;
   margin: 0 auto;
+  padding: clamp(1.25rem, 4vw, 2rem) clamp(1rem, 3vw, 1.5rem) 3rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.375rem;
 }
 
-.help-header {
-  margin-bottom: 0.25rem;
-}
-
-.help-header h2 {
+.page-title {
   margin: 0;
-  font-size: clamp(1.3rem, 4vw, 1.8rem);
-  color: #2f3b52;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--ink);
 }
 
-.help-header p {
-  margin: 0.4rem 0 0;
-  color: #5b6b88;
-  font-size: 0.95rem;
-  max-width: 62ch;
+.page-subtitle {
+  margin: -0.875rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+  line-height: 1.55;
+  max-width: 70ch;
 }
 
-.help-card {
-  padding: clamp(1rem, 3vw, 1.5rem);
-  border: 1px solid #e2e8f5;
-  border-radius: 12px;
-  background-color: #fff;
-  box-shadow: 0 2px 8px #0000000f;
+/* ---- cards ---- */
+
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  padding: 1.625rem;
+  box-shadow: var(--shadow);
 }
 
-.help-card h3 {
-  margin: 0 0 0.9rem;
-  font-size: 1.05rem;
-  color: #2f3b52;
+.card-title {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
 }
 
-.card-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.9rem;
-}
-
-.card-head h3 {
-  margin: 0;
-}
-
-.pill {
-  padding: 0.2rem 0.65rem;
-  border-radius: 999px;
-  background-color: #eef2f8;
-  color: #5b6b88;
-  font-size: 0.8rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.pill.on {
-  background-color: #e3f4e9;
-  color: #1f7a4d;
-}
-
-.card-hint {
-  margin: 1rem 0 0;
-  color: #5b6b88;
-  font-size: 0.875rem;
+.card-body {
+  margin: 0 0 1.25rem;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
   line-height: 1.6;
-  max-width: 68ch;
+  max-width: 70ch;
 }
 
-.card-hint a {
-  color: #1c5fa8;
-}
-
-/* ---- the numbered walkthrough ---- */
-
-.steps {
-  margin: 0;
-  padding-left: 1.2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  color: #5b6b88;
-  font-size: 0.925rem;
+.card-note {
+  margin: 1.125rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
   line-height: 1.6;
+  max-width: 70ch;
 }
 
-.steps strong {
-  color: #2f3b52;
+.side-column .card-note {
+  font-size: 0.75rem;
+  color: var(--ink-3);
 }
 
 /* ---- commands ---- */
 
-.command-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.command-list li {
+.command-row {
   display: grid;
-  grid-template-columns: minmax(130px, max-content) 1fr;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 1rem;
   align-items: baseline;
-  gap: 0.75rem;
+  padding: 0.6875rem 0;
+  border-top: 1px solid var(--rule);
 }
 
-/* The column is as wide as the longest command; each pill hugs its own text. */
-.command-list code {
-  justify-self: start;
-}
-
-.command-list span {
-  color: #5b6b88;
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-code {
-  padding: 0.15rem 0.4rem;
-  border-radius: 5px;
-  background-color: #eef2f8;
-  color: #2a3f9d;
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
-  font-size: 0.85em;
+.command {
+  padding: 0.4375rem 0.6875rem;
+  border: 1px solid var(--field-border);
+  border-radius: 8px;
+  background-color: var(--sunken);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--accent-ink);
   overflow-wrap: anywhere;
 }
 
-/* ---- the toggle glossary ---- */
-
-.definition-list {
-  margin: 0;
+/* The column is as wide as the longest command; each pill hugs its own text. */
+.command-row .command {
+  justify-self: start;
 }
 
-.definition-list dt {
-  color: #2f3b52;
-  font-weight: 600;
-  font-size: 0.95rem;
+.command-does {
+  font-size: 0.875rem;
+  color: var(--ink-2);
+  line-height: 1.5;
 }
 
-.definition-list dd {
-  margin: 0.25rem 0 0.9rem;
-  color: #5b6b88;
-  font-size: 0.9rem;
-  line-height: 1.6;
-  max-width: 68ch;
+/* ---- the two columns ---- */
+
+.columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.375rem;
+  align-items: flex-start;
 }
 
-.definition-list dd:last-child {
-  margin-bottom: 0;
+/*
+ * flex: 999 takes nearly all the spare width while both columns are on one
+ * line; 420px is the width below which the questions drop to their own.
+ */
+.main-column {
+  flex: 999 1 420px;
+  min-width: 0;
+}
+
+.side-column {
+  flex: 1 1 280px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.375rem;
+}
+
+.side-column .card {
+  padding: 1.375rem 1.5rem;
+}
+
+.side-column .card-title {
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
 }
 
 /* ---- questions ---- */
 
-.faq-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.faq {
+  border-top: 1px solid var(--rule);
 }
 
-.faq-item {
-  border-bottom: 1px solid #eef2f8;
-}
-
-.faq-item:last-child {
-  border-bottom: none;
-}
-
-.faq-question {
-  width: 100%;
-  min-height: 44px;
+.faq summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.75rem 0;
-  border: none;
-  background: none;
-  color: #2f3b52;
-  font-size: 0.95rem;
-  font-weight: 600;
-  text-align: left;
+  min-height: 44px;
+  padding: 0.8125rem 0;
+  list-style: none;
   cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ink);
 }
 
-.faq-question:hover {
-  color: #1c5fa8;
+/* Safari draws its own disclosure triangle without this. */
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq summary:hover {
+  color: var(--accent-ink);
 }
 
 .faq-marker {
@@ -211,27 +177,88 @@ code {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background-color: #eef2f8;
-  color: #5b6b88;
+  background-color: var(--rule);
+  color: var(--ink-2);
   font-size: 1rem;
   line-height: 1;
 }
 
 .faq-answer {
   margin: 0 0 1rem;
-  color: #5b6b88;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  color: var(--ink-2);
   line-height: 1.65;
-  max-width: 68ch;
+  max-width: 70ch;
+}
+
+/* ---- your setup ---- */
+
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.status-row.last {
+  border-bottom: none;
+}
+
+.status-label {
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.chip {
+  padding: 0.1875rem 0.625rem;
+  border-radius: 999px;
+  background-color: var(--rule);
+  color: var(--ink-2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.chip.on {
+  background-color: var(--good-soft);
+  color: var(--good-ink);
+}
+
+.chip.info {
+  background-color: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+/* ---- contact ---- */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 1.25rem;
+  border-radius: 10px;
+  background-color: var(--accent);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-hover);
+  color: #fff;
 }
 
 @media (max-width: 560px) {
-  .command-list li {
-    grid-template-columns: 1fr;
-    gap: 0.25rem;
+  .card {
+    padding: 1.25rem;
   }
 
-  .command-list code {
-    width: fit-content;
+  .command-row {
+    grid-template-columns: 1fr;
+    gap: 0.375rem;
   }
 }

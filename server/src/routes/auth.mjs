@@ -140,22 +140,71 @@ authRouter.get('/me', asyncRoute(async (req, res) => {
   res.json({ user: publicUser(rows[0]), loginType: session.loginType });
 }));
 
-/** Renames the account. The email is the identity, so it is not editable. */
+/**
+ * Renames the account, and changes the email it signs in with.
+ *
+ * The email is the identity, so changing it changes the sign-in: it has to stay
+ * unique, and the check is case-insensitive like the column.
+ */
 authRouter.patch('/profile', requireAuth, asyncRoute(async (req, res) => {
   const name = String(req.body?.name ?? '').trim();
+  const email = normaliseEmail(req.body?.email);
 
   if (name.length < 3) {
     return badRequest(res, 'Name must be at least 3 characters');
   }
 
+  if (req.body?.email !== undefined && !email) {
+    return badRequest(res, 'A valid email is required');
+  }
+
+  if (email) {
+    const taken = await query('select 1 from users where email = $1 and id <> $2', [
+      email,
+      req.session.userId
+    ]);
+
+    if (taken.rowCount > 0) {
+      return res.status(409).json({ error: 'Another account already uses that email.' });
+    }
+  }
+
   const { rows } = await query(
-    `update users set name = $1
-      where id = $2
+    `update users
+        set name = $1,
+            email = coalesce($2, email)
+      where id = $3
       returning id, name, email, admin_password_hash, created_at`,
-    [name, req.session.userId]
+    [name, email, req.session.userId]
   );
 
   res.json({ user: publicUser(rows[0]) });
+}));
+
+/**
+ * Closes the account.
+ *
+ * Everything belonging to it goes with it: the expenses, the balance accounts,
+ * the permission flags and any linked phone all cascade from this row. The
+ * password is required because the session alone would let a borrowed browser
+ * destroy the lot.
+ */
+authRouter.delete('/account', requireAuth, asyncRoute(async (req, res) => {
+  const password = String(req.body?.password ?? '');
+
+  const { rows } = await query('select password_hash from users where id = $1', [
+    req.session.userId
+  ]);
+
+  if (!rows[0] || !await verifyPassword(password, rows[0].password_hash)) {
+    return res.status(403).json({ error: 'Your password is not correct' });
+  }
+
+  await query('delete from users where id = $1', [req.session.userId]);
+
+  clearSession(res);
+
+  res.json({ deleted: true });
 }));
 
 /**

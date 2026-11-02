@@ -22,7 +22,7 @@ interface BalanceRow {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './bal-mnt.component.html',
-  styleUrls: ['./bal-mnt.component.css', './bal-mnt.component.dark.css']
+  styleUrl: './bal-mnt.component.css'
 })
 export class BalMntComponent implements OnInit, OnDestroy {
   private readonly balanceService = inject(BalanceService);

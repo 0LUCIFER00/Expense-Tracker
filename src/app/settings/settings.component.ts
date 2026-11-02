@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { SettingsService } from '../shared/settings.service';
 import { Settings } from '../shared/models';
@@ -9,9 +10,9 @@ import { WhatsappService, WhatsappLinkStatus } from '../shared/whatsapp.service'
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './settings.component.html',
-  styleUrls: ['./settings.component.css', './settings.component.dark.css']
+  styleUrl: './settings.component.css'
 })
 export class SettingsComponent implements OnInit {
   private readonly auth = inject(AuthService);

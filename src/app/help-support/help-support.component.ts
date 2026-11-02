@@ -1,117 +1,154 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { ApiService } from '../shared/api.service';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { AuthService } from '../auth.service';
+import { BalanceService } from '../shared/balance.service';
+import { SettingsService } from '../shared/settings.service';
+import { WhatsappService, WhatsappLinkStatus } from '../shared/whatsapp.service';
 
 interface Faq {
   question: string;
   answer: string;
 }
 
-interface WhatsappStatus {
-  available: boolean;
-  connected: boolean;
-  number: string | null;
-}
+/**
+ * Where "Contact support" goes.
+ *
+ * A placeholder until there is somewhere real to send it: change this one line
+ * rather than hunting through the template.
+ */
+const SUPPORT_ADDRESS = 'support@example.com';
 
 @Component({
   selector: 'app-help-support',
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './help-support.component.html',
-  styleUrls: ['./help-support.component.css', './help-support.component.dark.css']
+  styleUrl: './help-support.component.css'
 })
 export class HelpSupportComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly auth = inject(AuthService);
+  private readonly balanceService = inject(BalanceService);
+  private readonly settingsService = inject(SettingsService);
+  private readonly whatsappService = inject(WhatsappService);
 
   /** Index of the open answer; null when they are all closed. */
   openFaq: number | null = null;
 
-  /** Whether this account has a phone linked, so the page can say which. */
-  whatsapp: WhatsappStatus | null = null;
+  whatsapp: WhatsappLinkStatus | null = null;
+  hasAdminPassword = false;
+  accountCount = 0;
+  canSeeBalances = false;
+
+  readonly supportMailto =
+    `mailto:${SUPPORT_ADDRESS}?subject=${encodeURIComponent('Expense Tracker — help')}`;
 
   readonly whatsappCommands = [
-    { send: '250 coffee', does: 'Records ₹250 for "Coffee", filed under Food & Drink.' },
     {
-      send: '1200 groceries hdfc',
-      does: 'Records it and takes ₹1,200 out of your HDFC Bank balance.'
+      send: '250 coffee',
+      does: 'Records ₹250 for Coffee. No account named, so no balance changes.'
     },
-    { send: '80 chai cash', does: 'Spends from Hand Cash instead.' },
-    { send: 'balance', does: 'Lists your accounts and what is in each.' },
-    { send: 'today', does: 'Lists what you have recorded today.' },
-    { send: 'undo', does: 'Removes the last expense you sent, and puts the money back.' },
+    { send: '1200 groceries hdfc', does: 'Records it and takes ₹1,200 out of HDFC Bank.' },
+    { send: '80 chai cash', does: 'The same, from a Hand Cash account.' },
+    { send: 'balance', does: 'Lists every account and what is in each.' },
+    { send: 'today', does: 'Everything recorded today, with the settled total.' },
+    { send: 'undo', does: 'Removes the last expense you sent and puts the money back.' },
     { send: 'help', does: 'Shows this list on your phone.' }
   ];
 
   readonly faqs: Faq[] = [
     {
+      question: 'Why did my expense not reduce the balance?',
+      answer:
+        'You did not name an account, or the name did not match one of yours. ' +
+        '"hdfc" matches "HDFC Bank", but a name you have not created matches ' +
+        'nothing and stays in the description.'
+    },
+    {
+      question: 'I was asked which account I meant',
+      answer:
+        'Two of your accounts share that word — "bank" when you have both Indian ' +
+        'Bank and HDFC Bank. Send it again with the fuller name. Guessing would ' +
+        'quietly take money from the wrong one.'
+    },
+    {
+      question: 'Why is my expense waiting for an admin?',
+      answer:
+        'It is dated in the past or the future, and this account does not have the ' +
+        'backdating permission. Nothing has moved yet: an admin can approve it from ' +
+        'the expenses list, and the balance is only debited then.'
+    },
+    {
+      question: 'I deleted an expense — where did the money go?',
+      answer:
+        'Back into the account it came from, as long as it had actually been taken ' +
+        'out. Deleting from the expense list and sending "undo" do the same thing. ' +
+        'A pending entry never moved money, so nothing is returned.'
+    },
+    {
       question: 'What is the admin password for?',
       answer:
-        'It is a second password for the same account. Signing in with it gives ' +
-        'you everything; signing in with your normal password gives you only what ' +
-        'the toggles in Settings allow. The main use is hiding your balances: on a ' +
+        'It is a second password for the same account. Signing in with it gives you ' +
+        'everything; signing in with your normal password gives you only what the ' +
+        'toggles in Settings allow. The main use is hiding your balances: on a ' +
         'shared or public machine, sign in as a normal user and no amount appears ' +
         'anywhere, including in WhatsApp replies.'
     },
     {
-      question: 'Why is my expense "Pending / Waiting Admin"?',
-      answer:
-        'It was dated something other than today, and this account does not have ' +
-        'permission to backdate or post-date an entry. Nothing has moved yet: it ' +
-        'waits until someone signed in with the admin password approves it, and ' +
-        'the balance is only debited then.'
-    },
-    {
-      question: 'Does deleting an expense give the money back?',
-      answer:
-        'Yes, if that expense actually took money out of an account. Deleting it ' +
-        'from the expense list and sending "undo" over WhatsApp do exactly the ' +
-        'same thing. An entry that was only logged, or one whose account has since ' +
-        'been deleted, has nothing to return.'
-    },
-    {
-      question: 'Why do some entries say "Uncategorised"?',
+      question: 'Why do some entries say “Uncategorised”?',
       answer:
         'Either they were added before categories existed, or they were filed ' +
-        'without one. Over WhatsApp the category is guessed from what you wrote, ' +
-        'and left blank when the words do not make it obvious.'
+        'without one. Over WhatsApp the category is read from what you wrote, and ' +
+        'left blank when the words do not make it obvious.'
     },
     {
-      question: 'What happens if an account does not have enough in it?',
+      question: 'I stopped getting replies',
       answer:
-        'Nothing is recorded. The app will not let a balance go negative, so the ' +
-        'expense is refused and you are told how much the account actually holds ' +
-        '(unless balances are hidden for this session).'
+        'The WhatsApp access token expires. Replies stop but your expenses are still ' +
+        'recorded — they just arrive silently until the token is renewed.'
     },
     {
       question: 'Can I get my expenses out of the app?',
       answer:
-        'Yes. On the View Expenses page, "Export CSV" downloads exactly the rows ' +
-        'you are looking at, filters and sorting included. The file opens in Excel, ' +
-        'Google Sheets or any spreadsheet.'
-    },
-    {
-      question: 'I forgot my password.',
-      answer:
-        'There is no reset email yet. If you are still signed in anywhere, change ' +
-        'it from your Profile page. Otherwise the account cannot currently be ' +
-        'recovered, so keep the password somewhere safe.'
+        'Yes. "Export CSV" on the expenses page downloads exactly the rows you are ' +
+        'looking at; "Download my data" on your profile takes the lot. Both open in ' +
+        'Excel, Google Sheets or any spreadsheet.'
     }
   ];
 
   ngOnInit(): void {
-    this.api.get<WhatsappStatus>('/whatsapp/link').subscribe({
-      next: status => {
-        this.whatsapp = status;
+    this.auth.ensureSession().subscribe(session => {
+      this.hasAdminPassword = Boolean(session?.user.hasAdminPassword);
+    });
+
+    forkJoin({
+      balances: this.balanceService.list(),
+      settings: this.settingsService.load(true),
+      // A help page is still useful without these, so they resolve to a default
+      // rather than leaving the page empty.
+      whatsapp: this.whatsappService.status().pipe(catchError(() => of(null)))
+    }).subscribe({
+      next: ({ balances, whatsapp }) => {
+        this.accountCount = balances.filter(account => account.saved).length;
+        this.canSeeBalances = this.settingsService.canSeeBalances;
+        this.whatsapp = whatsapp;
       },
-      // A help page is still useful without it, so a failure is left silent.
       error: () => {
         this.whatsapp = null;
       }
     });
   }
 
-  toggleFaq(index: number): void {
+  /**
+   * One answer open at a time.
+   *
+   * <details> would toggle itself on click, which fights the bound [open], so
+   * the default is prevented and the state kept here.
+   */
+  onToggleFaq(index: number, event: Event): void {
+    event.preventDefault();
     this.openFaq = this.openFaq === index ? null : index;
   }
 }

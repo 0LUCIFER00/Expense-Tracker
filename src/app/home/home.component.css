@@ -1,290 +1,458 @@
-.home-container {
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: clamp(1rem, 4vw, 2rem);
-}
-
-.hero-section {
-  text-align: center;
-  margin-bottom: clamp(1.5rem, 5vw, 3rem);
-}
-
-.hero-section h1 {
-  font-size: clamp(1.6rem, 5vw, 2.5rem);
-  line-height: 1.2;
-  color: #2a3f9d;
-}
-
-.subtitle {
-  font-size: clamp(0.95rem, 2.5vw, 1.2rem);
-  color: #666;
-  margin: 0.5rem auto 1.5rem;
-  max-width: 55ch;
-}
-
-.btn-primary {
-  background-color: #2a3f9d;
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  font-size: 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  min-height: 44px;
-}
-
-.btn-primary:hover {
-  background-color: #1c2978;
-}
-
 /*
- * Auto-fit keeps one card per row on a phone, two on a tablet and four on a
- * laptop without separate rules for each.
+ * Light theme. The dark overrides live in home.component.dark.css, scoped to
+ * [data-theme="dark"], so nothing here changes between themes.
+ *
+ * Laid out as the design has it: a wide headline card beside a narrow accounts
+ * card, then two equal cards, then the WhatsApp strip. flex-wrap does the
+ * responsive work — each card states the width below which it should drop to
+ * its own line, so there is no breakpoint to keep in sync.
  */
-.stats-section {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 1rem;
-  margin: 2rem 0;
-}
 
-.card {
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  padding: clamp(1rem, 3vw, 1.5rem);
-  text-align: center;
-  min-width: 0;
-}
-
-.card h2 {
-  color: #444;
-  margin-bottom: 0.5rem;
-  font-size: clamp(0.95rem, 2.2vw, 1.15rem);
-  overflow-wrap: anywhere;
-}
-
-.card p {
-  font-size: clamp(1.1rem, 3vw, 1.4rem);
-  color: #2a3f9d;
-  overflow-wrap: anywhere;
-}
-
-.actions-section {
-  text-align: center;
-  margin-top: clamp(1.5rem, 5vw, 3rem);
-}
-
-.btn-secondary {
-  background-color: #f2f2f2;
-  color: #2a3f9d;
-  padding: 0.6rem 1.2rem;
-  font-size: 1rem;
-  border: 1px solid #2a3f9d;
-  border-radius: 8px;
-  cursor: pointer;
-  min-height: 44px;
-}
-
-.btn-secondary:hover {
-  background-color: #e4eaff;
-}
-
-.date {
-  margin: 1rem 0;
-  font-style: italic;
-  color: #777;
-}
-
-/* ---- trend, panels, lists ---- */
-
-.page-error {
-  max-width: 900px;
-  margin: 0 auto 1.5rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid #f3b7b7;
-  border-radius: 8px;
-  background-color: #fdeaea;
-  color: #a33a3a;
-  text-align: center;
-}
-
-.trend {
+:host {
   display: block;
-  margin-top: 0.35rem;
-  font-size: 0.85rem;
-  color: #666;
 }
 
-/* Up is worse for spending, so the colours are the reverse of the usual. */
-.trend.up {
-  color: #b04a2f;
-}
-
-.trend.down {
-  color: #1f7a4d;
-}
-
-/*
- * Auto-fit again: one panel per row on a phone, two on a tablet, three on a
- * wide laptop, without a breakpoint for each.
- */
-.panels {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-  gap: 1rem;
-  align-items: start;
-}
-
-.panel {
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  padding: clamp(1rem, 3vw, 1.5rem);
-  min-width: 0;
-}
-
-.panel-title {
-  margin: 0 0 1rem;
-  font-size: 1.05rem;
-  color: #2a3f9d;
-}
-
-.panel-note {
-  margin: 1rem 0 0;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.category-list,
-.recent-list,
-.account-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.dashboard {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 4vw, 2rem) clamp(1rem, 3vw, 1.5rem) 3rem;
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 2rem;
 }
 
-.category-head {
+.page-error {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--bad);
+  border-radius: 10px;
+  background-color: var(--bad-soft);
+  color: var(--bad-ink);
+  text-align: center;
+}
+
+.dash-row {
   display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.35rem;
-  font-size: 0.9rem;
+  flex-wrap: wrap;
+  gap: 2rem;
+  align-items: flex-start;
 }
 
-.category-name {
-  color: #444;
+/* Every panel on the page is one of these. */
+.card {
+  flex: 1 1 380px;
+  min-width: 0;
+  background-color: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  padding: 1.5rem 1.6rem;
+  box-shadow: var(--shadow);
+}
+
+.card-title {
+  margin: 0 0 1.1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* A subtitle pushes the first row down, so the title's own gap is dropped. */
+.card-title:has(+ .card-subtitle) {
+  margin-bottom: 0.35rem;
+}
+
+.card-subtitle {
+  margin: 0 0 1.1rem;
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+
+.card-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-3);
+}
+
+.card-link {
+  display: inline-block;
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+
+.card-link:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+/* ---- the headline ---- */
+
+/*
+ * flex: 999 means this takes nearly all the spare width while both cards are on
+ * one line, and 420px is the width below which it drops to its own.
+ */
+.headline-card {
+  flex: 999 1 420px;
+  padding: 1.75rem 1.9rem;
+}
+
+.headline-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.today {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ink-3);
+}
+
+.primary-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 1.25rem;
+  border-radius: 10px;
+  background-color: var(--accent);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.primary-action:hover {
+  background-color: var(--accent-hover);
+  color: #fff;
+}
+
+.primary-action svg {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.headline-figure {
+  margin: 1.1rem 0 0;
+  font-size: clamp(2.75rem, 8vw, 4.25rem);
+  line-height: 0.95;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: var(--accent-ink);
   overflow-wrap: anywhere;
 }
 
-.category-total {
-  color: #2a3f9d;
-  font-weight: 600;
-  white-space: nowrap;
+.headline-caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.625rem;
+  margin: 0.75rem 0 0;
+  font-size: 0.95rem;
+  color: var(--ink-2);
 }
 
-.category-track {
-  height: 8px;
-  border-radius: 4px;
-  background-color: #eef2fb;
-  overflow: hidden;
+.delta {
+  padding: 0.2rem 0.625rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
-.category-fill {
-  height: 100%;
-  border-radius: 4px;
-  background-color: #7cbbff;
+/* Spending more is the unwelcome direction, so the colours run the other way. */
+.delta.more {
+  background-color: var(--bad-soft);
+  color: var(--bad-ink);
 }
 
-.recent-list li,
-.account-list li {
+.delta.less {
+  background-color: var(--good-soft);
+  color: var(--good-ink);
+}
+
+.delta.flat {
+  background-color: var(--rule);
+  color: var(--ink-2);
+}
+
+.headline-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.75rem 2.75rem;
+  margin-top: 1.6rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--rule-strong);
+}
+
+.stat-label {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+
+.stat-value {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* ---- where your money is ---- */
+
+.accounts-card {
+  flex: 1 1 320px;
+}
+
+.account-row {
+  padding: 0.625rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.account-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 0.75rem;
-  min-width: 0;
 }
 
-.recent-main {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
+.account-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: anywhere;
 }
 
-.recent-desc {
-  color: #444;
-  font-size: 0.95rem;
+.account-amount {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.account-kind {
+  display: block;
+  margin-top: 0.125rem;
+  font-size: 0.6875rem;
+  color: var(--ink-3);
+}
+
+.account-track {
+  display: block;
+  height: 4px;
+  margin-top: 0.4375rem;
+  border-radius: 999px;
+  background-color: var(--rule);
+  overflow: hidden;
+}
+
+.account-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background-color: var(--accent);
+}
+
+/* ---- where it went ---- */
+
+.category-row {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) 76px;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4375rem 0;
+}
+
+.category-name {
+  font-size: 0.8125rem;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.category-track {
+  display: block;
+  height: 10px;
+  border-radius: 3px;
+  background-color: var(--rule);
+  overflow: hidden;
+}
+
+.category-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background-color: var(--accent);
+}
+
+/*
+ * A ramp down the list, so the bars read as one series rather than five
+ * unrelated colours. The shades differ in lightness, not hue.
+ */
+.category-fill[data-tone='1'] {
+  background-color: var(--ramp-2);
+}
+
+.category-fill[data-tone='2'] {
+  background-color: var(--ramp-3);
+}
+
+.category-fill[data-tone='3'] {
+  background-color: var(--ramp-4);
+}
+
+.category-fill[data-tone='4'] {
+  background-color: var(--ramp-5);
+}
+
+.category-amount {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ---- recent ---- */
+
+.recent-row {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.5625rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.recent-date {
+  font-size: 0.75rem;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.recent-what {
+  font-size: 0.875rem;
+  color: var(--ink);
   overflow-wrap: anywhere;
 }
 
 .recent-meta {
-  color: #808a9c;
-  font-size: 0.8rem;
+  font-size: 0.6875rem;
+  color: var(--ink-3);
 }
 
 .recent-amount {
-  color: #2a3f9d;
-  font-weight: 600;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ink);
   white-space: nowrap;
 }
 
 .recent-amount.pending {
-  color: #9a7b22;
+  color: var(--warn-ink);
 }
 
-.account-name {
-  color: #444;
-  font-size: 0.95rem;
-  overflow-wrap: anywhere;
+/* ---- the WhatsApp strip ---- */
+
+/*
+ * This card is a child of the column, not of a .dash-row, so .card's
+ * `flex: 1 1 380px` would make 380px its HEIGHT rather than its width.
+ */
+.whatsapp-strip {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.375rem 1.6rem;
 }
 
-.account-type {
-  flex: 1 1 auto;
-  color: #808a9c;
-  font-size: 0.8rem;
-  text-align: right;
+.whatsapp-icon {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background-color: var(--good-soft);
 }
 
-.account-balance {
-  color: #2a3f9d;
-  font-weight: 600;
-  white-space: nowrap;
+.whatsapp-icon svg {
+  fill: none;
+  stroke: var(--good-ink);
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.empty-state {
-  max-width: 48ch;
-  margin: 2rem auto 0;
-  text-align: center;
-  color: #666;
+/* Takes the spare width, and drops to its own line below 320px of content. */
+.whatsapp-text {
+  flex: 999 1 320px;
+  min-width: 0;
 }
 
-.empty-state h2 {
-  margin: 0 0 0.5rem;
-  font-size: 1.1rem;
-  color: #444;
+.whatsapp-title {
+  margin: 0 0 0.1875rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ink);
 }
 
-@media (max-width: 480px) {
-  .stats-section {
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-    margin: 1.5rem 0;
+.whatsapp-body {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.secondary-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 1.125rem;
+  border-radius: 10px;
+  border: 1px solid var(--accent);
+  color: var(--accent-ink);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.secondary-action:hover {
+  background-color: var(--accent-soft);
+}
+
+/* The three-column category row stops fitting before phone width. */
+@media (max-width: 420px) {
+  .dashboard,
+  .dash-row {
+    gap: 1.25rem;
   }
 
-  .btn-primary,
-  .btn-secondary {
-    width: 100%;
-    max-width: 320px;
+  /*
+   * Name and amount share the first line, with the bar underneath. Both are
+   * placed explicitly: left to auto-placement the bar's full-width span pushes
+   * the amount onto a third row of its own.
+   */
+  .category-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 0.3125rem;
   }
-}
 
-@media (max-width: 360px) {
-  .stats-section {
-    grid-template-columns: 1fr;
+  .category-amount {
+    grid-area: 1 / 2;
+  }
+
+  .category-track {
+    grid-area: 2 / 1 / 3 / -1;
+  }
+
+  .primary-action,
+  .secondary-action {
+    flex: 1 1 100%;
+    justify-content: center;
   }
 }

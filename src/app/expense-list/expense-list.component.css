@@ -1,200 +1,166 @@
 /*
- * Layout note: the list scrolls with the page rather than inside a panel of a
- * hardcoded height. The old `calc(100vh - 80px)` panel assumed a fixed header
- * and footer, which broke as soon as the header wrapped or a phone's toolbars
- * changed the viewport. On wide screens the column header sticks instead.
+ * View expenses, as the design draws it: filters and the total across the top,
+ * then a table with a tinted header strip and each row on its own sunken panel.
+ * Colours come from the tokens in styles.css, so this one stylesheet serves
+ * both themes.
  */
 
-.body {
-  width: 100%;
-  padding: clamp(0.5rem, 2vw, 1rem);
+:host {
+  display: block;
+  color: var(--ink);
 }
 
-.filter-expense-section {
-  width: 100%;
+.expenses-page {
+  max-width: 1120px;
   margin: 0 auto;
-  padding: clamp(1rem, 3vw, 2rem);
-  padding-bottom: 0.6rem;
-  background-color: #fdfdfd;
+  padding: clamp(1.25rem, 4vw, 2rem) clamp(1rem, 3vw, 1.5rem) 3rem;
+}
+
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  padding: 1.5rem 1.625rem;
+  box-shadow: var(--shadow);
+}
+
+.list-notice,
+.list-error {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 10px;
-  box-shadow: 0 2px 8px #0000001a;
-  transition: max-width 0.3s ease, padding 0.3s ease;
+  font-size: 0.875rem;
 }
 
-.filter-expense-section.full-view {
-  max-width: 1100px;
+.list-notice {
+  border: 1px solid var(--good);
+  background-color: var(--good-soft);
+  color: var(--good-ink);
 }
 
-.filter-expense-section.compact-view {
-  max-width: 820px;
+.list-error {
+  border: 1px solid var(--bad);
+  background-color: var(--bad-soft);
+  color: var(--bad-ink);
 }
 
-/* ---- filter bar ---- */
+/* ---- filters ---- */
 
 .filter-bar {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
   flex-wrap: wrap;
-  margin-bottom: 0.35rem;
+  align-items: flex-end;
+  gap: 0.875rem;
+  margin-bottom: 1.125rem;
 }
 
-.filter-bar label {
-  font-weight: bold;
-  color: #333;
+.filter label {
+  display: block;
+  margin-bottom: 0.3125rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ink-2);
 }
 
-.filter-bar select {
-  flex: 0 1 auto;
-  min-width: 0;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 1rem;
-  background-color: #fff;
+.filter select {
+  padding: 0.5625rem 0.75rem;
+  border: 1px solid var(--field-border);
+  border-radius: 8px;
+  background-color: var(--field-bg);
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: var(--ink);
+}
+
+.filter select:focus {
   outline: none;
+  border-color: var(--focus-border);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
-.filter-bar select:focus {
-  border-color: #7cbbff;
-  box-shadow: 0 0 0 2px #7cbbff33;
+.filter-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
 }
 
 .export-btn {
-  flex: 0 0 auto;
-  padding: 0.5rem 0.9rem;
-  border: 1px solid #7cbbff;
-  border-radius: 6px;
-  background-color: #fff;
-  color: #1c5fa8;
-  font-size: 0.95rem;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  min-height: 40px;
+  padding: 0 0.875rem;
+  border: 1px solid var(--field-border);
+  border-radius: 8px;
+  background-color: var(--surface);
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+}
+
+.export-btn svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .export-btn:hover:not(:disabled) {
-  background-color: #eaf4ff;
+  border-color: var(--focus-border);
+  color: var(--accent-ink);
 }
 
 .export-btn:disabled {
-  border-color: #d6dbe4;
-  color: #9aa3b2;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-.spend.blowing-box {
-  padding: 0.5rem 1rem;
-  margin-left: auto;
-  width: fit-content;
+.total-pill {
+  padding: 0.5625rem 1rem;
   border-radius: 10px;
-  background: #7cbbff;
-  transition: transform 0.3s ease;
+  background-color: var(--accent);
   color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
   white-space: nowrap;
 }
 
-.spend.blowing-box:hover {
-  transform: scale(1.03);
+/* ---- the table ---- */
+
+/*
+ * Seven columns do not fit a phone, and squeezing them makes every cell a
+ * two-character column. Below the breakpoint each row becomes a labelled card
+ * instead; in between, the table scrolls sideways inside this box.
+ */
+.table-scroll {
+  overflow-x: auto;
 }
 
-/* ---- rows ---- */
-
-.expense-list {
-  list-style: none;
-  padding: 0;
-  margin: 0.5rem 0 0;
-}
-
-.expense-row {
+.table-head,
+.table-row {
   display: grid;
-  align-items: center;
+  grid-template-columns: 72px 86px minmax(130px, 1fr) 126px 118px 96px 64px;
   gap: 0.75rem;
-  padding: 0.5rem 0.8rem;
-  min-height: 30px;
-  background-color: #f4f6fa;
-  margin-bottom: 0.4rem;
+  align-items: center;
+  min-width: 760px;
+}
+
+.table-head.no-account,
+.table-row.no-account {
+  grid-template-columns: 72px 86px minmax(130px, 1fr) 126px 96px 64px;
+  min-width: 640px;
+}
+
+.table-head {
+  padding: 0.625rem 0.875rem;
   border-radius: 8px;
-  box-shadow: 0 1px 3px #0000000d;
-}
-
-.with-source-columns {
-  grid-template-columns:
-    72px 68px minmax(90px, 1.2fr) minmax(80px, 1fr)
-    minmax(70px, 0.9fr) minmax(70px, 0.9fr) minmax(95px, 1.1fr) 48px;
-  gap: 0.5rem;
-}
-
-.without-source-columns {
-  grid-template-columns:
-    90px 80px minmax(140px, 1.5fr) minmax(100px, 1fr) minmax(140px, 1.3fr) 56px;
-}
-
-.expense-header-list {
-  margin: 0.5rem 0 0;
-  position: sticky;
-  /* Clears the sticky app header so both stay visible while scrolling. */
-  top: 62px;
-  z-index: 5;
-}
-
-.expense-header-list .expense-row {
-  margin-bottom: 0;
-}
-
-.header-row {
-  background: #7cbbff;
-  color: #ebebeb;
-  font-weight: 600;
-}
-
-.expense-data-scroll {
-  margin-top: 0.45rem;
-  padding-bottom: 0.5rem;
-}
-
-.expense-date,
-.expense-amount,
-.expense-desc,
-.expense-spend-category,
-.expense-type,
-.expense-category,
-.expense-status {
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  line-height: 1.4;
-  font-size: 0.8rem;
-}
-
-.expense-amount {
-  font-weight: bold;
-  color: #2a3f9d;
-}
-
-.expense-desc {
-  color: #222;
-}
-
-.expense-spend-category,
-.expense-type,
-.expense-category,
-.expense-status {
-  color: #444;
-}
-
-/* An entry from before categories existed, or one filed without a category. */
-.uncategorised {
-  color: #8a93a6;
-  font-style: italic;
-}
-
-.status-done {
-  color: #2563eb;
-  font-weight: 700;
-}
-
-.status-pending {
-  color: #dc3545;
+  background-color: var(--table-head);
+  color: var(--table-head-ink);
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
@@ -203,173 +169,220 @@
   user-select: none;
 }
 
-.sortable:hover {
-  color: #1f3f8f;
-  text-decoration: underline;
+.action-head {
+  text-align: right;
 }
 
-/* ---- actions ---- */
+.table-row {
+  margin-top: 0.375rem;
+  padding: 0.6875rem 0.875rem;
+  border-radius: 8px;
+  background-color: var(--sunken);
+}
 
-.action-buttons {
+.cell-date {
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.cell-amount {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+
+.cell-what {
+  font-size: 0.875rem;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.cell-account {
+  font-size: 0.75rem;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+/* ---- chips ---- */
+
+.chip {
+  display: inline-block;
+  padding: 0.1875rem 0.625rem;
+  border-radius: 999px;
+  background-color: var(--rule);
+  color: var(--ink-2);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/*
+ * A colour per category, so a glance down the column groups them. The hues
+ * differ in lightness as well, so they are not told apart by hue alone.
+ */
+.chip[data-cat='Food & Drink'],
+.chip[data-cat='Groceries'] {
+  background-color: var(--good-soft);
+  color: var(--good-ink);
+}
+
+.chip[data-cat='Travel'],
+.chip[data-cat='Shopping'] {
+  background-color: var(--warn-soft);
+  color: var(--warn-ink);
+}
+
+.chip[data-cat='Bills & Utilities'],
+.chip[data-cat='Health'],
+.chip[data-cat='Education'] {
+  background-color: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.chip[data-status='done'] {
+  background-color: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.chip[data-status='waiting'] {
+  background-color: var(--bad-soft);
+  color: var(--bad-ink);
+}
+
+/* ---- row actions ---- */
+
+.cell-actions {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  justify-content: flex-end;
+  gap: 0.375rem;
 }
 
-.btn-danger,
-.btn-success {
-  color: #fff;
-  border: none;
-  width: 26px;
-  height: 26px;
-  font-size: 0.8rem;
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
   border-radius: 50%;
   cursor: pointer;
-  font-weight: bold;
-  transition: transform 0.2s ease, background 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
 }
 
-.btn-danger {
-  background: #e63e3e;
+.icon-btn svg {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.btn-danger:hover {
-  transform: scale(1.08);
-  background: #d22828;
+.icon-btn.remove {
+  background-color: var(--bad);
 }
 
-.btn-success {
-  background: #198754;
+.icon-btn.approve {
+  background-color: var(--good);
 }
 
-.btn-success:hover {
-  transform: scale(1.08);
-  background: #146c43;
+.icon-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* ---- the rest ---- */
+
+.table-note {
+  margin: 1.125rem 0 0;
+  font-size: 0.75rem;
+  color: var(--ink-3);
+  line-height: 1.5;
 }
 
 .no-record {
-  text-align: center;
-  color: #666;
-  font-weight: 600;
   padding: 2.5rem 1rem;
+  text-align: center;
 }
 
-/* ================= Tablet ================= */
-/*
- * The eight-column table stops fitting here, so every row turns into a card
- * and each value carries its own label (the column header is dropped).
- */
-@media (max-width: 900px) {
-  .filter-expense-section.full-view,
-  .filter-expense-section.compact-view {
-    max-width: 100%;
-  }
+.no-record h3 {
+  margin: 0 0 0.375rem;
+  font-size: 1rem;
+  color: var(--ink);
+}
 
-  .expense-header-list {
-    display: none;
-  }
-
-  .expense-row.with-source-columns,
-  .expense-row.without-source-columns {
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem 1rem;
-    align-items: start;
-    padding: 0.85rem;
-  }
-
-  .expense-row > span[data-label] {
-    display: grid;
-    grid-template-columns: minmax(70px, auto) 1fr;
-    gap: 0.5rem;
-    min-width: 0;
-  }
-
-  .expense-row > span[data-label]::before {
-    content: attr(data-label);
-    font-weight: 600;
-    color: #666;
-  }
-
-  .expense-date,
-  .expense-amount,
-  .expense-desc,
-  .expense-spend-category,
-  .expense-type,
-  .expense-category,
-  .expense-status {
-    font-size: 0.85rem;
-  }
-
-  .action-buttons {
-    grid-column: 1 / -1;
-    justify-content: flex-end;
-    border-top: 1px solid #e2e8f5;
-    padding-top: 0.6rem;
-  }
-
-  .btn-danger,
-  .btn-success {
-    width: 34px;
-    height: 34px;
-    font-size: 0.9rem;
-  }
+.no-record p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--ink-3);
 }
 
 /* ================= Phone ================= */
-@media (max-width: 600px) {
+/*
+ * Each row becomes a card with its values labelled, and the header strip goes,
+ * because a seven-column table cannot be read at this width however it scrolls.
+ */
+@media (max-width: 760px) {
+  .card {
+    padding: 1.125rem;
+  }
+
   .filter-bar {
-    align-items: stretch;
+    gap: 0.75rem;
   }
 
-  .filter-bar select,
-  .export-btn {
+  .filter {
+    flex: 1 1 140px;
+  }
+
+  .filter select {
+    width: 100%;
+  }
+
+  .filter-actions {
     flex: 1 1 100%;
-    width: 100%;
+    margin-left: 0;
   }
 
-  .spend.blowing-box {
-    width: 100%;
-    margin-left: 0;
+  .export-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .total-pill {
+    flex: 1 1 auto;
     text-align: center;
   }
 
-  .expense-row.with-source-columns,
-  .expense-row.without-source-columns {
+  .table-scroll {
+    overflow-x: visible;
+  }
+
+  .table-head {
+    display: none;
+  }
+
+  .table-row,
+  .table-row.no-account {
     grid-template-columns: 1fr;
-    gap: 0.35rem;
+    gap: 0.375rem;
+    min-width: 0;
+    padding: 0.875rem;
   }
 
-  .filter-expense-section {
-    border-radius: 8px;
-  }
-}
-
-@media (max-width: 400px) {
-  .body {
-    padding: 0.5rem 0.4rem;
+  .table-row > span[data-label] {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 0.5rem;
+    align-items: baseline;
   }
 
-  .filter-expense-section {
-    padding: 0.85rem 0.7rem;
+  .table-row > span[data-label]::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--ink-3);
   }
-}
 
-.list-notice,
-.list-error {
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  text-align: center;
-}
-
-.list-notice {
-  color: #5b6b88;
-}
-
-.list-error {
-  color: #d32f2f;
+  .cell-actions {
+    margin-top: 0.25rem;
+    padding-top: 0.625rem;
+    border-top: 1px solid var(--rule);
+  }
 }

@@ -1,149 +1,174 @@
 <div class="profile-page">
 
+  <header class="identity">
+    <span class="avatar" aria-hidden="true">{{ initials }}</span>
+
+    <div class="identity-text">
+      <h1>{{ user?.name }}</h1>
+      <p>{{ user?.email }}</p>
+    </div>
+
+    <span class="chip" [class.admin]="isAdminSession">
+      {{ isAdminSession ? 'Signed in as admin' : 'Signed in as user' }}
+    </span>
+  </header>
+
   <p class="page-error" *ngIf="loadError">{{ loadError }}</p>
   <p class="page-success" *ngIf="successMessage">{{ successMessage }}</p>
 
-  <section class="identity-card">
-    <div class="avatar" aria-hidden="true">{{ initials }}</div>
+  <div class="columns">
 
-    <div class="identity-text">
-      <h2>{{ user?.name }}</h2>
-      <p class="email">{{ user?.email }}</p>
+    <div class="main-column">
 
-      <p class="meta">
-        <span class="badge" [class.admin]="isAdminSession">
-          {{ isAdminSession ? 'Signed in as admin' : 'Signed in as user' }}
-        </span>
+      <section class="card">
+        <h2 class="card-title">Your details</h2>
 
-        <span *ngIf="user?.createdAt">
-          Member since {{ user?.createdAt | date: 'MMMM y' }}
-        </span>
-      </p>
+        <label class="et-field-label" for="profileName">Name</label>
+        <input id="profileName" class="et-field" type="text" [(ngModel)]="nameDraft"
+          [disabled]="detailsBusy" placeholder="Your full name">
+
+        <label class="et-field-label" for="profileEmail">Email</label>
+        <input id="profileEmail" class="et-field" type="email" [(ngModel)]="emailDraft"
+          [disabled]="detailsBusy" placeholder="you@example.com">
+        <p class="field-note">Used to sign in. Changing it changes your sign-in.</p>
+
+        <p class="et-field-error" *ngIf="detailsError">{{ detailsError }}</p>
+
+        <button type="button" class="et-btn-primary" [disabled]="!detailsChanged || detailsBusy"
+          (click)="onSaveDetails()">
+          {{ detailsBusy ? 'Saving…' : 'Save changes' }}
+        </button>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Password</h2>
+        <p class="card-body">
+          Your current password is needed even though you are already signed in, so
+          an unlocked browser is not enough to lock you out of your own account.
+        </p>
+
+        <label class="et-field-label" for="currentPassword">Current password</label>
+        <input id="currentPassword" class="et-field" type="password"
+          [(ngModel)]="currentPassword" [disabled]="passwordBusy"
+          placeholder="Enter your current password">
+
+        <label class="et-field-label" for="newPassword">New password</label>
+        <input id="newPassword" class="et-field" type="password" [(ngModel)]="newPassword"
+          [disabled]="passwordBusy" placeholder="At least 6 characters">
+
+        <label class="et-field-label" for="confirmNewPassword">Confirm new password</label>
+        <input id="confirmNewPassword" class="et-field" type="password"
+          [(ngModel)]="confirmPassword" [disabled]="passwordBusy"
+          placeholder="Repeat the new password">
+
+        <p class="et-field-error" *ngIf="confirmPassword && !passwordsMatch">
+          The new passwords do not match.
+        </p>
+
+        <p class="et-field-error" *ngIf="passwordError">{{ passwordError }}</p>
+
+        <button type="button" class="et-btn-ghost" [disabled]="!canSubmitPassword"
+          (click)="onChangePassword()">
+          {{ passwordBusy ? 'Saving…' : 'Change password' }}
+        </button>
+      </section>
+
     </div>
-  </section>
 
-  <section class="stats-row">
-    <div class="stat">
-      <span class="stat-label">Entries</span>
-      <span class="stat-value">{{ totalExpenses }}</span>
-    </div>
+    <aside class="side-column">
 
-    <div class="stat">
-      <span class="stat-label">Total spent</span>
-      <span class="stat-value">₹{{ totalSpent }}</span>
-    </div>
+      <section class="card">
+        <h2 class="card-title">Account</h2>
 
-    <!-- The count is not a balance, but it is still about the accounts. -->
-    <div class="stat" *ngIf="canSeeBalances">
-      <span class="stat-label">Accounts</span>
-      <span class="stat-value">{{ accountCount }}</span>
-    </div>
-  </section>
+        <div class="fact">
+          <span class="fact-label">Member since</span>
+          <span class="fact-value tnum">
+            {{ user?.createdAt ? (user?.createdAt | date: 'd MMM y') : '—' }}
+          </span>
+        </div>
 
-  <section class="profile-card">
-    <h3>Your details</h3>
+        <div class="fact">
+          <span class="fact-label">Expenses recorded</span>
+          <span class="fact-value tnum">{{ totalExpenses }}</span>
+        </div>
 
-    <div class="field-row">
-      <label for="profileName">Name</label>
+        <div class="fact" *ngIf="canSeeBalances">
+          <span class="fact-label">Accounts</span>
+          <span class="fact-value tnum">{{ accountCount }}</span>
+        </div>
 
-      <ng-container *ngIf="!editingName">
-        <span class="field-value">{{ user?.name }}</span>
+        <div class="fact last">
+          <span class="fact-label">Admin access</span>
+          <span class="fact-value">{{ user?.hasAdminPassword ? 'On' : 'Off' }}</span>
+        </div>
+      </section>
 
-        <button type="button" class="link-btn" (click)="onEditName()">Change</button>
-      </ng-container>
+      <section class="card">
+        <h2 class="card-title">Linked WhatsApp</h2>
 
-      <ng-container *ngIf="editingName">
-        <input id="profileName" type="text" class="form-control" [(ngModel)]="nameDraft"
-          [disabled]="nameBusy" placeholder="Your full name">
+        <ng-container *ngIf="whatsapp?.connected">
+          <p class="linked-number tnum">{{ whatsapp?.number }}</p>
+          <p class="field-note">Messages from this number are added to your expenses.</p>
+        </ng-container>
 
-        <span class="field-actions">
-          <button type="button" class="primary-btn" [disabled]="nameBusy" (click)="onSaveName()">
-            Save
+        <p class="card-body" *ngIf="whatsapp && !whatsapp.connected">
+          No phone linked yet.
+        </p>
+
+        <a class="card-link" routerLink="/settings">Manage in Settings</a>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Your data</h2>
+        <p class="card-body">
+          Download every expense as CSV, or close the account and delete it.
+        </p>
+
+        <div class="stacked-actions">
+          <button type="button" class="et-btn-ghost" [disabled]="exportBusy || !totalExpenses"
+            (click)="onDownloadData()">
+            {{ exportBusy ? 'Preparing…' : 'Download my data' }}
           </button>
 
-          <button type="button" class="ghost-btn" [disabled]="nameBusy" (click)="onCancelName()">
-            Cancel
+          <button type="button" class="et-btn-danger" (click)="onAskDelete()">
+            Delete account
           </button>
-        </span>
-      </ng-container>
-    </div>
+        </div>
+      </section>
 
-    <p class="field-error" *ngIf="nameError">{{ nameError }}</p>
+    </aside>
 
-    <div class="field-row">
-      <label>Email</label>
-      <span class="field-value">{{ user?.email }}</span>
-      <span class="field-hint">This is how you sign in, so it cannot be changed here.</span>
-    </div>
+  </div>
 
-    <div class="field-row">
-      <label>Admin password</label>
+</div>
 
-      <span class="field-value">
-        {{ user?.hasAdminPassword ? 'Set' : 'Not set' }}
-      </span>
+<!-- Deleting takes the expenses and balances with it, so it asks first. -->
+<div class="et-overlay" *ngIf="showDeletePopup">
+  <div class="et-popup">
+    <h3>Delete this account</h3>
 
-      <a class="link-btn" routerLink="/settings">Manage in Settings</a>
-    </div>
-  </section>
-
-  <section class="profile-card">
-    <h3>Change password</h3>
-
-    <p class="card-hint">
-      Your current password is needed even though you are already signed in, so
-      an unlocked browser is not enough to lock you out of your own account.
+    <p class="et-popup-body">
+      Everything goes: {{ totalExpenses }}
+      {{ totalExpenses === 1 ? 'expense' : 'expenses' }}, your accounts and their
+      balances, and any linked phone. This cannot be undone.
     </p>
 
-    <div class="form-group">
-      <label for="currentPassword">Current password</label>
-      <input id="currentPassword" type="password" class="form-control"
-        [(ngModel)]="currentPassword" [disabled]="passwordBusy"
-        placeholder="Enter your current password">
+    <label class="et-field-label" for="deletePassword">Your password</label>
+    <input id="deletePassword" class="et-field" type="password"
+      [(ngModel)]="deletePassword" [disabled]="deleteBusy"
+      placeholder="Enter your password to confirm">
+
+    <p class="et-field-error" *ngIf="deleteError">{{ deleteError }}</p>
+
+    <div class="et-popup-actions">
+      <button type="button" class="et-btn-ghost" [disabled]="deleteBusy" (click)="onCancelDelete()">
+        Keep my account
+      </button>
+
+      <button type="button" class="et-btn-danger" [disabled]="!deletePassword || deleteBusy"
+        (click)="onConfirmDelete()">
+        {{ deleteBusy ? 'Deleting…' : 'Delete everything' }}
+      </button>
     </div>
-
-    <div class="form-group">
-      <label for="newPassword">New password</label>
-      <input id="newPassword" type="password" class="form-control" [(ngModel)]="newPassword"
-        [disabled]="passwordBusy" placeholder="At least 6 characters">
-    </div>
-
-    <div class="form-group">
-      <label for="confirmNewPassword">Confirm new password</label>
-      <input id="confirmNewPassword" type="password" class="form-control"
-        [(ngModel)]="confirmPassword" [disabled]="passwordBusy"
-        placeholder="Repeat the new password">
-    </div>
-
-    <p class="field-error" *ngIf="confirmPassword && !passwordsMatch">
-      The new passwords do not match.
-    </p>
-
-    <p class="field-error" *ngIf="passwordError">{{ passwordError }}</p>
-
-    <button type="button" class="primary-btn" [disabled]="!canSubmitPassword"
-      (click)="onChangePassword()">
-      {{ passwordBusy ? 'Saving…' : 'Change password' }}
-    </button>
-  </section>
-
-  <section class="profile-card">
-    <h3>Elsewhere</h3>
-
-    <ul class="link-list">
-      <li>
-        <a routerLink="/settings">Settings</a>
-        <span>Permissions, the admin password and WhatsApp</span>
-      </li>
-      <li>
-        <a routerLink="/view-expenses">View expenses</a>
-        <span>Filter, sort and export your entries</span>
-      </li>
-      <li>
-        <a routerLink="/help_support">Help &amp; support</a>
-        <span>How the app works, and the WhatsApp commands</span>
-      </li>
-    </ul>
-  </section>
-
+  </div>
 </div>

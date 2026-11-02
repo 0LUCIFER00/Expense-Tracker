@@ -79,6 +79,12 @@ describe('HomeComponent', () => {
     http.expectOne('/api/expenses').flush(expenses);
     http.expectOne('/api/balances').flush(accounts);
     http.expectOne('/api/settings').flush({ ...DEFAULT_SETTINGS, ...settings });
+    http.expectOne('/api/whatsapp/link').flush({
+      available: true,
+      connected: false,
+      number: null,
+      businessNumber: '919000000000'
+    });
 
     fixture.detectChanges();
   }
@@ -94,29 +100,50 @@ describe('HomeComponent', () => {
       expect(component.lastMonthSpent).toBe(200);
     });
 
-    it('reports the change as a percentage of last month', () => {
+    it('reports how much more was spent, and that it was more', () => {
       load([
         expense({ id: 'e1', date: dateInMonth(0), amount: 300 }),
         expense({ id: 'e2', date: dateInMonth(1), amount: 200 })
       ]);
 
-      expect(component.monthChange).toBe(50);
+      expect(component.monthDifference).toBe(100);
+      expect(component.spentMore).toBeTrue();
     });
 
-    it('reports a fall as a negative percentage', () => {
+    // The pill reads "less than October", so the figure itself stays positive.
+    it('reports a fall as a positive figure the other way round', () => {
       load([
         expense({ id: 'e1', date: dateInMonth(0), amount: 50 }),
         expense({ id: 'e2', date: dateInMonth(1), amount: 200 })
       ]);
 
-      expect(component.monthChange).toBe(-75);
+      expect(component.monthDifference).toBe(150);
+      expect(component.spentMore).toBeFalse();
     });
 
-    // Dividing by a zero previous month would give Infinity.
-    it('has no percentage when last month was empty', () => {
+    it('has no difference to show when the two months match', () => {
+      load([
+        expense({ id: 'e1', date: dateInMonth(0), amount: 200 }),
+        expense({ id: 'e2', date: dateInMonth(1), amount: 200 })
+      ]);
+
+      expect(component.monthDifference).toBe(0);
+    });
+
+    it('averages over the days gone by, not the whole month', () => {
       load([expense({ date: dateInMonth(0), amount: 300 })]);
 
-      expect(component.monthChange).toBeNull();
+      expect(component.dailyAverage).toBe(Math.round(300 / new Date().getDate()));
+    });
+
+    it('counts this month’s entries only', () => {
+      load([
+        expense({ id: 'e1', date: dateInMonth(0) }),
+        expense({ id: 'e2', date: dateInMonth(0) }),
+        expense({ id: 'e3', date: dateInMonth(1) })
+      ]);
+
+      expect(component.monthEntries).toBe(2);
     });
   });
 
@@ -151,22 +178,6 @@ describe('HomeComponent', () => {
   });
 
   describe('the rest of the summary', () => {
-    it('counts pending entries separately from the total', () => {
-      load([
-        expense({ id: 'e1', amount: 100 }),
-        expense({
-          id: 'e2',
-          amount: 50,
-          status: 'Pending / Waiting Admin',
-          isPendingApproval: true
-        })
-      ]);
-
-      expect(component.totalExpenses).toBe(2);
-      expect(component.totalSpent).toBe(100);
-      expect(component.pendingCount).toBe(1);
-    });
-
     it('shows five entries, most recently spent first', () => {
       load(
         Array.from({ length: 7 }, (_, i) =>
@@ -206,8 +217,37 @@ describe('HomeComponent', () => {
         ]
       );
 
-      expect(component.accounts.length).toBe(2);
+      expect(component.accountRows.length).toBe(2);
       expect(component.accountsTotal).toBe(1500);
+    });
+
+    it('orders the accounts by balance and sizes them against the largest', () => {
+      load(
+        [],
+        [
+          account({ id: 'b1', category: 'Paytm', balance: 250 }),
+          account({ id: 'b2', category: 'HDFC Bank', balance: 1000 })
+        ]
+      );
+
+      expect(component.accountRows.map(row => row.account.category)).toEqual([
+        'HDFC Bank',
+        'Paytm'
+      ]);
+      expect(component.accountRows.map(row => row.share)).toEqual([100, 25]);
+    });
+
+    // A zero balance would otherwise render as an invisible bar.
+    it('leaves an empty account a visible sliver', () => {
+      load(
+        [],
+        [
+          account({ id: 'b1', balance: 1000 }),
+          account({ id: 'b2', balance: 0 })
+        ]
+      );
+
+      expect(component.accountRows[1].share).toBe(2);
     });
 
     it('keeps the accounts panel shut when balances are hidden', () => {
