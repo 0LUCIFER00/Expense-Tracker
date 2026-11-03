@@ -6,6 +6,10 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <!-- Sets the dark attribute before the first paint. Not inline: the server's
+       content security policy refuses inline scripts. -->
+  <script src="theme-init.js"></script>
+
   <!-- The design's typeface. Segoe UI stands in while it loads, and if it
        never does, so nothing depends on this request succeeding. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,14 +18,6 @@
     href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
 </head>
 <body>
-  <script>
-    // Runs before the app renders to avoid a flash of the light theme.
-    try {
-      if (localStorage.getItem('theme') === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-      }
-    } catch (e) {}
-  </script>
   <app-root></app-root>
 </body>
 </html>

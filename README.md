@@ -221,6 +221,24 @@ Responses carry a content security policy, `X-Frame-Options: DENY` and friends, 
 site cannot be framed by another page and a successful injection has nowhere to send
 anything. Over HTTPS it also sends HSTS.
 
+Because that policy sends `script-src 'self'`, **nothing inline may execute**: not a
+`<script>` block in `index.html`, not an `onload=` attribute. Two things fell foul of
+that and left the production build unstyled, so both are now arranged around it.
+
+- The theme bootstrap, which sets the dark attribute before the first paint, lives in
+  `public/theme-init.js` and is loaded with `src`. Inline, it was refused and dark mode
+  flashed light on every load.
+- `inlineCritical` is switched off in `angular.json`. With it on, the build inlines
+  above-the-fold CSS and defers the real stylesheet behind
+  `media="print" onload="this.media='all'"` — an inline handler the policy blocks, so
+  the stylesheet stayed on `media="print"` and never applied. Every page then rendered
+  from the small inlined fragment alone: light-only, with the dark theme and the shared
+  `.et-*` primitives missing. Turning it off costs a render-blocking stylesheet on the
+  first visit and keeps the pages looking like themselves.
+
+If a page ever renders as plain unstyled HTML, read the browser console first: a CSP
+refusal is the likely cause, and it is silent apart from that line.
+
 `.env` holds the database credentials and is gitignored. Do not commit it.
 
 ### Still outstanding
