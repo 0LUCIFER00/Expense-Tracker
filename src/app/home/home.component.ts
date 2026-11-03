@@ -101,6 +101,7 @@ export class HomeComponent implements OnInit {
       lastMonthName: lastMonth.toLocaleDateString(undefined, { month: 'long' }),
 
       spent,
+      lastMonthSpent,
       difference: Math.abs(spent - lastMonthSpent),
       spentMore: spent > lastMonthSpent,
 
@@ -119,8 +120,29 @@ export class HomeComponent implements OnInit {
       days,
       busiestDay: Math.max(0, ...days.map(day => day.total)),
 
+      projected: this.project(spent, now),
+      pending: expenses.filter(expense => expense.isPendingApproval).length,
+
       offerWhatsapp
     };
+  }
+
+  /**
+   * What the month comes to if the rate so far holds.
+   *
+   * Nothing before the fourth: on the second, one restaurant bill triples the
+   * figure, and a projection that swings like that is worse than none.
+   */
+  private project(spent: number, now: Date): number | null {
+    const dayOfMonth = now.getDate();
+
+    if (dayOfMonth < 4) {
+      return null;
+    }
+
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+    return Math.round((spent / dayOfMonth) * daysInMonth);
   }
 
   private forMonth(expenses: Expense[], month: number, year: number): Expense[] {

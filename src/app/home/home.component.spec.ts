@@ -76,12 +76,6 @@ describe('HomeComponent', () => {
     return component.data as DashboardData;
   }
 
-  /** Last month is not on the summary; it is the figure the delta came from. */
-  function lastMonthSpent(): number {
-    const d = data();
-    return d.spentMore ? d.spent - d.difference : d.spent + d.difference;
-  }
-
   function load(
     expenses: Expense[],
     accounts: BalanceAccount[] = [],
@@ -112,7 +106,7 @@ describe('HomeComponent', () => {
       ]);
 
       expect(data().spent).toBe(300);
-      expect(lastMonthSpent()).toBe(200);
+      expect(data().lastMonthSpent).toBe(200);
     });
 
     it('reports how much more was spent, and that it was more', () => {
@@ -274,6 +268,68 @@ describe('HomeComponent', () => {
       load([], [account()], { balanceUserAccess: false });
 
       expect(data().canSeeBalances).toBeFalse();
+    });
+  });
+
+  describe('the month projection', () => {
+    /** Builds a date this month on the given day, so "today" can be moved. */
+    function onDay(day: number): string {
+      const now = new Date();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      return `${now.getFullYear()}-${month}-${String(day).padStart(2, '0')}`;
+    }
+
+    // One restaurant bill on the second would treble the figure.
+    it('says nothing before the fourth of the month', () => {
+      jasmine.clock().install();
+      jasmine.clock().mockDate(new Date(2026, 10, 2, 12));
+
+      load([expense({ date: onDay(2), amount: 500 })]);
+
+      expect(data().projected).toBeNull();
+
+      jasmine.clock().uninstall();
+    });
+
+    it('scales the rate so far across the whole month', () => {
+      jasmine.clock().install();
+      // The 10th of a 30-day month: a tenth gone, so three times the spend.
+      jasmine.clock().mockDate(new Date(2026, 10, 10, 12));
+
+      load([expense({ date: onDay(5), amount: 900 })]);
+
+      expect(data().projected).toBe(2700);
+
+      jasmine.clock().uninstall();
+    });
+
+    it('is zero when nothing has been spent', () => {
+      jasmine.clock().install();
+      jasmine.clock().mockDate(new Date(2026, 10, 10, 12));
+
+      load([]);
+
+      expect(data().projected).toBe(0);
+
+      jasmine.clock().uninstall();
+    });
+  });
+
+  describe('entries waiting for an admin', () => {
+    it('counts only the pending ones', () => {
+      load([
+        expense({ id: 'e1' }),
+        expense({ id: 'e2', status: 'Pending / Waiting Admin', isPendingApproval: true }),
+        expense({ id: 'e3', status: 'Pending / Waiting Admin', isPendingApproval: true })
+      ]);
+
+      expect(data().pending).toBe(2);
+    });
+
+    it('is zero when everything has settled', () => {
+      load([expense()]);
+
+      expect(data().pending).toBe(0);
     });
   });
 

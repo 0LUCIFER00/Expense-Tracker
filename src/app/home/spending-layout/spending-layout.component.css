@@ -95,33 +95,12 @@
   flex-wrap: wrap;
 }
 
-.focus-head {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  flex-wrap: wrap;
-}
-
 .today {
   margin: 0;
   font-size: 0.75rem;
   color: var(--ink-3);
 }
 
-/* States the condition of the page, quietly, where it will be read first. */
-.locked {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3125rem;
-  padding: 0.1875rem 0.5rem;
-  border-radius: 999px;
-  background-color: var(--sunken);
-  color: var(--ink-3);
-  font-size: 0.6875rem;
-  font-weight: 700;
-}
-
-.locked svg,
 .strip-icon svg {
   fill: none;
   stroke: currentColor;
@@ -220,7 +199,7 @@ app-spend-chart {
 }
 
 .stat {
-  flex: 1 1 130px;
+  flex: 1 1 110px;
   min-width: 0;
   background-color: var(--sunken);
   border-radius: 10px;
@@ -400,6 +379,11 @@ app-spend-chart {
 .strip-icon.whatsapp {
   background-color: var(--good-soft);
   color: var(--good-ink);
+}
+
+.strip-icon.waiting {
+  background-color: var(--warn-soft);
+  color: var(--warn-ink);
 }
 
 .strip-text {

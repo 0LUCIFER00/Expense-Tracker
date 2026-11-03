@@ -44,6 +44,8 @@ export interface DashboardData {
 
   /** Settled spending in the month being shown. */
   spent: number;
+  /** And the month before, which the delta is measured against. */
+  lastMonthSpent: number;
   /** The gap to last month as a positive figure; `spentMore` carries the sign. */
   difference: number;
   spentMore: boolean;
@@ -62,6 +64,14 @@ export interface DashboardData {
   days: DashboardDay[];
   /** The busiest day's spending, which the chart's bars are scaled against. */
   busiestDay: number;
+
+  /**
+   * What the month would come to at the rate so far. Null for the first few
+   * days, when one quiet or busy day still swings it too far to mean anything.
+   */
+  projected: number | null;
+  /** Entries waiting for an admin to approve them. */
+  pending: number;
 
   /** True while there is a phone to connect and nothing connected yet. */
   offerWhatsapp: boolean;
