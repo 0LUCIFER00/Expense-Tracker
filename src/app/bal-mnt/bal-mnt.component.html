@@ -118,26 +118,3 @@
     </div>
 
 </div>
-
-<!-- A saved account holds a balance and is named on past expenses, so it asks. -->
-<div class="et-overlay" *ngIf="pendingRemoval">
-  <div class="et-popup">
-    <h3>Delete this account</h3>
-
-    <p class="et-popup-body">
-      {{ pendingRemoval.category || 'This account' }} and the
-      &#8377;{{ pendingRemoval.balance | number }} it holds. Expenses spent from
-      it stay in the list, but stop pointing at it. This cannot be undone.
-    </p>
-
-    <div class="et-popup-actions">
-      <button type="button" class="et-btn-ghost" (click)="onCancelRemove()">
-        Keep it
-      </button>
-
-      <button type="button" class="et-btn-danger" (click)="onConfirmRemove()">
-        Delete account
-      </button>
-    </div>
-  </div>
-</div>
