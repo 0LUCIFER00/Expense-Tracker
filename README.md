@@ -82,6 +82,39 @@ build in `docs/` can no longer run on its own — it will load but every request
 will fail. Deploy the Express server somewhere and point the front end at it, or
 keep using Pages only for a preview of the UI.
 
+### Vercel
+
+`vercel.json` serves the built Angular app as static files and routes `/api/*` to
+`api/index.mjs`, which exports the same Express app the server uses. The entry in
+`server/src/index.mjs` is not used there: Vercel owns the process lifecycle, so
+nothing listens on a port or drains the pool on a signal.
+
+```bash
+vercel link --project expense-tracker
+vercel deploy --prod
+```
+
+Set `DATABASE_URL`, `JWT_SECRET` and the five `WHATSAPP_*` variables in the project
+first — the server refuses to start in production without a signing secret. Run
+`npm run db:migrate` from a machine with the connection string; nothing applies
+migrations on deploy.
+
+Two things differ from a long-lived server, and both are handled by checking the
+`VERCEL` variable the platform sets:
+
+- **The rate limiter counts in Postgres**, not in memory. Several instances answer
+  requests and are recycled around traffic, so a counter held in a process is not a
+  limit at all. See `server/migrations/008_shared_rate_limits.sql`.
+- **The connection pool is capped at 2 per instance** rather than 10, because each
+  instance opens its own and a small Postgres plan allows about twenty in total.
+
+`.vercelignore` matters: without it Vercel falls back to `.gitignore`, which did not
+exclude Angular's 2GB build cache, and the upload fails on the 100MB file limit.
+
+One thing worth tuning: check which region the Aiven service runs in and pin
+`regions` in `vercel.json` to the closest Vercel region, or every query crosses an
+ocean. The default is `iad1`.
+
 ### GitHub Pages (front end only)
 
 `docs/` is the published build and is committed to the repository. Regenerate it with:

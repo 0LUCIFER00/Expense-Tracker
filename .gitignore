@@ -6,6 +6,10 @@
 /out-tsc
 /bazel-out
 
+# Angular's build cache. Gigabytes of webpack packs, rebuilt on demand, and
+# never wanted anywhere but this machine.
+/.angular/cache
+
 # Node
 /node_modules
 npm-debug.log
@@ -46,3 +50,6 @@ Thumbs.db
 .env.local
 .env.*.local
 !.env.example
+
+.vercel
+.env*

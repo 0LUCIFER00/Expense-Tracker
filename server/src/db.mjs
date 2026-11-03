@@ -68,11 +68,22 @@ if (ssl && !caPath) {
   );
 }
 
+/*
+ * One long-lived server can hold a comfortable pool. A serverless platform
+ * cannot: it runs several instances at once and each would open its own ten,
+ * which exhausts a small Postgres plan — Aiven's free tier allows about twenty
+ * connections in total. VERCEL is set by the platform itself, so nothing has
+ * to be configured for this to take effect there.
+ */
+const IS_SERVERLESS = Boolean(process.env['VERCEL']);
+
 export const pool = new Pool({
   connectionString: url.toString(),
   ssl,
-  max: 10,
-  idleTimeoutMillis: 30_000,
+  max: IS_SERVERLESS ? 2 : 10,
+  // Idle clients are worth keeping on a server that stays up, and worth
+  // dropping quickly where the instance may be frozen between requests.
+  idleTimeoutMillis: IS_SERVERLESS ? 10_000 : 30_000,
   connectionTimeoutMillis: 15_000
 });
 

@@ -1,0 +1,14 @@
+# What not to upload. Vercel falls back to .gitignore when this file is
+# absent, which let the 2GB Angular cache through on the first attempt.
+#
+# Vercel builds the app itself, so nothing generated locally is wanted: it
+# would be uploaded only to be overwritten by the build.
+
+.angular
+dist
+docs
+node_modules
+.git
+
+# The committed Pages build. It is a second copy of the front end, served by
+# GitHub, and has nothing to do with this deployment.
