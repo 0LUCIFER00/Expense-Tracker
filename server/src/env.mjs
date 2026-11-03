@@ -38,15 +38,34 @@ if (!DATABASE_URL) {
   );
 }
 
+export const NODE_ENV = process.env['NODE_ENV'] || 'development';
+
+export const IS_PRODUCTION = NODE_ENV === 'production';
+
 /**
- * Sessions are signed with this. A missing secret is written back to .env once
- * so that restarting the server does not sign everyone out during development.
+ * Sessions are signed with this.
+ *
+ * In development a missing secret is generated and appended to .env, so that
+ * restarting the server does not sign everyone out.
+ *
+ * In production it is required. Generating one quietly would mean a new secret
+ * per process: every deploy signs everybody out, and two instances behind a
+ * load balancer would reject each other's cookies — which looks like random
+ * logouts rather than a missing variable. Better to refuse to start.
  */
 function readOrCreateJwtSecret() {
   const existing = process.env['JWT_SECRET'];
 
   if (existing && existing.length >= 32) {
     return existing;
+  }
+
+  if (IS_PRODUCTION) {
+    throw new Error(
+      existing
+        ? 'JWT_SECRET is set but shorter than 32 characters. Use a long random string.'
+        : 'JWT_SECRET is not set. Set it to a long random string before starting in production.'
+    );
   }
 
   const generated = randomBytes(48).toString('base64url');
@@ -74,7 +93,3 @@ function readOrCreateJwtSecret() {
 export const JWT_SECRET = readOrCreateJwtSecret();
 
 export const PORT = Number(process.env['PORT'] || 3000);
-
-export const NODE_ENV = process.env['NODE_ENV'] || 'development';
-
-export const IS_PRODUCTION = NODE_ENV === 'production';

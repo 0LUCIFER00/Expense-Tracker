@@ -97,7 +97,14 @@ export function createApp() {
       await pool.query('select 1');
       res.json({ status: 'ok', database: 'reachable' });
     } catch (error) {
-      res.status(503).json({ status: 'degraded', database: error.message });
+      /*
+       * The reason stays in the log. A connection failure quotes the host,
+       * port and user it tried, and this endpoint needs no cookie — so saying
+       * why out loud hands a stranger the shape of the infrastructure.
+       */
+      console.error('[health] database unreachable:', error.message);
+
+      res.status(503).json({ status: 'degraded', database: 'unreachable' });
     }
   });
 

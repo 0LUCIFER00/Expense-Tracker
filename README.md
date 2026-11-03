@@ -239,6 +239,14 @@ that and left the production build unstyled, so both are now arranged around it.
 If a page ever renders as plain unstyled HTML, read the browser console first: a CSP
 refusal is the likely cause, and it is silent apart from that line.
 
+`JWT_SECRET` signs the session cookie and is **required in production** — the server
+refuses to start without one at least 32 characters long. In development a missing one
+is generated and appended to `.env` instead, so a restart does not sign you out. That
+convenience would be a trap in a deployment: a generated secret lives only as long as
+the process, so every restart would sign everybody out, and two instances would reject
+each other's cookies. `render.yaml` sets it with `generateValue: true`, which Render
+generates once and then keeps.
+
 `.env` holds the database credentials and is gitignored. Do not commit it.
 
 ### Still outstanding
