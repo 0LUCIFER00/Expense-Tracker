@@ -7,7 +7,6 @@ import { CategoryTotal, ExpenseService } from '../shared/expense.service';
 import { BalanceService } from '../shared/balance.service';
 import { SettingsService } from '../shared/settings.service';
 import { WhatsappService } from '../shared/whatsapp.service';
-import { DashboardLayout, DashboardLayoutService } from '../shared/dashboard-layout.service';
 import {
   DashboardAccount,
   DashboardCategory,
@@ -18,15 +17,19 @@ import { parseLocalDate } from '../shared/date-utils';
 import { FitsScreenDirective } from '../shared/fits-screen.directive';
 import { ToastService } from '../shared/toast.service';
 import { BalancesLayoutComponent } from './balances-layout/balances-layout.component';
-import { LedgerLayoutComponent } from './ledger-layout/ledger-layout.component';
+import { SpendingLayoutComponent } from './spending-layout/spending-layout.component';
 
 /**
  * The dashboard.
  *
  * This works out the figures; one of the two layout components draws them. The
  * arithmetic lives here rather than in either layout so a number cannot come
- * out different depending on which one you are looking at. Which layout is in
- * use is a preference, set on the Settings page.
+ * out different depending on which one you are looking at.
+ *
+ * Which one is drawn follows the permission, not a preference: a session that
+ * may see balances gets the layout built around them, and one that may not gets
+ * the layout built without them. That is the admin password's whole purpose, so
+ * it is not something to leave to a setting someone could forget to turn on.
  */
 @Component({
   selector: 'app-home',
@@ -37,7 +40,7 @@ import { LedgerLayoutComponent } from './ledger-layout/ledger-layout.component';
     CommonModule,
     FitsScreenDirective,
     BalancesLayoutComponent,
-    LedgerLayoutComponent
+    SpendingLayoutComponent
   ]
 })
 export class HomeComponent implements OnInit {
@@ -45,19 +48,12 @@ export class HomeComponent implements OnInit {
   private readonly balanceService = inject(BalanceService);
   private readonly settingsService = inject(SettingsService);
   private readonly whatsappService = inject(WhatsappService);
-  private readonly layoutService = inject(DashboardLayoutService);
   private readonly toast = inject(ToastService);
 
   /** Null until the first load finishes, so neither layout renders half-made. */
   data: DashboardData | null = null;
 
-  layout: DashboardLayout = this.layoutService.layout;
-
   ngOnInit(): void {
-    this.layoutService.layout$.subscribe(layout => {
-      this.layout = layout;
-    });
-
     forkJoin({
       expenses: this.expenseService.list(),
       balances: this.balanceService.list(),
@@ -217,8 +213,8 @@ export class HomeComponent implements OnInit {
    * lists 12 Oct above 2 Nov reads as a bug. Two on the same day fall back to
    * the order they were added.
    *
-   * Twelve rather than five: the ledger layout has a table to fill, and the
-   * balances layout only ever draws as many as its card has room for.
+   * Twelve rather than five: each layout draws as many as its card has room
+   * for, and a tall window has room for more than a short one.
    */
   private toRecent(expenses: Expense[]): Expense[] {
     return [...expenses]

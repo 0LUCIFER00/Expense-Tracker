@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -54,6 +54,7 @@ function dateInMonth(monthsAgo: number, day = 15): string {
 
 describe('HomeComponent', () => {
   let component: HomeComponent;
+  let fixture: ComponentFixture<HomeComponent>;
   let http: HttpTestingController;
 
   beforeEach(() => {
@@ -86,7 +87,7 @@ describe('HomeComponent', () => {
     accounts: BalanceAccount[] = [],
     settings: Partial<Settings> = {}
   ) {
-    const fixture = TestBed.createComponent(HomeComponent);
+    fixture = TestBed.createComponent(HomeComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
 
@@ -273,6 +274,51 @@ describe('HomeComponent', () => {
       load([], [account()], { balanceUserAccess: false });
 
       expect(data().canSeeBalances).toBeFalse();
+    });
+  });
+
+  /*
+   * The layout follows the permission rather than a preference. Hiding
+   * balances is the admin password's whole purpose, so it cannot be left to
+   * a setting someone could forget.
+   */
+  describe('which layout is drawn', () => {
+    function host(): HTMLElement {
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('uses the balances layout when they may be seen', () => {
+      load([expense()], [account()]);
+
+      expect(host().querySelector('app-balances-layout')).not.toBeNull();
+      expect(host().querySelector('app-spending-layout')).toBeNull();
+    });
+
+    it('uses the spending layout when they may not', () => {
+      load([expense()], [account()], { balanceUserAccess: false });
+
+      expect(host().querySelector('app-spending-layout')).not.toBeNull();
+      expect(host().querySelector('app-balances-layout')).toBeNull();
+    });
+
+    it('draws neither until the figures are in', () => {
+      const built = TestBed.createComponent(HomeComponent);
+      built.detectChanges();
+
+      const el = built.nativeElement as HTMLElement;
+
+      expect(el.querySelector('app-balances-layout')).toBeNull();
+      expect(el.querySelector('app-spending-layout')).toBeNull();
+
+      http.expectOne('/api/expenses').flush([]);
+      http.expectOne('/api/balances').flush([]);
+      http.expectOne('/api/settings').flush(DEFAULT_SETTINGS);
+      http.expectOne('/api/whatsapp/link').flush({
+        available: false,
+        connected: false,
+        number: null,
+        businessNumber: null
+      });
     });
   });
 });

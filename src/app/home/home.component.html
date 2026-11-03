@@ -1,8 +1,12 @@
 <div class="dashboard" appFitsScreen>
 
+  <!--
+    The permission picks the layout: balances get their own arrangement, and a
+    session that may not see them gets one built without them.
+  -->
   <ng-container *ngIf="data">
-    <app-balances-layout *ngIf="layout === 'balances'" [data]="data"></app-balances-layout>
-    <app-ledger-layout *ngIf="layout === 'ledger'" [data]="data"></app-ledger-layout>
+    <app-balances-layout *ngIf="data.canSeeBalances" [data]="data"></app-balances-layout>
+    <app-spending-layout *ngIf="!data.canSeeBalances" [data]="data"></app-spending-layout>
   </ng-container>
 
 </div>

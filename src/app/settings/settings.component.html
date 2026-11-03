@@ -143,52 +143,6 @@
 
   </section>
 
-  <section class="card">
-    <h2 class="card-title">Dashboard layout</h2>
-    <p class="card-body">
-      How the home page arranges itself. Both fit a laptop screen without
-      scrolling; it is a matter of which you would rather look at.
-    </p>
-
-    <div class="layout-choices">
-      <button type="button" class="layout-choice" *ngFor="let option of layouts"
-        [class.on]="dashboardLayout === option.id" [attr.aria-pressed]="dashboardLayout === option.id"
-        (click)="onPickLayout(option.id)">
-
-        <!-- A sketch of the arrangement, not a screenshot of it. -->
-        <span class="layout-sketch" [attr.data-layout]="option.id" aria-hidden="true">
-          <ng-container *ngIf="option.id === 'balances'">
-            <span class="sk-strip">
-              <span class="sk-tile"></span><span class="sk-tile"></span>
-              <span class="sk-tile"></span><span class="sk-tile"></span>
-            </span>
-            <span class="sk-row">
-              <span class="sk-wide"></span>
-              <span class="sk-narrow"></span>
-            </span>
-          </ng-container>
-
-          <ng-container *ngIf="option.id === 'ledger'">
-            <span class="sk-row tall">
-              <span class="sk-rail"></span>
-              <span class="sk-main">
-                <span class="sk-bar"></span>
-                <span class="sk-line"></span>
-                <span class="sk-line"></span>
-                <span class="sk-line"></span>
-              </span>
-            </span>
-          </ng-container>
-        </span>
-
-        <span class="layout-text">
-          <span class="layout-name">{{ option.name }}</span>
-          <span class="layout-note">{{ option.note }}</span>
-        </span>
-      </button>
-    </div>
-  </section>
-
   <section class="card whatsapp-card" *ngIf="whatsappStatus">
 
     <div class="whatsapp-head">

@@ -1,0 +1,519 @@
+/*
+ * The dashboard with no balances on it.
+ *
+ * The accounts strip of the other layout is gone, so the month gets the width
+ * instead: the figure, a fortnight of daily spending and the stats on the left,
+ * what it went on and what happened lately beside them. Colours come from the
+ * tokens in styles.css, so this one stylesheet serves both themes.
+ */
+
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  color: var(--ink);
+}
+
+.layout {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 1.25rem) clamp(1rem, 3vw, 1.5rem) 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow);
+}
+
+.card-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.card-empty {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+}
+
+.card-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+
+.card-link:hover {
+  text-decoration: underline;
+}
+
+/* ---- the two panels ---- */
+
+.panels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+/*
+ * flex: 1.4 takes the larger share while both are on one line; 420px is the
+ * width below which the focus card drops to its own.
+ */
+.focus-card {
+  flex: 1.4 1 420px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.25rem;
+}
+
+.side {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.focus-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.875rem;
+  flex-wrap: wrap;
+}
+
+.focus-head {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+
+.today {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+
+/* States the condition of the page, quietly, where it will be read first. */
+.locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.1875rem 0.5rem;
+  border-radius: 999px;
+  background-color: var(--sunken);
+  color: var(--ink-3);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.locked svg,
+.strip-icon svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.figure {
+  margin: 0.625rem 0 0;
+  font-size: clamp(2.25rem, 6vw, 3.375rem);
+  line-height: 0.92;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: var(--accent-ink);
+  overflow-wrap: anywhere;
+}
+
+.caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+
+.delta {
+  padding: 0.1875rem 0.5625rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Spending more is the unwelcome direction, so the colours run the other way. */
+.delta.more {
+  background-color: var(--bad-soft);
+  color: var(--bad-ink);
+}
+
+.delta.less {
+  background-color: var(--good-soft);
+  color: var(--good-ink);
+}
+
+app-spend-chart {
+  margin-top: 1rem;
+}
+
+.primary-action,
+.secondary-action {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  min-height: 42px;
+  padding: 0 1.125rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.primary-action {
+  background-color: var(--accent);
+  color: #fff;
+}
+
+.primary-action:hover {
+  background-color: var(--accent-hover);
+  color: #fff;
+}
+
+.primary-action svg {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+}
+
+.secondary-action {
+  border: 1px solid var(--accent);
+  color: var(--accent-ink);
+}
+
+.secondary-action:hover {
+  background-color: var(--accent-soft);
+}
+
+.stats {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.stat {
+  flex: 1 1 130px;
+  min-width: 0;
+  background-color: var(--sunken);
+  border-radius: 10px;
+  padding: 0.625rem 0.75rem;
+}
+
+.stat-label {
+  margin: 0;
+  font-size: 0.6875rem;
+  color: var(--ink-3);
+}
+
+.stat-value {
+  margin: 0.25rem 0 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* ---- the stacked bar ---- */
+
+.spend-card {
+  flex: 0 0 auto;
+}
+
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.625rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-head .card-title {
+  margin: 0;
+}
+
+.card-meta {
+  font-size: 0.6875rem;
+  color: var(--ink-3);
+}
+
+.bar {
+  display: flex;
+  height: 12px;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: var(--rule);
+}
+
+.bar-slice {
+  display: block;
+  height: 100%;
+  background-color: var(--ramp-1);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 0.875rem;
+  margin-top: 0.625rem;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background-color: var(--ramp-1);
+}
+
+.legend-amount {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* A ramp down the list, so the slices read as one series. */
+[data-tone='1'] {
+  background-color: var(--ramp-2);
+}
+
+[data-tone='2'] {
+  background-color: var(--ramp-3);
+}
+
+[data-tone='3'] {
+  background-color: var(--ramp-4);
+}
+
+[data-tone='4'] {
+  background-color: var(--ramp-5);
+}
+
+/* ---- recent ---- */
+
+.recent-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.recent-row {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.625rem;
+  padding: 0.4375rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.recent-date {
+  font-size: 0.6875rem;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.recent-what {
+  font-size: 0.8125rem;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.recent-meta {
+  font-size: 0.6875rem;
+  color: var(--ink-3);
+}
+
+.recent-amount {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.recent-amount.pending {
+  color: var(--warn-ink);
+}
+
+/* ---- the strips along the foot ---- */
+
+.strips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.strip {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 1.25rem;
+}
+
+.strip-icon {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background-color: var(--sunken);
+  color: var(--ink-2);
+}
+
+.strip-icon.whatsapp {
+  background-color: var(--good-soft);
+  color: var(--good-ink);
+}
+
+.strip-text {
+  flex: 999 1 220px;
+  min-width: 0;
+}
+
+.strip-title {
+  margin: 0 0 0.125rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.strip-body {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--ink-2);
+  line-height: 1.45;
+}
+
+/* ================= One screen, no page scroll ================= */
+/*
+ * Where the window has the room the whole page fits it: the strips keep their
+ * own height and the panels take the rest. A list that still cannot fit scrolls
+ * inside its own card rather than taking the page with it.
+ */
+@media (min-width: 900px) and (min-height: 560px) {
+  .layout {
+    flex: 1;
+    min-height: 0;
+    padding-bottom: 0.875rem;
+  }
+
+  /*
+   * nowrap matters: a wrapping row sizes its line to the tallest card and
+   * never shrinks it, so the cards would overflow the height they were given.
+   */
+  .panels {
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-wrap: nowrap;
+  }
+
+  .focus-card,
+  .side {
+    min-height: 0;
+  }
+
+  .scroll-area {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .stats {
+    margin-top: auto;
+  }
+
+  .strips {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+  }
+}
+
+/* A laptop viewport is shorter again; this spends the difference on spacing. */
+@media (min-width: 900px) and (min-height: 560px) and (max-height: 760px) {
+  .layout {
+    gap: 0.5rem;
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
+
+  .panels,
+  .side,
+  .strips {
+    gap: 0.5rem;
+  }
+
+  .card,
+  .focus-card {
+    padding: 0.75rem 1rem;
+  }
+
+  .figure {
+    font-size: clamp(2rem, 4vw, 2.75rem);
+  }
+
+  app-spend-chart {
+    margin-top: 0.625rem;
+  }
+
+  .stats {
+    gap: 0.5rem;
+  }
+
+  .stat {
+    padding: 0.4375rem 0.625rem;
+  }
+
+  .stat-value {
+    font-size: 1rem;
+  }
+
+  .strip {
+    padding: 0.5rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .primary-action,
+  .secondary-action {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
