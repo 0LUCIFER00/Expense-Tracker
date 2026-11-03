@@ -107,6 +107,18 @@ Two things differ from a long-lived server, and both are handled by checking the
   limit at all. See `server/migrations/008_shared_rate_limits.sql`.
 - **The connection pool is capped at 2 per instance** rather than 10, because each
   instance opens its own and a small Postgres plan allows about twenty in total.
+- **Work that outlives the response is handed to `waitUntil`**, via
+  `server/src/after-response.mjs`. The WhatsApp webhook answers Meta before doing
+  anything, so that the reply is never late enough to be retried. A serverless
+  instance may be frozen the moment the response is flushed, which cut the work off
+  part-way: the webhook answered 200, wrote nothing, and sent no reply, while the
+  log showed the database connection dying mid-handshake. On a server that stays up
+  the promise simply runs, and nothing is imported.
+
+`regions` is pinned to `sin1` because the Aiven service is in Singapore. Left to
+itself Vercel ran the function in `iad1`, `pdx1` and `bom1`, so every query crossed
+the Pacific — about 650ms a request, and the Portland instance timed out connecting
+altogether.
 
 `.vercelignore` matters: without it Vercel falls back to `.gitignore`, which did not
 exclude Angular's 2GB build cache, and the upload fails on the 100MB file limit.

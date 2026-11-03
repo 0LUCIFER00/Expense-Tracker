@@ -4,6 +4,7 @@ import { asyncRoute } from '../http.mjs';
 import { effectivePermissions } from '../settings-store.mjs';
 import { removeExpense } from '../expense-store.mjs';
 import { addIncome, removeIncome } from '../income-store.mjs';
+import { afterResponse } from '../after-response.mjs';
 import { HELP_TEXT, parseMessage } from '../whatsapp/parser.mjs';
 import { guessCategory, guessIncomeCategory } from '../categories.mjs';
 import {
@@ -49,11 +50,12 @@ whatsappRouter.post('/webhook', asyncRoute(async (req, res) => {
     return;
   }
 
-  try {
-    await handleMessage(message);
-  } catch (error) {
-    console.error('[whatsapp] handler failed', error);
-  }
+  /*
+   * Not a bare await: once the response is flushed, a serverless instance may
+   * be frozen or discarded, and the work would be cut off half-finished. This
+   * hands the promise to the platform so the instance is kept until it ends.
+   */
+  afterResponse(handleMessage(message));
 }));
 
 /**

@@ -3,6 +3,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist/expense-tracker/browser",
   "framework": null,
+  "regions": ["sin1"],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/(.*)", "destination": "/index.html" }
