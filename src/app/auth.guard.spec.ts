@@ -52,7 +52,7 @@ describe('authGuard', () => {
     expect(await decision).toBeTrue();
   });
 
-  it('redirects an anonymous visitor to login with a message', async () => {
+  it('redirects an anonymous visitor to login with a reason code', async () => {
     const decision = run();
 
     http.expectOne('/api/auth/me').flush(
@@ -66,7 +66,9 @@ describe('authGuard', () => {
 
     const tree = result as UrlTree;
     expect(router.serializeUrl(tree)).toContain('/login');
-    expect(tree.queryParams['message']).toBe('User should login to access page');
+    // A code, not a sentence: the login page owns the wording so that a
+    // crafted ?message=... link cannot speak in the app's voice.
+    expect(tree.queryParams['message']).toBe('signed-out');
   });
 
   it('asks the server rather than trusting anything the page can set', async () => {

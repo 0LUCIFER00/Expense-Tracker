@@ -56,6 +56,29 @@ whatsappRouter.post('/webhook', asyncRoute(async (req, res) => {
   }
 }));
 
+/**
+ * The processed-message table only exists to recognise a retry, and Meta
+ * retries within minutes. A row older than a day cannot match anything, so it
+ * is dropped — otherwise the table grows for the life of the deployment.
+ *
+ * Done here, occasionally, rather than on a schedule: there is no scheduler in
+ * this app, and the webhook is the only thing that writes to the table.
+ */
+async function pruneProcessedMessages() {
+  if (Math.random() > 0.02) {
+    return;
+  }
+
+  try {
+    await query(
+      "delete from whatsapp_processed_messages where processed_at < now() - interval '1 day'"
+    );
+  } catch (error) {
+    // Housekeeping; never worth failing a message over.
+    console.warn('[whatsapp] could not prune processed messages:', error.message);
+  }
+}
+
 async function handleMessage(message) {
   // A retry carries the same id, so claim it once and ignore repeats.
   const claim = await query(
@@ -67,6 +90,8 @@ async function handleMessage(message) {
   if (claim.rowCount === 0) {
     return;
   }
+
+  await pruneProcessedMessages();
 
   const from = normaliseNumber(message.from);
 
@@ -421,6 +446,20 @@ async function addMoneyIn(from, user, parsed) {
   }
 
   const permissions = await effectivePermissions({ userId: user.id, loginType: 'user' });
+
+  /*
+   * The same switch that hides the Add Money page. A phone is another way into
+   * the same action, so leaving it open here would make the setting mean "hide
+   * the page" rather than "may not add money" — and the website already refuses
+   * the equivalent request with a 403.
+   */
+  if (!permissions.canAddMoney) {
+    return sendText(
+      from,
+      'Adding money is switched off for this account. Sign in on the website ' +
+      'with your admin password to turn it back on.'
+    );
+  }
 
   if (!permissions.canUpdateBalance) {
     return sendText(

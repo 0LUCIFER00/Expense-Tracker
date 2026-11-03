@@ -98,7 +98,7 @@
           </button>
 
           <button type="button" class="icon-btn remove" *ngIf="canRemoveExpenses"
-            aria-label="Remove this expense" (click)="onDelete(e)">
+            aria-label="Remove this expense" (click)="onAskDelete(e)">
             <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
               <path d="M6 6l12 12M18 6 6 18" />
             </svg>
@@ -120,4 +120,31 @@
 
   </div>
 
+</div>
+
+<!-- Removing moves money back as well as deleting the row, so it asks first. -->
+<div class="et-overlay" *ngIf="pendingRemoval">
+  <div class="et-popup">
+    <h3>Remove this expense</h3>
+
+    <p class="et-popup-body">
+      &#8377;{{ pendingRemoval.amount | number }} &mdash; {{ pendingRemoval.description }}.
+      <ng-container *ngIf="pendingRemoval.balanceUpdated">
+        The money goes back into the account it came from.
+      </ng-container>
+      This cannot be undone.
+    </p>
+
+    <div class="et-popup-actions">
+      <button type="button" class="et-btn-ghost" [disabled]="removing"
+        (click)="onCancelDelete()">
+        Keep it
+      </button>
+
+      <button type="button" class="et-btn-danger" [disabled]="removing"
+        (click)="onConfirmDelete()">
+        {{ removing ? 'Removing&hellip;' : 'Remove' }}
+      </button>
+    </div>
+  </div>
 </div>

@@ -1,12 +1,22 @@
 import { Router } from 'express';
 import { query, transaction } from '../db.mjs';
 import { requireAuth } from '../auth.mjs';
-import { asyncRoute, badRequest, notFound, parseAmount, parseDate } from '../http.mjs';
+import {
+  asyncRoute,
+  badRequest,
+  notFound,
+  parseAmount,
+  parseDate,
+  parseText
+} from '../http.mjs';
 import { effectivePermissions } from '../settings-store.mjs';
 import { removeExpense } from '../expense-store.mjs';
 import { CATEGORIES, normaliseCategory } from '../categories.mjs';
 
 export const expensesRouter = Router();
+
+/** Long enough for anything anyone types; short enough to render in a cell. */
+const DESCRIPTION_MAX = 200;
 
 expensesRouter.use(requireAuth);
 
@@ -77,7 +87,10 @@ expensesRouter.get('/', asyncRoute(async (req, res) => {
 
 expensesRouter.post('/', asyncRoute(async (req, res) => {
   const amount = parseAmount(req.body?.amount);
-  const description = String(req.body?.description ?? '').trim();
+  const description = parseText(req.body?.description, {
+    field: 'Description',
+    max: DESCRIPTION_MAX
+  });
   const date = parseDate(req.body?.date);
   const sourceId = req.body?.sourceId ? String(req.body.sourceId) : null;
   const category = normaliseCategory(req.body?.category);
@@ -87,8 +100,8 @@ expensesRouter.post('/', asyncRoute(async (req, res) => {
     return badRequest(res, 'Amount must be between 1 and 100000');
   }
 
-  if (!description) {
-    return badRequest(res, 'Description is required');
+  if (description.error) {
+    return badRequest(res, description.error);
   }
 
   if (!date) {
@@ -162,7 +175,7 @@ expensesRouter.post('/', asyncRoute(async (req, res) => {
          values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
          returning ${SELECT_COLUMNS}`,
         [
-          req.session.userId, amount, description, date, category,
+          req.session.userId, amount, description.value, date, category,
           source?.id ?? null, source?.type ?? null, source?.category ?? null,
           updateBalance, permissions.canBackdate, debit, status, remarks
         ]

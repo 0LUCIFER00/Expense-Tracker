@@ -18,11 +18,10 @@ export const authGuard: CanActivateFn = () => {
         return true;
       }
 
+      // A code rather than the sentence itself: the login page keeps the
+      // wording, so a crafted link cannot put words in the app's mouth.
       return router.createUrlTree(['/login'], {
-        queryParams: {
-          message: 'User should login to access page',
-          time: new Date().getTime()
-        }
+        queryParams: { message: 'signed-out' }
       });
     })
   );

@@ -106,6 +106,7 @@ the Angular router. Never edit `docs/` by hand — it will drift from `src/`.
 | `src/app/shared/expense.service.ts` | Expense calls and the settled-only total |
 | `src/app/shared/balance.service.ts` | Balance account calls |
 | `server/src/` | Express API — routes, auth, database pool |
+| `server/src/rate-limit.mjs` | Fixed-window limiter for the endpoints that take a password |
 | `server/migrations/` | SQL migrations |
 | `src/app/add-expense/` | Add-expense form and its date-confirmation popup |
 | `src/app/expense-list/` | Filtering, sorting, approval, and deletion |
@@ -209,4 +210,30 @@ signed JWT in an httpOnly cookie, so page scripts cannot read or forge it, and e
 permission the UI honours is enforced again in the API — the browser is not trusted to
 decide what it may do.
 
+Changing an existing admin password needs the current one, or a session already signed
+in with it. Without that, anyone holding the ordinary account password could replace the
+admin password with their own and grant themselves everything it was hiding.
+
+The endpoints that take a password are rate limited per address and per account, so a
+guessing run stops after ten tries in ten minutes rather than continuing indefinitely.
+
+Responses carry a content security policy, `X-Frame-Options: DENY` and friends, so the
+site cannot be framed by another page and a successful injection has nowhere to send
+anything. Over HTTPS it also sends HSTS.
+
 `.env` holds the database credentials and is gitignored. Do not commit it.
+
+### Still outstanding
+
+- **The Aiven certificate is not verified.** The connection is encrypted, but without
+  the project CA the server at the other end is not authenticated. Download it from the
+  Aiven console to `server/certs/ca.pem`, or point `PGSSLROOTCERT` at it, and the
+  connection verifies itself — the code already looks for both.
+- **Angular 19 has published advisories** that are only fixed in 21. The upgrade is a
+  major version step, so it is a deliberate piece of work rather than a patch. See
+  `npm audit --omit=dev`.
+- **A session outlives a password change.** Changing the password does not invalidate
+  cookies issued before it, for up to the seven-day session life. Closing this means
+  recording the moment of the change on the user row and comparing it against the
+  token's `iat` on every authenticated request — one extra database round trip per
+  request, which is why it has not simply been switched on.

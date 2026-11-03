@@ -44,6 +44,13 @@ export function verifySignature(rawBody, header) {
     return { ok: false, reason: 'signature length mismatch' };
   }
 
+  // Buffer.from(..., 'hex') stops at the first character that is not hex and
+  // returns a shorter buffer, which makes timingSafeEqual throw on the length
+  // check below — a 500 where this should plainly be a rejection.
+  if (!/^[0-9a-f]+$/i.test(received)) {
+    return { ok: false, reason: 'signature is not hexadecimal' };
+  }
+
   const same = timingSafeEqual(Buffer.from(received, 'hex'), Buffer.from(expected, 'hex'));
 
   return same ? { ok: true } : { ok: false, reason: 'signature mismatch' };

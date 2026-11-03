@@ -209,7 +209,46 @@ export class BalMntComponent implements OnInit {
     });
   }
 
+  /**
+   * Deleting a saved account cannot be undone: the stored balance goes, and
+   * every expense that was spent from it loses the link back to it. A row that
+   * was never saved exists only on screen, so that one just disappears.
+   */
+  pendingRemovalIndex: number | null = null;
+
+  get pendingRemoval(): BalanceRow | null {
+    return this.pendingRemovalIndex === null
+      ? null
+      : this.balances[this.pendingRemovalIndex] ?? null;
+  }
+
   removeRow(index: number): void {
+    const item = this.balances[index];
+
+    if (item?.id) {
+      this.pendingRemovalIndex = index;
+      return;
+    }
+
+    this.dropRow(index);
+  }
+
+  onCancelRemove(): void {
+    this.pendingRemovalIndex = null;
+  }
+
+  onConfirmRemove(): void {
+    const index = this.pendingRemovalIndex;
+
+    if (index === null) {
+      return;
+    }
+
+    this.pendingRemovalIndex = null;
+    this.dropRow(index);
+  }
+
+  private dropRow(index: number): void {
     const item = this.balances[index];
 
     const dropLocally = () => {

@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import express from 'express';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { authRouter } from './routes/auth.mjs';
 import { balancesRouter } from './routes/balances.mjs';
@@ -10,12 +11,75 @@ import { settingsRouter } from './routes/settings.mjs';
 import { whatsappRouter } from './routes/whatsapp.mjs';
 import { linkRouter } from './routes/link.mjs';
 import { pool } from './db.mjs';
-import { projectRoot } from './env.mjs';
+import { IS_PRODUCTION, projectRoot } from './env.mjs';
+
+/**
+ * The headers a browser needs to be told, since nothing else sets them.
+ *
+ * frame-ancestors is the one that matters most here: without it another site
+ * can put this one in an invisible iframe over its own buttons, and a click
+ * meant for that page lands on "Remove" or "Delete account" in this one. The
+ * connect/img/script rules keep a successful injection from phoning anywhere.
+ */
+const CSP = [
+  "default-src 'self'",
+  // Angular's styles are injected inline, and Google Fonts serves the typeface.
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "script-src 'self'",
+  "img-src 'self' data:",
+  // The API is same-origin in a deployment; nothing else should be reachable.
+  "connect-src 'self'",
+  "form-action 'self'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+  "object-src 'none'"
+].join('; ');
+
+function securityHeaders(_req, res, next) {
+  res.set({
+    'Content-Security-Policy': CSP,
+    // Belt and braces for browsers that predate frame-ancestors.
+    'X-Frame-Options': 'DENY',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'same-origin',
+    'Cross-Origin-Opener-Policy': 'same-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()'
+  });
+
+  // Only meaningful over HTTPS, and only safe once the site is HTTPS-only.
+  if (IS_PRODUCTION) {
+    res.set('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
+  }
+
+  next();
+}
 
 export function createApp() {
   const app = express();
 
   app.disable('x-powered-by');
+
+  /*
+   * Render (and any other platform) puts a proxy in front, so req.ip would
+   * otherwise be the proxy's address for everyone — which would make the
+   * per-address rate limits count the whole internet as one caller. One hop is
+   * all that is trusted; trusting more would let a client forge the header.
+   */
+  if (IS_PRODUCTION) {
+    app.set('trust proxy', 1);
+  }
+
+  app.use(securityHeaders);
+
+  /*
+   * The bundles are text, and text compresses to roughly a third. Without this
+   * a first visit downloads about 340kB where 96kB would do, which is most of
+   * the wait on a phone. It skips anything already compressed, and honours a
+   * client that asks for identity.
+   */
+  app.use(compression());
+
   app.use(
     express.json({
       limit: '100kb',
@@ -57,14 +121,50 @@ export function createApp() {
   const browserDist = join(projectRoot, 'dist', 'expense-tracker', 'browser');
 
   if (existsSync(browserDist)) {
-    app.use(express.static(browserDist, { index: false, maxAge: '1h' }));
+    app.use(
+      express.static(browserDist, {
+        index: false,
+        setHeaders(res, path) {
+          /*
+           * A built bundle carries a content hash in its name, so a given file
+           * never changes: it can be cached for as long as the browser likes,
+           * and a new deploy is a new filename rather than a stale copy. An
+           * hour, as this was, meant re-downloading the whole app every hour
+           * for no reason. Everything else keeps the conservative default.
+           */
+          if (/-[A-Z0-9]{8,}\.(js|css)$/.test(path)) {
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+          } else {
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+          }
+        }
+      })
+    );
 
     // Deep links such as /view-expenses are routes inside the SPA, not files.
-    app.get('*', (_req, res) => res.sendFile(join(browserDist, 'index.html')));
+    // Never cached: it is what points at the current bundle names.
+    app.get('*', (_req, res) => {
+      res.setHeader('Cache-Control', 'no-cache');
+      res.sendFile(join(browserDist, 'index.html'));
+    });
   }
 
   // eslint-disable-next-line no-unused-vars -- Express needs the 4-arg shape.
   app.use((error, _req, res, _next) => {
+    /*
+     * A body express.json() could not parse. The caller sent it, so it is a 400
+     * and not worth a stack trace in the log — left alone it reports as a
+     * server fault and buries real 500s in noise.
+     */
+    if (error.type === 'entity.parse.failed') {
+      return res.status(400).json({ error: 'Malformed request body.' });
+    }
+
+    // A body over the 100kb cap.
+    if (error.type === 'entity.too.large') {
+      return res.status(413).json({ error: 'That request is too large.' });
+    }
+
     // A unique-violation that slipped past the pre-check.
     if (error.code === '23505') {
       return res.status(409).json({ error: 'That record already exists.' });

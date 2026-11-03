@@ -15,15 +15,28 @@ const CRLF = '\r\n';
 const NEEDS_QUOTING = /[",\r\n]/;
 
 /**
+ * The characters a spreadsheet treats as the start of a formula rather than
+ * text. Tab and carriage return count because Excel strips them first.
+ */
+const FORMULA_LEAD = /^[=+\-@\t\r]/;
+
+/**
  * Quotes a value for CSV.
  *
  * A description is free text, so it can contain the delimiter, a quote or a
  * newline; each would otherwise shift every later column of that row.
+ *
+ * A cell starting with = + - or @ is also made inert with a leading
+ * apostrophe, which spreadsheets strip on display. Without it, a description
+ * reading `=HYPERLINK("http://…")` is not data in the exported file — it is a
+ * formula that Excel runs when the file is opened, and descriptions can arrive
+ * over WhatsApp from whoever has the linked number.
  */
 export function toCsvCell(value: string): string {
   const text = String(value ?? '');
+  const safe = FORMULA_LEAD.test(text) ? `'${text}` : text;
 
-  return NEEDS_QUOTING.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  return NEEDS_QUOTING.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 }
 
 /** Joins a header row and body rows into one CSV document. */

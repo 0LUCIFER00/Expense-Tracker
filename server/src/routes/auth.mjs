@@ -8,9 +8,37 @@ import {
   requireAuth,
   verifyPassword
 } from '../auth.mjs';
-import { asyncRoute, badRequest, normaliseEmail } from '../http.mjs';
+import { asyncRoute, badRequest, normaliseEmail, parseText } from '../http.mjs';
+import { rateLimit } from '../rate-limit.mjs';
 
 export const authRouter = Router();
+
+/** Longer than any real name, short enough to render in the header. */
+const NAME_MAX = 80;
+
+/**
+ * Guessing a password is counted per account as well as per address, so one
+ * attacker cannot lock every account out by hammering a single one, and a
+ * household behind one address is not punished for a flatmate's typing.
+ */
+const loginLimit = rateLimit({
+  limit: 10,
+  windowMs: 10 * 60_000,
+  key: req => `${req.ip}|${normaliseEmail(req.body?.email) ?? ''}`
+});
+
+/** Account creation is slower still: nobody opens six accounts in an hour. */
+const registerLimit = rateLimit({ limit: 5, windowMs: 60 * 60_000 });
+
+/**
+ * The endpoints that check a password the caller is supposed to already know.
+ * Counted per session rather than per address, since they all require one.
+ */
+const passwordLimit = rateLimit({
+  limit: 10,
+  windowMs: 10 * 60_000,
+  key: req => readSession(req)?.userId ?? req.ip
+});
 
 function publicUser(row) {
   return {
@@ -24,13 +52,17 @@ function publicUser(row) {
   };
 }
 
-authRouter.post('/register', asyncRoute(async (req, res) => {
-  const name = String(req.body?.name ?? '').trim();
+authRouter.post('/register', registerLimit, asyncRoute(async (req, res) => {
+  const name = parseText(req.body?.name, { field: 'Name', max: NAME_MAX });
   const email = normaliseEmail(req.body?.email);
   const password = String(req.body?.password ?? '');
   const adminPassword = String(req.body?.adminPassword ?? '');
 
-  if (name.length < 3) {
+  if (name.error) {
+    return badRequest(res, name.error);
+  }
+
+  if (name.value.length < 3) {
     return badRequest(res, 'Name must be at least 3 characters');
   }
 
@@ -60,7 +92,7 @@ authRouter.post('/register', asyncRoute(async (req, res) => {
       `insert into users (name, email, password_hash, admin_password_hash)
        values ($1, $2, $3, $4)
        returning id, name, email, admin_password_hash, created_at`,
-      [name, email, passwordHash, adminHash]
+      [name.value, email, passwordHash, adminHash]
     );
 
     // Every account starts with the full permission matrix granted.
@@ -77,7 +109,7 @@ authRouter.post('/register', asyncRoute(async (req, res) => {
   res.status(201).json({ user: publicUser(user), loginType: 'user' });
 }));
 
-authRouter.post('/login', asyncRoute(async (req, res) => {
+authRouter.post('/login', loginLimit, asyncRoute(async (req, res) => {
   const email = normaliseEmail(req.body?.email);
   const password = String(req.body?.password ?? '');
 
@@ -147,10 +179,14 @@ authRouter.get('/me', asyncRoute(async (req, res) => {
  * unique, and the check is case-insensitive like the column.
  */
 authRouter.patch('/profile', requireAuth, asyncRoute(async (req, res) => {
-  const name = String(req.body?.name ?? '').trim();
+  const name = parseText(req.body?.name, { field: 'Name', max: NAME_MAX });
   const email = normaliseEmail(req.body?.email);
 
-  if (name.length < 3) {
+  if (name.error) {
+    return badRequest(res, name.error);
+  }
+
+  if (name.value.length < 3) {
     return badRequest(res, 'Name must be at least 3 characters');
   }
 
@@ -175,7 +211,7 @@ authRouter.patch('/profile', requireAuth, asyncRoute(async (req, res) => {
             email = coalesce($2, email)
       where id = $3
       returning id, name, email, admin_password_hash, created_at`,
-    [name, email, req.session.userId]
+    [name.value, email, req.session.userId]
   );
 
   res.json({ user: publicUser(rows[0]) });
@@ -189,7 +225,7 @@ authRouter.patch('/profile', requireAuth, asyncRoute(async (req, res) => {
  * password is required because the session alone would let a borrowed browser
  * destroy the lot.
  */
-authRouter.delete('/account', requireAuth, asyncRoute(async (req, res) => {
+authRouter.delete('/account', requireAuth, passwordLimit, asyncRoute(async (req, res) => {
   const password = String(req.body?.password ?? '');
 
   const { rows } = await query('select password_hash from users where id = $1', [
@@ -213,7 +249,7 @@ authRouter.delete('/account', requireAuth, asyncRoute(async (req, res) => {
  * The current one is required even though the caller already holds a session:
  * a borrowed, unlocked browser should not be enough to lock the owner out.
  */
-authRouter.put('/password', requireAuth, asyncRoute(async (req, res) => {
+authRouter.put('/password', requireAuth, passwordLimit, asyncRoute(async (req, res) => {
   const currentPassword = String(req.body?.currentPassword ?? '');
   const newPassword = String(req.body?.newPassword ?? '');
 
@@ -248,17 +284,44 @@ authRouter.put('/password', requireAuth, asyncRoute(async (req, res) => {
   res.json({ changed: true });
 }));
 
-/** Creates or replaces the account's admin password. */
-authRouter.put('/admin-password', requireAuth, asyncRoute(async (req, res) => {
+/**
+ * Creates the account's admin password, or replaces an existing one.
+ *
+ * Creating the first one needs nothing beyond a session: with no admin password
+ * yet, the normal user already has every permission, so there is nothing to
+ * climb past.
+ *
+ * Replacing one is different. The admin password is what the permission matrix
+ * is enforced against, so a normal user who could overwrite it could set one of
+ * their own, sign in with it and grant themselves everything the owner had
+ * switched off — balances, Add Money, approvals, deletions. Changing it
+ * therefore needs proof of the current admin: either a session already signed
+ * in with it, or the existing password in the body.
+ */
+authRouter.put('/admin-password', requireAuth, passwordLimit, asyncRoute(async (req, res) => {
   const adminPassword = String(req.body?.adminPassword ?? '');
+  const currentAdminPassword = String(req.body?.currentAdminPassword ?? '');
 
   if (adminPassword.length < 6) {
     return badRequest(res, 'Admin password must be at least 6 characters');
   }
 
-  const { rows } = await query('select password_hash from users where id = $1', [
-    req.session.userId
-  ]);
+  const { rows } = await query(
+    'select password_hash, admin_password_hash from users where id = $1',
+    [req.session.userId]
+  );
+
+  const existingAdminHash = rows[0]?.admin_password_hash ?? null;
+
+  if (existingAdminHash && req.session.loginType !== 'admin') {
+    const proven = await verifyPassword(currentAdminPassword, existingAdminHash);
+
+    if (!proven) {
+      return res.status(403).json({
+        error: 'Enter the current admin password to change it.'
+      });
+    }
+  }
 
   if (rows[0] && await verifyPassword(adminPassword, rows[0].password_hash)) {
     return badRequest(res, 'The admin password must differ from the account password');
@@ -275,7 +338,7 @@ authRouter.put('/admin-password', requireAuth, asyncRoute(async (req, res) => {
 }));
 
 /** Clears it, after confirming the caller knows the current one. */
-authRouter.post('/admin-password/remove', requireAuth, asyncRoute(async (req, res) => {
+authRouter.post('/admin-password/remove', requireAuth, passwordLimit, asyncRoute(async (req, res) => {
   const currentPassword = String(req.body?.adminPassword ?? '');
 
   const { rows } = await query(

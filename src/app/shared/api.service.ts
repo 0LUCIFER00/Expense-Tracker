@@ -57,7 +57,14 @@ export class ApiService {
 /** A failed connection, or a gateway with nothing behind it. */
 const GATEWAY_STATUSES = new Set([0, 502, 503, 504]);
 
-const UNREACHABLE_MESSAGE = 'Cannot reach the server. Start the API with: npm run dev';
+/**
+ * Worded for whoever is actually reading it. The old text told them to run
+ * `npm run dev`, which is an instruction for this machine, not for someone
+ * using the deployed site — and naming the internals of a service that is down
+ * tells a stranger more about it than it tells the user.
+ */
+const UNREACHABLE_MESSAGE =
+  'Cannot reach the server. Check your connection and try again in a moment.';
 
 /**
  * The API answers every failure with a JSON `error` field, including its own

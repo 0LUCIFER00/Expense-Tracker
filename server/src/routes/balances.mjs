@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { query } from '../db.mjs';
 import { requireAuth } from '../auth.mjs';
-import { asyncRoute, badRequest, notFound } from '../http.mjs';
+import { asyncRoute, badRequest, notFound, parseText } from '../http.mjs';
 import { effectivePermissions } from '../settings-store.mjs';
 
 export const balancesRouter = Router();
@@ -57,20 +57,35 @@ async function requireBalanceAccess(req, res) {
   return true;
 }
 
+/** Both are shown in a cell and quoted in WhatsApp replies, so they stay short. */
+const NAME_MAX = 60;
+
+/** The ceiling on a single account, matching numeric(14, 2). */
+const BALANCE_MAX = 999_999_999_99.99;
+
 function readBody(body) {
-  const type = String(body?.type ?? '').trim();
-  const category = String(body?.category ?? '').trim();
+  const type = parseText(body?.type, { field: 'Type', max: NAME_MAX });
+  const category = parseText(body?.category, { field: 'Category', max: NAME_MAX });
   const balance = Number(body?.balance);
 
-  if (!type || !category) {
-    return { error: 'Type and category are required' };
+  if (type.error || category.error) {
+    return { error: type.error ?? category.error };
   }
 
   if (!Number.isFinite(balance) || balance < 0) {
     return { error: 'Balance must be zero or more' };
   }
 
-  return { type, category, balance: Math.round(balance * 100) / 100 };
+  // numeric(14, 2) overflows above this, which would surface as a 500.
+  if (balance > BALANCE_MAX) {
+    return { error: 'That balance is larger than this app can hold' };
+  }
+
+  return {
+    type: type.value,
+    category: category.value,
+    balance: Math.round(balance * 100) / 100
+  };
 }
 
 balancesRouter.post('/', asyncRoute(async (req, res) => {

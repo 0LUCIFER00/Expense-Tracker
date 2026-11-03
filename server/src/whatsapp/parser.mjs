@@ -24,6 +24,9 @@ const INCOME_WORDS = new Set([
   'deposited', 'earned', 'salary', 'refund', 'refunded'
 ]);
 
+/** Matches the cap the web form enforces, so the two cannot disagree. */
+const DESCRIPTION_MAX = 200;
+
 /** Filler that should never end up in the description. */
 const NOISE = new Set([
   'rs', 'rs.', 'inr', 'rupees', 'spent', 'paid', 'for', 'on', 'to', 'at',
@@ -147,7 +150,13 @@ function cleanDescription(words) {
     return '';
   }
 
-  return text.charAt(0).toUpperCase() + text.slice(1);
+  const sentence = text.charAt(0).toUpperCase() + text.slice(1);
+
+  // The same ceiling the web form is held to. Meta allows 4096 characters in a
+  // message, and an entry that long breaks every table and reply that shows it.
+  return sentence.length > DESCRIPTION_MAX
+    ? sentence.slice(0, DESCRIPTION_MAX - 1).trimEnd() + '…'
+    : sentence;
 }
 
 /**

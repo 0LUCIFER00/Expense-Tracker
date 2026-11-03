@@ -8,6 +8,15 @@ import { SettingsService } from '../shared/settings.service';
 import { ApiError } from '../shared/api.service';
 import { ToastService } from '../shared/toast.service';
 
+/**
+ * The reasons this page may be sent a visitor, keyed by the code in the URL.
+ * Anything not listed here is ignored.
+ */
+const REASONS: Record<string, string> = {
+  'signed-out': 'Sign in to open that page.',
+  expired: 'Your session has ended. Sign in again.'
+};
+
 @Component({
   selector: 'app-login-page',
   standalone: true,
@@ -39,7 +48,15 @@ export class LoginPageComponent implements OnInit, OnDestroy {
           return;
         }
 
-        this.toast.error(params['message']);
+        const message = REASONS[String(params['message'])];
+
+        // Only the app's own reasons are announced. The address bar is not a
+        // trusted source: a link carrying ?message=... would otherwise put any
+        // text a stranger chose into the app's own voice, on the page where
+        // someone is about to type their password.
+        if (message) {
+          this.toast.error(message);
+        }
 
         // Dropped from the address straight away, so a refresh does not
         // announce it a second time.

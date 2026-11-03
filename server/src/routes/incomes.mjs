@@ -1,12 +1,22 @@
 import { Router } from 'express';
 import { query } from '../db.mjs';
 import { requireAuth } from '../auth.mjs';
-import { asyncRoute, badRequest, notFound, parseAmount, parseDate } from '../http.mjs';
+import {
+  asyncRoute,
+  badRequest,
+  notFound,
+  parseAmount,
+  parseDate,
+  parseText
+} from '../http.mjs';
 import { effectivePermissions } from '../settings-store.mjs';
 import { INCOME_CATEGORIES, normaliseIncomeCategory } from '../categories.mjs';
 import { addIncome, removeIncome, INCOME_COLUMNS } from '../income-store.mjs';
 
 export const incomesRouter = Router();
+
+/** Matches the cap on an expense description; the two are shown side by side. */
+const DESCRIPTION_MAX = 200;
 
 incomesRouter.use(requireAuth);
 
@@ -44,7 +54,10 @@ incomesRouter.get('/', asyncRoute(async (req, res) => {
 
 incomesRouter.post('/', asyncRoute(async (req, res) => {
   const amount = parseAmount(req.body?.amount);
-  const description = String(req.body?.description ?? '').trim();
+  const description = parseText(req.body?.description, {
+    field: 'Description',
+    max: DESCRIPTION_MAX
+  });
   const date = parseDate(req.body?.date);
   const targetId = req.body?.targetId ? String(req.body.targetId) : null;
   const category = normaliseIncomeCategory(req.body?.category);
@@ -53,8 +66,8 @@ incomesRouter.post('/', asyncRoute(async (req, res) => {
     return badRequest(res, 'Amount must be between 1 and 100000');
   }
 
-  if (!description) {
-    return badRequest(res, 'Description is required');
+  if (description.error) {
+    return badRequest(res, description.error);
   }
 
   if (!date) {
@@ -92,7 +105,7 @@ incomesRouter.post('/', asyncRoute(async (req, res) => {
   try {
     const created = await addIncome(req.session.userId, {
       amount,
-      description,
+      description: description.value,
       receivedOn: date,
       category,
       targetId,

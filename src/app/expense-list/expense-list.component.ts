@@ -127,9 +127,39 @@ export class ExpenseListComponent implements OnInit {
     });
   }
 
-  onDelete(expense: Expense): void {
+  /**
+   * Removing an entry cannot be undone, and one that moved money moves it
+   * back, so a mis-click changes a balance as well as the list. The bin button
+   * opens this instead of acting.
+   */
+  pendingRemoval: Expense | null = null;
+  removing = false;
+
+  onAskDelete(expense: Expense): void {
+    this.pendingRemoval = expense;
+  }
+
+  onCancelDelete(): void {
+    this.pendingRemoval = null;
+  }
+
+  onConfirmDelete(): void {
+    const expense = this.pendingRemoval;
+
+    if (!expense || this.removing) {
+      return;
+    }
+
+    this.removing = true;
+    this.onDelete(expense);
+  }
+
+  private onDelete(expense: Expense): void {
     this.expenseService.remove(expense.id).subscribe({
       next: removed => {
+        this.removing = false;
+        this.pendingRemoval = null;
+
         // Say so when money went back, otherwise the balance silently changing
         // looks like a second bug.
         this.toast.success(
@@ -142,6 +172,8 @@ export class ExpenseListComponent implements OnInit {
         this.reload();
       },
       error: error => {
+        this.removing = false;
+        this.pendingRemoval = null;
         this.toast.error(error.message);
       }
     });

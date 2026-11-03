@@ -100,10 +100,19 @@ export class AuthService {
     );
   }
 
-  /** Both of these change hasAdminPassword, so re-read the session after. */
-  setAdminPassword(adminPassword: string): Observable<Session | null> {
+  /**
+   * Both of these change hasAdminPassword, so re-read the session after.
+   *
+   * @param currentAdminPassword required by the server only when replacing an
+   *   existing admin password from a normal session; creating the first one, or
+   *   changing it while signed in as admin, needs nothing.
+   */
+  setAdminPassword(
+    adminPassword: string,
+    currentAdminPassword?: string
+  ): Observable<Session | null> {
     return this.api
-      .put('/auth/admin-password', { adminPassword })
+      .put('/auth/admin-password', { adminPassword, currentAdminPassword })
       .pipe(switchMap(() => this.refreshSession()));
   }
 
