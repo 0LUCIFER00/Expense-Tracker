@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { BalanceService } from '../shared/balance.service';
 import { BalanceAccount } from '../shared/models';
+import { ToastService } from '../shared/toast.service';
 
 /**
  * A row on screen. `id` is null until the row has been saved to the server,
@@ -25,8 +26,9 @@ interface BalanceRow {
   templateUrl: './bal-mnt.component.html',
   styleUrl: './bal-mnt.component.css'
 })
-export class BalMntComponent implements OnInit, OnDestroy {
+export class BalMntComponent implements OnInit {
   private readonly balanceService = inject(BalanceService);
+  private readonly toast = inject(ToastService);
 
   popupVisible = false;
   popupValue = '';
@@ -35,10 +37,6 @@ export class BalMntComponent implements OnInit, OnDestroy {
   balances: BalanceRow[] = [this.createBalanceRow()];
 
   loading = true;
-  errorMessage = '';
-  toastMessage = '';
-
-  private toastTimeout: ReturnType<typeof setTimeout> | undefined;
 
   handCashOptions = ['Personal', 'General'];
 
@@ -57,10 +55,6 @@ export class BalMntComponent implements OnInit, OnDestroy {
     this.load();
   }
 
-  ngOnDestroy(): void {
-    clearTimeout(this.toastTimeout);
-  }
-
   private load(): void {
     this.balanceService.list().subscribe({
       next: accounts => {
@@ -72,7 +66,7 @@ export class BalMntComponent implements OnInit, OnDestroy {
         this.loading = false;
       },
       error: error => {
-        this.errorMessage = error.message;
+        this.toast.error(error.message);
         this.loading = false;
       }
     });
@@ -184,7 +178,7 @@ export class BalMntComponent implements OnInit, OnDestroy {
 
   saveBalanceRow(item: BalanceRow): void {
     if (!this.isRowComplete(item)) {
-      this.showToast('Please fill all fields');
+      this.toast.error('Please fill all fields');
       return;
     }
 
@@ -206,11 +200,11 @@ export class BalMntComponent implements OnInit, OnDestroy {
         item.balance = saved.balance;
         item.saved = true;
         item.busy = false;
-        this.showToast('Data saved');
+        this.toast.success('Account saved.');
       },
       error: error => {
         item.busy = false;
-        this.showToast(error.message);
+        this.toast.error(error.message);
       }
     });
   }
@@ -237,24 +231,13 @@ export class BalMntComponent implements OnInit, OnDestroy {
     this.balanceService.remove(item.id).subscribe({
       next: () => {
         dropLocally();
-        this.showToast('Data deleted');
+        this.toast.success('Account deleted.');
       },
       error: error => {
         item.busy = false;
-        this.showToast(error.message);
+        this.toast.error(error.message);
       }
     });
   }
 
-  showToast(message: string): void {
-    this.toastMessage = message;
-
-    // Without clearing the previous timer, a toast raised within 2s of the last
-    // one is wiped out early by the older timeout.
-    clearTimeout(this.toastTimeout);
-
-    this.toastTimeout = setTimeout(() => {
-      this.toastMessage = '';
-    }, 2000);
-  }
 }

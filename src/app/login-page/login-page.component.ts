@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs';
 import { AuthService } from '../auth.service';
 import { SettingsService } from '../shared/settings.service';
 import { ApiError } from '../shared/api.service';
+import { ToastService } from '../shared/toast.service';
 
 @Component({
   selector: 'app-login-page',
@@ -20,18 +21,15 @@ export class LoginPageComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly authService = inject(AuthService);
   private readonly settingsService = inject(SettingsService);
+  private readonly toast = inject(ToastService);
 
   loginForm: FormGroup = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(6)]]
   });
 
-  successMessage = '';
-  accessMessage = '';
   submitting = false;
 
-  private messageTimeout: ReturnType<typeof setTimeout> | undefined;
-  private redirectTimeout: ReturnType<typeof setTimeout> | undefined;
   private readonly subscriptions = new Subscription();
 
   ngOnInit(): void {
@@ -41,24 +39,16 @@ export class LoginPageComponent implements OnInit, OnDestroy {
           return;
         }
 
-        this.accessMessage = params['message'];
+        this.toast.error(params['message']);
 
-        clearTimeout(this.messageTimeout);
-
-        this.messageTimeout = setTimeout(() => {
-          this.accessMessage = '';
-          this.router.navigate([], {
-            relativeTo: this.route,
-            queryParams: {}
-          });
-        }, 1000);
+        // Dropped from the address straight away, so a refresh does not
+        // announce it a second time.
+        this.router.navigate([], { relativeTo: this.route, queryParams: {} });
       })
     );
   }
 
   ngOnDestroy(): void {
-    clearTimeout(this.messageTimeout);
-    clearTimeout(this.redirectTimeout);
     this.subscriptions.unsubscribe();
   }
 
@@ -71,7 +61,6 @@ export class LoginPageComponent implements OnInit, OnDestroy {
     const { email, password } = this.loginForm.value;
 
     this.submitting = true;
-    this.accessMessage = '';
 
     this.authService.login(email, password).subscribe({
       next: () => {
@@ -84,17 +73,14 @@ export class LoginPageComponent implements OnInit, OnDestroy {
       },
       error: (error: ApiError) => {
         this.submitting = false;
-        this.accessMessage = error.message;
+        this.toast.error(error.message);
       }
     });
   }
 
   private goHome(): void {
     this.submitting = false;
-    this.successMessage = 'Login successful! Redirecting to home...';
-
-    this.redirectTimeout = setTimeout(() => {
-      this.router.navigate(['/home']);
-    }, 1000);
+    this.toast.success('Signed in.');
+    this.router.navigate(['/home']);
   }
 }

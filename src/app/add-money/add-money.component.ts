@@ -14,6 +14,7 @@ import { SettingsService } from '../shared/settings.service';
 import { BalanceAccount, Income } from '../shared/models';
 import { today } from '../shared/date-utils';
 import { FitsScreenDirective } from '../shared/fits-screen.directive';
+import { ToastService } from '../shared/toast.service';
 
 /**
  * Add Money — the mirror of Add Expense.
@@ -34,6 +35,7 @@ export class AddMoneyComponent implements OnInit {
   private readonly incomeService = inject(IncomeService);
   private readonly balanceService = inject(BalanceService);
   private readonly settingsService = inject(SettingsService);
+  private readonly toast = inject(ToastService);
 
   moneyForm: FormGroup = this.fb.group({
     target: ['', Validators.required],
@@ -51,8 +53,6 @@ export class AddMoneyComponent implements OnInit {
   canSeeBalances = false;
 
   submitting = false;
-  errorMessage = '';
-  successMessage = '';
 
   ngOnInit(): void {
     this.reload();
@@ -83,7 +83,7 @@ export class AddMoneyComponent implements OnInit {
         }
       },
       error: error => {
-        this.errorMessage = error.message;
+        this.toast.error(error.message);
       }
     });
   }
@@ -142,8 +142,6 @@ export class AddMoneyComponent implements OnInit {
     const form = this.moneyForm.getRawValue();
 
     this.submitting = true;
-    this.errorMessage = '';
-    this.successMessage = '';
 
     this.incomeService
       .create({
@@ -157,12 +155,13 @@ export class AddMoneyComponent implements OnInit {
         next: added => {
           this.submitting = false;
 
-          this.successMessage =
+          this.toast.success(
             added.balanceAfter === null
               ? 'Money added.'
               // Grouped, so it reads the same as every other figure on screen.
               : `Money added. ${added.targetCategory} now ` +
-                `₹${Number(added.balanceAfter).toLocaleString()}.`;
+                `₹${Number(added.balanceAfter).toLocaleString()}.`
+          );
 
           this.moneyForm.reset({
             target: '',
@@ -176,7 +175,7 @@ export class AddMoneyComponent implements OnInit {
         },
         error: error => {
           this.submitting = false;
-          this.errorMessage = error.message;
+          this.toast.error(error.message);
         }
       });
   }

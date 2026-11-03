@@ -4,8 +4,6 @@
       <h1>Register</h1>
       <p class="subtitle">Create your account to manage expenses</p>
 
-      <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
-      <p class="form-error" *ngIf="errorMessage">{{ errorMessage }}</p>
 
       <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
         <div class="form-group">

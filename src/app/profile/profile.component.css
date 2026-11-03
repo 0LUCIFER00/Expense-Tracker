@@ -76,26 +76,6 @@
   color: var(--good-ink);
 }
 
-.page-error,
-.page-success {
-  margin: 0;
-  padding: 0.75rem 1rem;
-  border-radius: 10px;
-  font-size: 0.875rem;
-}
-
-.page-error {
-  border: 1px solid var(--bad);
-  background-color: var(--bad-soft);
-  color: var(--bad-ink);
-}
-
-.page-success {
-  border: 1px solid var(--good);
-  background-color: var(--good-soft);
-  color: var(--good-ink);
-}
-
 /* ---- the two columns ---- */
 
 .columns {

@@ -59,12 +59,3 @@
   color: #9db0ff;
 }
 
-:host-context([data-theme='dark']) .success {
-  color: #5fd3a0;
-}
-
-:host-context([data-theme='dark']) .access-msg {
-  background: #2d1816;
-  border-color: #6b2a24;
-  color: #ff8a80;
-}

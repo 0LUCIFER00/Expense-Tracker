@@ -1,0 +1,122 @@
+/*
+ * Top right, clear of the header, stacked newest at the bottom. Colours come
+ * from the tokens in styles.css, so this one stylesheet serves both themes.
+ */
+
+.toast-stack {
+  position: fixed;
+  top: 74px;
+  right: clamp(0.75rem, 2vw, 1.25rem);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  /* The stack spans the gutter but only the toasts themselves take clicks. */
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  width: min(360px, calc(100vw - 1.5rem));
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--good);
+  border-left-width: 4px;
+  border-radius: 10px;
+  background-color: var(--surface);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  animation: toast-in 0.18s ease-out;
+}
+
+.toast.error {
+  border-color: var(--bad);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+
+/* Someone who has asked for less movement gets the fade without the slide. */
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+
+.toast-icon {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background-color: var(--good-soft);
+}
+
+.toast.error .toast-icon {
+  background-color: var(--bad-soft);
+}
+
+.toast-icon svg {
+  fill: none;
+  stroke: var(--good-ink);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.toast.error .toast-icon svg {
+  stroke: var(--bad-ink);
+}
+
+.toast-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0.1875rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.toast-close {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.toast-close:hover {
+  background-color: var(--sunken);
+  color: var(--ink);
+}
+
+.toast-close svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+/* Full width on a phone, where 360px would hang off the side. */
+@media (max-width: 480px) {
+  .toast-stack {
+    left: 0.75rem;
+    right: 0.75rem;
+  }
+
+  .toast {
+    width: auto;
+  }
+}

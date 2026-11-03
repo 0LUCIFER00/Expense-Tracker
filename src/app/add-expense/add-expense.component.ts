@@ -15,6 +15,7 @@ import { parseLocalDate, today } from '../shared/date-utils';
 import { ExpenseDatePopupComponent } from './expense-date-popup/expense-date-popup.component';
 import { RouterModule } from '@angular/router';
 import { FitsScreenDirective } from '../shared/fits-screen.directive';
+import { ToastService } from '../shared/toast.service';
 
 @Component({
   selector: 'app-add-expense',
@@ -34,6 +35,7 @@ export class AddExpenseComponent implements OnInit {
   private readonly expenseService = inject(ExpenseService);
   private readonly balanceService = inject(BalanceService);
   private readonly settingsService = inject(SettingsService);
+  private readonly toast = inject(ToastService);
 
   expenseForm: FormGroup = this.fb.group({
     source: [''],
@@ -54,8 +56,6 @@ export class AddExpenseComponent implements OnInit {
   popupType: 'past' | 'future' = 'past';
 
   submitting = false;
-  errorMessage = '';
-  successMessage = '';
 
   /** Set aside while the date-confirmation popup is open. */
   private pendingUpdateBalance = false;
@@ -76,7 +76,7 @@ export class AddExpenseComponent implements OnInit {
         this.applyPermissions();
       },
       error: error => {
-        this.errorMessage = error.message;
+        this.toast.error(error.message);
       }
     });
   }
@@ -159,7 +159,6 @@ export class AddExpenseComponent implements OnInit {
       return;
     }
 
-    this.errorMessage = '';
     this.pendingUpdateBalance = updateBalance && this.expenseAccess;
 
     const selected = parseLocalDate(this.expenseForm.getRawValue().date);
@@ -207,15 +206,18 @@ export class AddExpenseComponent implements OnInit {
       .subscribe({
         next: expense => {
           this.submitting = false;
-          this.successMessage =
+
+          this.toast.success(
             expense.status === 'Done'
               ? 'Expense added.'
-              : 'Sent to an admin for approval.';
+              : 'Sent to an admin for approval.'
+          );
+
           this.resetForm();
         },
         error: error => {
           this.submitting = false;
-          this.errorMessage = error.message;
+          this.toast.error(error.message);
         }
       });
   }

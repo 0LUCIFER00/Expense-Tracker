@@ -1,10 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { firstValueFrom, of, throwError } from 'rxjs';
 import { provideRouter } from '@angular/router';
 import { SettingsComponent } from './settings.component';
 import { AuthService } from '../auth.service';
 import { SettingsService } from '../shared/settings.service';
 import { WhatsappService, WhatsappLinkStatus } from '../shared/whatsapp.service';
+import { ToastService } from '../shared/toast.service';
 import { DEFAULT_SETTINGS, Session } from '../shared/models';
 
 const SESSION: Session = {
@@ -133,7 +134,7 @@ describe('SettingsComponent — WhatsApp section', () => {
     expect(component.whatsappStatus?.connected).toBeFalse();
   });
 
-  it('surfaces a failure to issue a code', () => {
+  it('surfaces a failure to issue a code', async () => {
     setUp({ available: true, connected: false, number: null, businessNumber: '919000000000' });
 
     whatsapp.requestCode.and.returnValue(
@@ -144,7 +145,13 @@ describe('SettingsComponent — WhatsApp section', () => {
     fixture.detectChanges();
 
     expect(component.whatsappBusy).toBeFalse();
-    expect(text()).toContain('not configured');
+
+    const toast = TestBed.inject(ToastService);
+    const shown = await firstValueFrom(toast.toasts$);
+
+    expect(shown.length).toBe(1);
+    expect(shown[0].kind).toBe('error');
+    expect(shown[0].text).toContain('not configured');
   });
 
   it('clears a stale code if the number turns out to be connected', () => {

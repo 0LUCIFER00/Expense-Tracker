@@ -12,6 +12,7 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { SettingsService } from '../shared/settings.service';
+import { ToastService } from '../shared/toast.service';
 import { ApiError } from '../shared/api.service';
 
 @Component({
@@ -26,6 +27,7 @@ export class RegisterPageComponent implements OnDestroy {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly settingsService = inject(SettingsService);
+  private readonly toast = inject(ToastService);
 
   registerForm: FormGroup = this.fb.group(
     {
@@ -38,8 +40,7 @@ export class RegisterPageComponent implements OnDestroy {
     { validators: this.passwordMatchValidator() }
   );
 
-  successMessage = '';
-  errorMessage = '';
+
   submitting = false;
 
   private redirectTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -66,7 +67,6 @@ export class RegisterPageComponent implements OnDestroy {
     const { name, email, password, adminPassword } = this.registerForm.value;
 
     this.submitting = true;
-    this.errorMessage = '';
 
     this.authService
       .register({ name, email, password, adminPassword: adminPassword || undefined })
@@ -79,14 +79,14 @@ export class RegisterPageComponent implements OnDestroy {
         },
         error: (error: ApiError) => {
           this.submitting = false;
-          this.errorMessage = error.message;
+          this.toast.error(error.message);
         }
       });
   }
 
   private goHome(): void {
     this.submitting = false;
-    this.successMessage = 'Registration successful! Redirecting to home...';
+    this.toast.success('Welcome. Your account is ready.');
 
     this.redirectTimeout = setTimeout(() => {
       this.router.navigate(['/home']);

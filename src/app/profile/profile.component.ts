@@ -12,6 +12,7 @@ import { SettingsService } from '../shared/settings.service';
 import { WhatsappService, WhatsappLinkStatus } from '../shared/whatsapp.service';
 import { Expense, SessionUser } from '../shared/models';
 import { downloadCsv } from '../shared/csv';
+import { ToastService } from '../shared/toast.service';
 
 @Component({
   selector: 'app-profile',
@@ -28,6 +29,7 @@ export class ProfileComponent implements OnInit {
   private readonly balanceService = inject(BalanceService);
   private readonly settingsService = inject(SettingsService);
   private readonly whatsappService = inject(WhatsappService);
+  private readonly toast = inject(ToastService);
 
   user: SessionUser | null = null;
   isAdminSession = false;
@@ -60,10 +62,7 @@ export class ProfileComponent implements OnInit {
   deleteBusy = false;
   deleteError = '';
 
-  /** One place for "that worked", cleared whenever something else starts. */
-  successMessage = '';
 
-  loadError = '';
 
   get initials(): string {
     const parts = (this.user?.name ?? '').trim().split(/\s+/).filter(Boolean);
@@ -119,7 +118,7 @@ export class ProfileComponent implements OnInit {
         this.whatsapp = whatsapp;
       },
       error: error => {
-        this.loadError = error.message;
+        this.toast.error(error.message);
       }
     });
   }
@@ -141,7 +140,6 @@ export class ProfileComponent implements OnInit {
 
     this.detailsBusy = true;
     this.detailsError = '';
-    this.successMessage = '';
 
     this.api.patch<{ user: SessionUser }>('/auth/profile', { name, email }).subscribe({
       next: () => {
@@ -150,7 +148,7 @@ export class ProfileComponent implements OnInit {
         this.auth.refreshSession().subscribe(session => {
           this.applySession(session?.user ?? this.user);
           this.detailsBusy = false;
-          this.successMessage = 'Details updated.';
+          this.toast.success('Details updated.');
         });
       },
       error: error => {
@@ -167,7 +165,6 @@ export class ProfileComponent implements OnInit {
 
     this.passwordBusy = true;
     this.passwordError = '';
-    this.successMessage = '';
 
     this.api
       .put('/auth/password', {
@@ -180,7 +177,7 @@ export class ProfileComponent implements OnInit {
           this.currentPassword = '';
           this.newPassword = '';
           this.confirmPassword = '';
-          this.successMessage = 'Password changed. It applies the next time you sign in.';
+          this.toast.success('Password changed. It applies the next time you sign in.');
         },
         error: error => {
           this.passwordBusy = false;
@@ -212,13 +209,12 @@ export class ProfileComponent implements OnInit {
     downloadCsv(`expense-tracker-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
 
     this.exportBusy = false;
-    this.successMessage = 'Downloaded.';
+    this.toast.success(`Downloaded ${this.expenses.length} expenses.`);
   }
 
   onAskDelete(): void {
     this.deletePassword = '';
     this.deleteError = '';
-    this.successMessage = '';
     this.showDeletePopup = true;
   }
 
@@ -243,6 +239,7 @@ export class ProfileComponent implements OnInit {
         this.settingsService.reset();
         this.auth.refreshSession().subscribe(() => {
           this.deleteBusy = false;
+          this.toast.success('Your account and everything in it has been deleted.');
           this.router.navigate(['/login']);
         });
       },

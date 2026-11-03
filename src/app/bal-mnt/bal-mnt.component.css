@@ -26,16 +26,6 @@
   color: var(--ink);
 }
 
-.page-error {
-  margin: 0 0 1.25rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--bad);
-  border-radius: 10px;
-  background-color: var(--bad-soft);
-  color: var(--bad-ink);
-  font-size: 0.875rem;
-}
-
 .page-hint {
   margin: 0 0 1.375rem;
   font-size: 0.8125rem;
@@ -240,24 +230,6 @@
 
 .popup-save-btn:hover {
   background-color: var(--accent-hover);
-}
-
-/* ---- the toast ---- */
-
-.toast-message {
-  position: fixed;
-  left: 50%;
-  bottom: 1.5rem;
-  z-index: 60;
-  transform: translateX(-50%);
-  max-width: calc(100vw - 2rem);
-  padding: 0.75rem 1.25rem;
-  border-radius: 10px;
-  background-color: var(--ink);
-  color: var(--surface);
-  font-size: 0.875rem;
-  font-weight: 600;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
 @media (max-width: 560px) {

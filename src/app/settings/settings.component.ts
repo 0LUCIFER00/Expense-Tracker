@@ -10,6 +10,7 @@ import {
   DashboardLayout,
   DashboardLayoutService
 } from '../shared/dashboard-layout.service';
+import { ToastService } from '../shared/toast.service';
 
 @Component({
   selector: 'app-settings',
@@ -23,6 +24,7 @@ export class SettingsComponent implements OnInit {
   private readonly settingsService = inject(SettingsService);
   private readonly whatsapp = inject(WhatsappService);
   private readonly layoutService = inject(DashboardLayoutService);
+  private readonly toast = inject(ToastService);
 
   /**
    * Which dashboard arrangement to use. A display preference, not a
@@ -48,6 +50,9 @@ export class SettingsComponent implements OnInit {
 
   onPickLayout(layout: DashboardLayout): void {
     this.layoutService.set(layout);
+
+    const chosen = this.layouts.find(option => option.id === layout);
+    this.toast.success(`Dashboard layout set to ${chosen?.name ?? layout}.`);
   }
 
   addExpenseUserAccess = true;
@@ -79,7 +84,6 @@ export class SettingsComponent implements OnInit {
   adminCancelPassword = '';
   cancelPasswordError = '';
   setPasswordError = '';
-  errorMessage = '';
 
   // --- WhatsApp linking ---
   whatsappStatus: WhatsappLinkStatus | null = null;
@@ -88,7 +92,6 @@ export class SettingsComponent implements OnInit {
   whatsappChatUrl: string | null = null;
   whatsappBusinessNumber: string | null = null;
   whatsappBusy = false;
-  whatsappError = '';
 
   ngOnInit(): void {
     this.loadSettingsPage();
@@ -108,14 +111,13 @@ export class SettingsComponent implements OnInit {
         }
       },
       error: error => {
-        this.whatsappError = error.message;
+        this.toast.error(error.message);
       }
     });
   }
 
   onConnectWhatsapp(): void {
     this.whatsappBusy = true;
-    this.whatsappError = '';
 
     this.whatsapp.requestCode().subscribe({
       next: result => {
@@ -127,7 +129,7 @@ export class SettingsComponent implements OnInit {
       },
       error: error => {
         this.whatsappBusy = false;
-        this.whatsappError = error.message;
+        this.toast.error(error.message);
       }
     });
   }
@@ -138,17 +140,17 @@ export class SettingsComponent implements OnInit {
 
   onDisconnectWhatsapp(): void {
     this.whatsappBusy = true;
-    this.whatsappError = '';
 
     this.whatsapp.disconnect().subscribe({
       next: () => {
         this.whatsappBusy = false;
         this.whatsappCode = '';
+        this.toast.success('WhatsApp disconnected.');
         this.loadWhatsappStatus();
       },
       error: error => {
         this.whatsappBusy = false;
-        this.whatsappError = error.message;
+        this.toast.error(error.message);
       }
     });
   }
@@ -166,7 +168,7 @@ export class SettingsComponent implements OnInit {
     this.settingsService.load(true).subscribe({
       next: settings => this.applySettings(settings),
       error: error => {
-        this.errorMessage = error.message;
+        this.toast.error(error.message);
       }
     });
   }
@@ -180,8 +182,6 @@ export class SettingsComponent implements OnInit {
   }
 
   onAccessChange(): void {
-    this.errorMessage = '';
-
     this.settingsService
       .update({
         balanceUserAccess: this.addBalanceUserAccess,
@@ -191,9 +191,12 @@ export class SettingsComponent implements OnInit {
         removePermissionUser: this.removePermissionUser
       })
       .subscribe({
-        next: settings => this.applySettings(settings),
+        next: settings => {
+          this.applySettings(settings);
+          this.toast.success('Permissions updated.');
+        },
         error: error => {
-          this.errorMessage = error.message;
+          this.toast.error(error.message);
           // Put the toggles back to whatever the server still believes.
           this.settingsService.load(true).subscribe(current => this.applySettings(current));
         }
@@ -227,6 +230,7 @@ export class SettingsComponent implements OnInit {
         // The server resets every permission to granted when the last admin
         // password goes, so pull the fresh values rather than showing stale ones.
         this.settingsService.reset();
+        this.toast.success('Admin access removed. Every permission is granted again.');
         this.loadSettingsPage();
       },
       error: error => {
@@ -254,6 +258,7 @@ export class SettingsComponent implements OnInit {
         this.adminPassword = '';
         this.confirmPassword = '';
         this.setPasswordError = '';
+        this.toast.success('Admin access created. Sign in with it to manage permissions.');
         this.loadSettingsPage();
       },
       error: error => {

@@ -5,6 +5,7 @@ import { forkJoin } from 'rxjs';
 import { Expense } from '../shared/models';
 import { ExpenseService, UNCATEGORISED } from '../shared/expense.service';
 import { downloadCsv } from '../shared/csv';
+import { ToastService } from '../shared/toast.service';
 import { SettingsService } from '../shared/settings.service';
 import { parseLocalDate } from '../shared/date-utils';
 
@@ -18,6 +19,7 @@ import { parseLocalDate } from '../shared/date-utils';
 export class ExpenseListComponent implements OnInit {
   private readonly expenseService = inject(ExpenseService);
   private readonly settingsService = inject(SettingsService);
+  private readonly toast = inject(ToastService);
 
   /** Everything the server returned; `expenses` is the filtered view of it. */
   private allExpenses: Expense[] = [];
@@ -26,8 +28,6 @@ export class ExpenseListComponent implements OnInit {
   total = 0;
 
   loading = true;
-  errorMessage = '';
-  noticeMessage = '';
 
   currentYear = new Date().getFullYear();
   recentYearsCount = 5;
@@ -89,7 +89,7 @@ export class ExpenseListComponent implements OnInit {
         this.loading = false;
       },
       error: error => {
-        this.errorMessage = error.message;
+        this.toast.error(error.message);
         this.loading = false;
       }
     });
@@ -117,9 +117,12 @@ export class ExpenseListComponent implements OnInit {
 
   onApprovePending(expense: Expense): void {
     this.expenseService.approve(expense.id).subscribe({
-      next: () => this.reload(),
+      next: () => {
+        this.toast.success('Approved.');
+        this.reload();
+      },
       error: error => {
-        this.errorMessage = error.message;
+        this.toast.error(error.message);
       }
     });
   }
@@ -129,14 +132,17 @@ export class ExpenseListComponent implements OnInit {
       next: removed => {
         // Say so when money went back, otherwise the balance silently changing
         // looks like a second bug.
-        this.noticeMessage = removed.refunded
-          ? `Removed. ₹${expense.amount} put back into ${removed.sourceCategory}.`
-          : 'Removed.';
+        this.toast.success(
+          removed.refunded
+            ? `Removed. ₹${Number(expense.amount).toLocaleString()} put back ` +
+              `into ${removed.sourceCategory}.`
+            : 'Removed.'
+        );
 
         this.reload();
       },
       error: error => {
-        this.errorMessage = error.message;
+        this.toast.error(error.message);
       }
     });
   }

@@ -7,9 +7,6 @@
       <p class="form-subtitle">Salary, a refund, anything that came in</p>
     </div>
 
-    <p class="form-error" *ngIf="errorMessage">{{ errorMessage }}</p>
-    <p class="form-success" *ngIf="successMessage">{{ successMessage }}</p>
-
     <p class="form-error" *ngIf="!canUpdateBalance">
       This account may not change balances, so money cannot be added here. Sign in
       with your admin password.

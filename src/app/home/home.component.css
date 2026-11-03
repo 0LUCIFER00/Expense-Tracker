@@ -28,13 +28,3 @@
   min-height: 0;
 }
 
-.page-error {
-  flex: 0 0 auto;
-  margin: clamp(1rem, 3vw, 1.25rem) clamp(1rem, 3vw, 1.5rem) 0;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--bad);
-  border-radius: 10px;
-  background-color: var(--bad-soft);
-  color: var(--bad-ink);
-  text-align: center;
-}

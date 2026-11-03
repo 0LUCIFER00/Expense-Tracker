@@ -77,22 +77,6 @@
   display: block;
 }
 
-.form-error {
-  color: #d32f2f;
-  font-size: 13px;
-  margin-bottom: 10px;
-  font-weight: 600;
-  text-align: center;
-}
-
-.success {
-  color: green;
-  font-size: 13px;
-  margin-bottom: 10px;
-  font-weight: 600;
-  text-align: center;
-}
-
 button {
   width: 100%;
   min-height: 46px;

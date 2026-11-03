@@ -11,8 +11,6 @@
         came from.
     </p>
 
-    <p class="page-error" *ngIf="errorMessage">{{ errorMessage }}</p>
-
     <div class="balance-container">
 
         <div class="balance-row" *ngFor="let item of balances; let i = index">
@@ -119,9 +117,4 @@
 
     </div>
 
-</div>
-
-
-<div class="toast-message" *ngIf="toastMessage">
-    {{ toastMessage }}
 </div>

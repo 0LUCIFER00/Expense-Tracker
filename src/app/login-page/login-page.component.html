@@ -4,8 +4,6 @@
       <h1>Login</h1>
       <p class="subtitle">Sign in to manage your expenses</p>
 
-      <p class="access-msg" *ngIf="accessMessage">{{ accessMessage }}</p>
-      <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
         <div class="form-group">
           <label for="email">Email</label>

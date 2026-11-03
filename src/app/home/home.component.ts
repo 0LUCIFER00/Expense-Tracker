@@ -16,6 +16,7 @@ import {
 } from '../shared/dashboard';
 import { parseLocalDate } from '../shared/date-utils';
 import { FitsScreenDirective } from '../shared/fits-screen.directive';
+import { ToastService } from '../shared/toast.service';
 import { BalancesLayoutComponent } from './balances-layout/balances-layout.component';
 import { LedgerLayoutComponent } from './ledger-layout/ledger-layout.component';
 
@@ -45,13 +46,12 @@ export class HomeComponent implements OnInit {
   private readonly settingsService = inject(SettingsService);
   private readonly whatsappService = inject(WhatsappService);
   private readonly layoutService = inject(DashboardLayoutService);
+  private readonly toast = inject(ToastService);
 
   /** Null until the first load finishes, so neither layout renders half-made. */
   data: DashboardData | null = null;
 
   layout: DashboardLayout = this.layoutService.layout;
-
-  loadError = '';
 
   ngOnInit(): void {
     this.layoutService.layout$.subscribe(layout => {
@@ -75,7 +75,7 @@ export class HomeComponent implements OnInit {
         );
       },
       error: error => {
-        this.loadError = error.message;
+        this.toast.error(error.message);
       }
     });
   }

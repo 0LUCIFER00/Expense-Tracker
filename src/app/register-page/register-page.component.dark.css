@@ -59,11 +59,6 @@
   color: #9db0ff;
 }
 
-:host-context([data-theme='dark']) .success {
-  color: #5fd3a0;
-}
-
-:host-context([data-theme='dark']) .error,
-:host-context([data-theme='dark']) .form-error {
+:host-context([data-theme='dark']) .error {
   color: #ff8a80;
 }

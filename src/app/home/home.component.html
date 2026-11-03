@@ -1,7 +1,5 @@
 <div class="dashboard" appFitsScreen>
 
-  <p class="page-error" *ngIf="loadError">{{ loadError }}</p>
-
   <ng-container *ngIf="data">
     <app-balances-layout *ngIf="layout === 'balances'" [data]="data"></app-balances-layout>
     <app-ledger-layout *ngIf="layout === 'ledger'" [data]="data"></app-ledger-layout>

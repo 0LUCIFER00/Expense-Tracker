@@ -13,8 +13,6 @@
     sign in with the admin password.
   </p>
 
-  <p class="page-error" *ngIf="errorMessage">{{ errorMessage }}</p>
-
   <section class="card">
 
     <div class="admin-row">
@@ -247,8 +245,6 @@
 
         <p class="card-note">Expires in {{ whatsappCodeMinutes }} minutes.</p>
       </div>
-
-      <p class="page-error" *ngIf="whatsappError">{{ whatsappError }}</p>
 
       <div class="whatsapp-actions">
         <a *ngIf="whatsappChatUrl && !whatsappStatus.connected" class="et-btn-primary"

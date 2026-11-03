@@ -41,16 +41,6 @@
   max-width: 70ch;
 }
 
-.page-error {
-  margin: 0;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--bad);
-  border-radius: 10px;
-  background-color: var(--bad-soft);
-  color: var(--bad-ink);
-  font-size: 0.875rem;
-}
-
 .chip {
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
