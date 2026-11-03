@@ -3,8 +3,9 @@ import { query, transaction } from '../db.mjs';
 import { asyncRoute } from '../http.mjs';
 import { effectivePermissions } from '../settings-store.mjs';
 import { removeExpense } from '../expense-store.mjs';
+import { addIncome, removeIncome } from '../income-store.mjs';
 import { HELP_TEXT, parseMessage } from '../whatsapp/parser.mjs';
-import { guessCategory } from '../categories.mjs';
+import { guessCategory, guessIncomeCategory } from '../categories.mjs';
 import {
   WHATSAPP_VERIFY_TOKEN,
   extractTextMessage,
@@ -110,6 +111,9 @@ async function handleMessage(message) {
     case 'expense':
       return addExpense(from, user, parsed, accounts);
 
+    case 'income':
+      return addMoneyIn(from, user, parsed);
+
     default:
       return sendText(
         from,
@@ -214,8 +218,37 @@ async function sendToday(from, userId) {
 }
 
 /** Removes the most recent WhatsApp-added entry, refunding it if it was debited. */
+/**
+ * Undoes the last thing sent from this phone, expense or money in.
+ *
+ * Both tables are checked and whichever entry was created later wins, so
+ * "undo" means the same thing it looks like it means however the two are
+ * interleaved.
+ */
 async function undoLast(from, userId) {
   try {
+    const [lastExpense, lastIncome] = await Promise.all([
+      query(
+        `select created_at from expenses
+          where user_id = $1 and source_channel = 'whatsapp'
+          order by created_at desc limit 1`,
+        [userId]
+      ),
+      query(
+        `select created_at from incomes
+          where user_id = $1 and source_channel = 'whatsapp'
+          order by created_at desc limit 1`,
+        [userId]
+      )
+    ]);
+
+    const expenseAt = lastExpense.rows[0]?.created_at ?? null;
+    const incomeAt = lastIncome.rows[0]?.created_at ?? null;
+
+    if (incomeAt && (!expenseAt || new Date(incomeAt) > new Date(expenseAt))) {
+      return undoIncome(from, userId);
+    }
+
     const removed = await removeExpense(userId, { lastFromChannel: 'whatsapp' });
 
     if (!removed) {
@@ -355,4 +388,102 @@ ${result.source.category} now ${money(result.remaining)}`
     console.error('[whatsapp] add expense failed', error);
     return sendText(from, 'Could not save that, sorry. Please try again.');
   }
+}
+
+/**
+ * Money coming in, from a message starting with "+" or an income verb.
+ *
+ * Unlike an expense it always needs an account: recording that money arrived
+ * without saying where it went would leave the balances wrong, which is the
+ * problem this feature exists to fix.
+ */
+async function addMoneyIn(from, user, parsed) {
+  if (parsed.ambiguousAccounts?.length) {
+    const options = parsed.ambiguousAccounts
+      .map(account => `• ${account.category}`)
+      .join('\n');
+
+    return sendText(
+      from,
+      `Which account did it go into?\n\n${options}\n\nSend it again with the fuller name.`
+    );
+  }
+
+  if (!parsed.account) {
+    return sendText(
+      from,
+      'Name the account the money went into, like *+50000 salary hdfc*, so the ' +
+      'balance can be updated.'
+    );
+  }
+
+  const permissions = await effectivePermissions({ userId: user.id, loginType: 'user' });
+
+  if (!permissions.canUpdateBalance) {
+    return sendText(
+      from,
+      'This account may not change balances. Sign in on the website with your ' +
+      'admin password.'
+    );
+  }
+
+  try {
+    const created = await addIncome(user.id, {
+      amount: parsed.amount,
+      description: parsed.description,
+      receivedOn: new Date().toISOString().slice(0, 10),
+      // Nobody types a category from a phone, so it is read out of the words.
+      category: guessIncomeCategory(parsed.description),
+      targetId: parsed.account.id,
+      channel: 'whatsapp'
+    });
+
+    const filedAs = created.category ? ` · ${created.category}` : '';
+
+    // Naming the account is fine; quoting what is in it is a balance.
+    const after = permissions.canSeeBalances
+      ? `\n${parsed.account.category} now ${money(created.balanceAfter)}`
+      : '';
+
+    return sendText(
+      from,
+      `➕ ${money(parsed.amount)} into ${parsed.account.category} · ` +
+      `${parsed.description}${filedAs}${after}\n\nSend *undo* to remove it.`
+    );
+  } catch (error) {
+    console.error('[whatsapp] add money failed', error);
+    return sendText(from, 'Could not save that, sorry. Please try again.');
+  }
+}
+
+/** The money-in half of "undo". */
+async function undoIncome(from, userId) {
+  const removed = await removeIncome(userId, { lastFromChannel: 'whatsapp' });
+
+  if (!removed) {
+    return sendText(from, 'Nothing to undo — you have not added anything here yet.');
+  }
+
+  if (removed.shortfall) {
+    return sendText(
+      from,
+      `${removed.target_category} no longer holds that much, so it cannot be ` +
+      'taken back. Remove what it was spent on first.'
+    );
+  }
+
+  const { canSeeBalances } = await effectivePermissions({ userId, loginType: 'user' });
+
+  let tail = '';
+
+  if (removed.reversed) {
+    tail = canSeeBalances
+      ? `\n${removed.target_category} now ${money(removed.balanceAfter)}.`
+      : `\nTaken back out of ${removed.target_category}.`;
+  }
+
+  return sendText(
+    from,
+    `Removed ${money(removed.amount)} in — ${removed.description}${tail}`
+  );
 }

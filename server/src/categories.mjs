@@ -122,3 +122,67 @@ export function guessCategory(description) {
 
   return null;
 }
+
+/**
+ * Where money coming in came from.
+ *
+ * A separate list from the expense categories: nothing is both a way of
+ * spending and a source of income, and offering "Groceries" as a place money
+ * arrives from would be nonsense.
+ */
+export const INCOME_CATEGORIES = [
+  'Salary',
+  'Business',
+  'Refund',
+  'Gift',
+  'Interest',
+  'Sold something',
+  'Other'
+];
+
+const INCOME_BY_LOWER = new Map(INCOME_CATEGORIES.map(name => [name.toLowerCase(), name]));
+
+/** As normaliseCategory, over the income list. */
+export function normaliseIncomeCategory(value) {
+  const text = String(value ?? '').trim().toLowerCase();
+
+  return text ? INCOME_BY_LOWER.get(text) ?? null : null;
+}
+
+/** Words that give away where money arriving over WhatsApp came from. */
+const INCOME_KEYWORDS = {
+  Salary: ['salary', 'pay', 'payday', 'wages', 'stipend'],
+  Business: ['business', 'client', 'invoice', 'freelance', 'project', 'order'],
+  Refund: ['refund', 'refunded', 'returned', 'cashback', 'reimbursement', 'claim'],
+  Gift: ['gift', 'gifted', 'birthday', 'shagun', 'bonus'],
+  Interest: ['interest', 'dividend', 'fd', 'maturity'],
+  'Sold something': ['sold', 'sale', 'olx', 'resale']
+};
+
+const INCOME_INDEX = new Map();
+
+for (const [category, words] of Object.entries(INCOME_KEYWORDS)) {
+  for (const word of words) {
+    if (!INCOME_INDEX.has(word)) {
+      INCOME_INDEX.set(word, category);
+    }
+  }
+}
+
+/** As guessCategory, over the income list. */
+export function guessIncomeCategory(description) {
+  const words = String(description ?? '')
+    .toLowerCase()
+    .split(/[^a-z]+/)
+    .filter(Boolean);
+
+  for (const word of words) {
+    const hit = INCOME_INDEX.get(word);
+
+    if (hit) {
+      return hit;
+    }
+  }
+
+  return null;
+}

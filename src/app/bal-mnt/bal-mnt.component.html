@@ -1,12 +1,14 @@
 <div class="body">
 
     <div class="header-row">
-        <h2 class="header">Balance Management</h2>
+        <h2 class="header">Money Management</h2>
     </div>
 
     <p class="page-hint">
-        The accounts you can spend from. A row counts once you save it with the
-        tick, and an expense that names one takes the money out of it.
+        The accounts your money sits in. A row counts once you save it with the
+        tick. To put money in, use <a routerLink="/add-money">Add Money</a> rather
+        than editing the figure here — that way there is a record of where it
+        came from.
     </p>
 
     <p class="page-error" *ngIf="errorMessage">{{ errorMessage }}</p>

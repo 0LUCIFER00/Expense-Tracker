@@ -37,6 +37,8 @@
         </a>
       </div>
 
+      <app-spend-chart [days]="data.days" [busiest]="data.busiestDay"></app-spend-chart>
+
       <!-- Pinned to the foot, so the card reads full whatever is above it. -->
       <div class="stats">
         <div class="stat" *ngIf="data.canSeeBalances">

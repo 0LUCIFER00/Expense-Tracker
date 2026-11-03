@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { DashboardData } from '../../shared/dashboard';
+import { SpendChartComponent } from '../../shared/spend-chart/spend-chart.component';
 
 /**
  * Layout A — balances first.
@@ -15,7 +16,7 @@ import { DashboardData } from '../../shared/dashboard';
 @Component({
   selector: 'app-balances-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, SpendChartComponent],
   templateUrl: './balances-layout.component.html',
   styleUrl: './balances-layout.component.css'
 })

@@ -12,10 +12,27 @@ const BALANCE_WORDS = new Set(['balance', 'bal', 'balances']);
 const UNDO_WORDS = new Set(['undo', 'delete', 'remove', 'cancel', 'oops']);
 const LIST_WORDS = new Set(['today', 'list', 'recent']);
 
+/*
+ * Words that mark a message as money coming in rather than going out.
+ *
+ * Deliberately not "add": people say "add 250 coffee" to record an expense at
+ * least as often as to record a credit, and guessing wrong moves money the
+ * wrong way. A leading "+" is the unambiguous form and the one the help names.
+ */
+const INCOME_WORDS = new Set([
+  'received', 'receive', 'got', 'credit', 'credited', 'income', 'deposit',
+  'deposited', 'earned', 'salary', 'refund', 'refunded'
+]);
+
 /** Filler that should never end up in the description. */
 const NOISE = new Set([
   'rs', 'rs.', 'inr', 'rupees', 'spent', 'paid', 'for', 'on', 'to', 'at',
-  'from', 'using', 'via', 'by', 'with', 'of', 'the', 'a', 'an'
+  'from', 'using', 'via', 'by', 'with', 'of', 'the', 'a', 'an',
+  // The verbs that mark money coming in; the direction is kept, not the word.
+  'received', 'receive', 'got', 'credit', 'credited', 'deposit', 'deposited',
+  'earned', 'into', 'in',
+  // Filler in both directions: "add 250 coffee", "added 500 salary".
+  'add', 'added'
 ]);
 
 const LINK_PATTERN = /^link\s+([a-z0-9]{4,10})$/i;
@@ -173,7 +190,17 @@ export function parseMessage(raw, accounts = []) {
     }
   }
 
-  const amountMatch = text.match(AMOUNT_PATTERN);
+  /*
+   * A leading "+" means money in. It is stripped before the amount is matched,
+   * because the amount pattern would otherwise not recognise "+5000".
+   */
+  const plusMarked = /^\+\s*/.test(text);
+  const body = plusMarked ? text.replace(/^\+\s*/, '') : text;
+
+  const firstWord = normalise(tokenise(body)[0] ?? '');
+  const incoming = plusMarked || INCOME_WORDS.has(firstWord);
+
+  const amountMatch = body.match(AMOUNT_PATTERN);
 
   if (!amountMatch) {
     return { kind: 'unknown' };
@@ -187,7 +214,7 @@ export function parseMessage(raw, accounts = []) {
 
   // Remove the amount (and any currency marker in front of it) from the text.
   const withoutAmount =
-    text.slice(0, amountMatch.index) + ' ' + text.slice(amountMatch.index + amountMatch[0].length);
+    body.slice(0, amountMatch.index) + ' ' + body.slice(amountMatch.index + amountMatch[0].length);
 
   const accountMatch = matchAccount(withoutAmount, accounts);
 
@@ -209,9 +236,9 @@ export function parseMessage(raw, accounts = []) {
   }
 
   return {
-    kind: 'expense',
+    kind: incoming ? 'income' : 'expense',
     amount: Math.round(amount * 100) / 100,
-    description: cleanDescription(words) || 'Expense',
+    description: cleanDescription(words) || (incoming ? 'Money in' : 'Expense'),
     account: accountMatch?.account ?? null,
     ambiguousAccounts: accountMatch?.ambiguous ?? null
   };
@@ -225,6 +252,11 @@ export const HELP_TEXT = [
   '  *80 chai cash*',
   '',
   'Add the account name (paytm, hdfc, cash…) to spend from it and update that balance.',
+  '',
+  'Money coming in starts with a *+*:',
+  '',
+  '  *+50000 salary hdfc*',
+  '  *+300 refund paytm*',
   '',
   'Other commands:',
   '  *balance* — show your accounts',

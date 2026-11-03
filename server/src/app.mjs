@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { authRouter } from './routes/auth.mjs';
 import { balancesRouter } from './routes/balances.mjs';
 import { expensesRouter } from './routes/expenses.mjs';
+import { incomesRouter } from './routes/incomes.mjs';
 import { settingsRouter } from './routes/settings.mjs';
 import { whatsappRouter } from './routes/whatsapp.mjs';
 import { linkRouter } from './routes/link.mjs';
@@ -38,6 +39,7 @@ export function createApp() {
 
   app.use('/api/auth', authRouter);
   app.use('/api/expenses', expensesRouter);
+  app.use('/api/incomes', incomesRouter);
   app.use('/api/balances', balancesRouter);
   app.use('/api/settings', settingsRouter);
   // The more specific path first: /api/whatsapp would otherwise shadow it.

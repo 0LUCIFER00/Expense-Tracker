@@ -40,10 +40,18 @@ export const routes: Routes = [
       import('./expense-list/expense-list.component').then(m => m.ExpenseListComponent)
   },
   {
-    path: 'bal-mnt',
+    path: 'add-money',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./add-money/add-money.component').then(m => m.AddMoneyComponent)
+  },
+  {
+    path: 'money',
     canActivate: [authGuard, balanceGuard],
     loadComponent: () => import('./bal-mnt/bal-mnt.component').then(m => m.BalMntComponent)
   },
+  // The page was called Balance Management; keep its old address working.
+  { path: 'bal-mnt', redirectTo: 'money' },
   {
     path: 'profile',
     canActivate: [authGuard],

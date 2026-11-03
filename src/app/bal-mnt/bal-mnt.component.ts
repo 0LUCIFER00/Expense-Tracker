@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { BalanceService } from '../shared/balance.service';
 import { BalanceAccount } from '../shared/models';
 
@@ -20,7 +21,7 @@ interface BalanceRow {
 @Component({
   selector: 'app-bal-mnt',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './bal-mnt.component.html',
   styleUrl: './bal-mnt.component.css'
 })

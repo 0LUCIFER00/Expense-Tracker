@@ -8,7 +8,12 @@ import { BalanceService } from '../shared/balance.service';
 import { SettingsService } from '../shared/settings.service';
 import { WhatsappService } from '../shared/whatsapp.service';
 import { DashboardLayout, DashboardLayoutService } from '../shared/dashboard-layout.service';
-import { DashboardAccount, DashboardCategory, DashboardData } from '../shared/dashboard';
+import {
+  DashboardAccount,
+  DashboardCategory,
+  DashboardData,
+  DashboardDay
+} from '../shared/dashboard';
 import { parseLocalDate } from '../shared/date-utils';
 import { FitsScreenDirective } from '../shared/fits-screen.directive';
 import { BalancesLayoutComponent } from './balances-layout/balances-layout.component';
@@ -64,7 +69,7 @@ export class HomeComponent implements OnInit {
       next: ({ expenses, balances, whatsapp }) => {
         this.data = this.summarise(
           expenses,
-          // Unsaved rows are drafts on the Balance Management page, not accounts.
+          // Unsaved rows are drafts on the Money Management page, not accounts.
           balances.filter(account => account.saved),
           Boolean(whatsapp?.available && !whatsapp?.connected)
         );
@@ -89,6 +94,7 @@ export class HomeComponent implements OnInit {
     const thisMonth = this.forMonth(expenses, now.getMonth(), now.getFullYear());
 
     const spent = this.expenseService.totalOf(thisMonth);
+    const days = this.toDays(expenses, now);
     const lastMonthSpent = this.expenseService.totalOf(
       this.forMonth(expenses, lastMonth.getMonth(), lastMonth.getFullYear())
     );
@@ -113,6 +119,9 @@ export class HomeComponent implements OnInit {
 
       categories: this.toCategories(this.expenseService.byCategory(thisMonth)),
       recent: this.toRecent(expenses),
+
+      days,
+      busiestDay: Math.max(0, ...days.map(day => day.total)),
 
       offerWhatsapp
     };
@@ -144,6 +153,47 @@ export class HomeComponent implements OnInit {
       share: largest
         ? Math.max(2, Math.round((Number(account.balance ?? 0) / largest) * 100))
         : 0
+    }));
+  }
+
+  /**
+   * The last fourteen days, one entry each, including the empty ones.
+   *
+   * Always fourteen: a chart with a fixed number of slots reads as a chart even
+   * when most of them are zero, where a bar per expense would leave a card
+   * holding a single stripe.
+   */
+  private toDays(expenses: Expense[], now: Date): DashboardDay[] {
+    const byDay = new Map<string, number>();
+
+    for (const expense of expenses) {
+      if (expense.status !== 'Done') {
+        continue;
+      }
+
+      const key = String(expense.date).slice(0, 10);
+      byDay.set(key, (byDay.get(key) ?? 0) + Number(expense.amount));
+    }
+
+    const days: DashboardDay[] = [];
+
+    for (let back = 13; back >= 0; back -= 1) {
+      const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - back);
+
+      const key =
+        `${date.getFullYear()}-` +
+        `${String(date.getMonth() + 1).padStart(2, '0')}-` +
+        `${String(date.getDate()).padStart(2, '0')}`;
+
+      days.push({ date, total: byDay.get(key) ?? 0, height: 0, isToday: back === 0 });
+    }
+
+    const busiest = Math.max(0, ...days.map(day => day.total));
+
+    // A day with nothing keeps a visible stub, so the axis reads continuously.
+    return days.map(day => ({
+      ...day,
+      height: busiest ? Math.max(4, Math.round((day.total / busiest) * 100)) : 4
     }));
   }
 

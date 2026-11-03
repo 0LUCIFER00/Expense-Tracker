@@ -83,3 +83,31 @@ export const DEFAULT_SETTINGS: Settings = {
   viewPermissionUser: true,
   removePermissionUser: true
 };
+
+/** Money coming in: the mirror of an Expense. */
+export interface Income {
+  id: string;
+  amount: number;
+  description: string;
+  date: string;
+  /** Where it came from, or null when it was filed without a category. */
+  category: string | null;
+
+  /** The account it went into. Null when this session may not see sources. */
+  targetId: string | null;
+  targetType: string | null;
+  targetCategory: string | null;
+
+  balanceUpdated: boolean;
+  createdAt: string;
+}
+
+/** What the Add Money form sends. */
+export interface NewIncome {
+  amount: number;
+  description: string;
+  date: string;
+  category: string | null;
+  /** Required: money has to arrive somewhere, or the balances go wrong. */
+  targetId: string;
+}

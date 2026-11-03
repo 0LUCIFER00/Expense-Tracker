@@ -1,0 +1,80 @@
+/*
+ * Fixed-width slots mean a quiet fortnight still reads as a chart with quiet
+ * days in it. Colours come from the tokens in styles.css, so this one
+ * stylesheet serves both themes.
+ */
+
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.chart {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.625rem;
+  margin-bottom: 0.5rem;
+}
+
+.chart-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.chart-peak {
+  font-size: 0.6875rem;
+  color: var(--ink-3);
+}
+
+.chart-plot {
+  flex: 1 1 auto;
+  min-height: 48px;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+.chart-day {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.chart-bar {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  background-color: var(--ramp-3);
+}
+
+/* A day with nothing keeps a stub, so the axis reads as continuous. */
+.chart-day.empty .chart-bar {
+  background-color: var(--rule);
+}
+
+.chart-day.today .chart-bar {
+  background-color: var(--ramp-1);
+}
+
+.chart-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.3125rem;
+  font-size: 0.625rem;
+  color: var(--ink-3);
+}

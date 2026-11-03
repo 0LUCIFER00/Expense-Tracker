@@ -52,6 +52,11 @@ export class HelpSupportComponent implements OnInit {
     },
     { send: '1200 groceries hdfc', does: 'Records it and takes ₹1,200 out of HDFC Bank.' },
     { send: '80 chai cash', does: 'The same, from a Hand Cash account.' },
+    {
+      send: '+50000 salary hdfc',
+      does: 'Money in, not out. The leading + is what makes the difference.'
+    },
+    { send: '+300 refund paytm', does: 'The same, into your Paytm wallet.' },
     { send: 'balance', does: 'Lists every account and what is in each.' },
     { send: 'today', does: 'Everything recorded today, with the settled total.' },
     { send: 'undo', does: 'Removes the last expense you sent and puts the money back.' },
@@ -108,6 +113,14 @@ export class HelpSupportComponent implements OnInit {
       answer:
         'The WhatsApp access token expires. Replies stop but your expenses are still ' +
         'recorded — they just arrive silently until the token is renewed.'
+    },
+    {
+      question: 'How do I record money coming in?',
+      answer:
+        'Add Money, beside Money Management in the menu. It records where the ' +
+        'money came from and credits the account in one go, so there is a trail ' +
+        '— editing the figure on Money Management leaves none. Over WhatsApp, ' +
+        'start the message with a + : "+50000 salary hdfc".'
     },
     {
       question: 'Can I get my expenses out of the app?',

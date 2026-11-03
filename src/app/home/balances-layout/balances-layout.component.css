@@ -184,7 +184,8 @@
   color: var(--good-ink);
 }
 
-.primary-action {
+.primary-action,
+.secondary-action {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
@@ -192,15 +193,13 @@
   min-height: 42px;
   padding: 0 1.125rem;
   border-radius: 10px;
-  background-color: var(--accent);
-  color: #fff;
   font-size: 0.875rem;
   font-weight: 700;
   text-decoration: none;
 }
 
-.primary-action:hover {
-  background-color: var(--accent-hover);
+.primary-action {
+  background-color: var(--accent);
   color: #fff;
 }
 
@@ -304,10 +303,7 @@
   color: var(--ink);
 }
 
-/*
- * A ramp down the list, so the slices read as one series rather than several
- * unrelated colours. The shades differ in lightness, not hue.
- */
+/* A ramp down the list, so the slices read as one series. */
 [data-tone='1'] {
   background-color: var(--ramp-2);
 }
@@ -418,20 +414,16 @@
 }
 
 .secondary-action {
-  display: inline-flex;
-  align-items: center;
-  min-height: 42px;
-  padding: 0 1.0625rem;
-  border-radius: 10px;
   border: 1px solid var(--accent);
   color: var(--accent-ink);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  text-decoration: none;
 }
 
 .secondary-action:hover {
   background-color: var(--accent-soft);
+}
+
+.primary-action:hover {
+  background-color: var(--accent-hover);
 }
 
 /* ================= One screen, no page scroll ================= */
@@ -535,3 +527,7 @@
   }
 }
 
+/* The chart is its own component; it just needs the room between the two. */
+app-spend-chart {
+  margin-top: 1rem;
+}

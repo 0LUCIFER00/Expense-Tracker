@@ -19,7 +19,7 @@ export class SettingsService {
 
   readonly settings$ = this.settingsSubject.asObservable();
 
-  /** Drives the Balance Management link in the header. */
+  /** Drives the Money Management and Add Money links in the header. */
   readonly balanceAccess$: Observable<boolean> = this.settings$.pipe(
     map(settings => this.auth.isAdmin || settings.balanceUserAccess)
   );

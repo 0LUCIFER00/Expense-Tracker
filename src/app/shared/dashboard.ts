@@ -27,6 +27,16 @@ export interface DashboardCategory {
   tone: number;
 }
 
+/** One day on the dashboard's recent-spending chart. */
+export interface DashboardDay {
+  /** Midnight local time, for the label. */
+  date: Date;
+  total: number;
+  /** Height as a percentage of the busiest day in the window. */
+  height: number;
+  isToday: boolean;
+}
+
 export interface DashboardData {
   today: Date;
   monthName: string;
@@ -47,6 +57,11 @@ export interface DashboardData {
 
   categories: DashboardCategory[];
   recent: Expense[];
+
+  /** The last fortnight, a bar each, so a quiet month still reads as a chart. */
+  days: DashboardDay[];
+  /** The busiest day's spending, which the chart's bars are scaled against. */
+  busiestDay: number;
 
   /** True while there is a phone to connect and nothing connected yet. */
   offerWhatsapp: boolean;

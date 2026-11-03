@@ -4,7 +4,7 @@ import { map } from 'rxjs/operators';
 import { SettingsService } from './shared/settings.service';
 
 /**
- * Keeps the Balance Management page off limits when balances are hidden.
+ * Keeps the Money Management page off limits when balances are hidden.
  *
  * The header already drops the link, but a typed URL would otherwise still
  * open the page. The API withholds the amounts and refuses the writes either
