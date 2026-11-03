@@ -16,6 +16,7 @@
     "db:check": "node server/scripts/check-connection.mjs",
     "test:api": "node --test server/test/*.test.mjs",
     "wa:check": "node server/scripts/check-whatsapp.mjs",
+    "wa:recent": "node server/scripts/recent-whatsapp.mjs",
     "dev": "concurrently -n api,web -c cyan,green \"npm:api:dev\" \"npm:start\""
   },
   "private": true,

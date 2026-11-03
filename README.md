@@ -174,6 +174,12 @@ paid 1,250.50 for dinner   →  filler words are ignored
 Naming a saved balance account debits it, subject to the same permission the
 web form uses. Other commands: `balance`, `today`, `undo`, `help`.
 
+Two scripts for when it is not behaving: `npm run wa:check` reads the configuration
+and asks Meta what it thinks the number is, and `npm run wa:recent` lists what has
+actually arrived. The second one exists as a script rather than a one-liner because
+PowerShell treats a backtick as an escape character, which quietly mangles the SQL
+in any `node -e` command copied from elsewhere.
+
 ### Linking a number
 
 The user opens **Settings → Add expenses over WhatsApp** and taps **Connect
