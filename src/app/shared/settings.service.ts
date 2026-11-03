@@ -19,9 +19,14 @@ export class SettingsService {
 
   readonly settings$ = this.settingsSubject.asObservable();
 
-  /** Drives the Money Management and Add Money links in the header. */
+  /** Drives the Money Management link in the header. */
   readonly balanceAccess$: Observable<boolean> = this.settings$.pipe(
     map(settings => this.auth.isAdmin || settings.balanceUserAccess)
+  );
+
+  /** Drives the Add Money link beside it. */
+  readonly addMoneyAccess$: Observable<boolean> = this.settings$.pipe(
+    map(settings => this.auth.isAdmin || settings.addMoneyUserAccess)
   );
 
   private loaded = false;
@@ -63,6 +68,15 @@ export class SettingsService {
   /** Whether any account balance may be shown on screen. */
   get canSeeBalances(): boolean {
     return this.allows('balanceUserAccess');
+  }
+
+  /**
+   * Whether the Add Money page is reachable. Separate from seeing balances:
+   * someone may be trusted to put money in without being shown what is there,
+   * and the amounts on that page follow canSeeBalances on their own.
+   */
+  get canAddMoney(): boolean {
+    return this.allows('addMoneyUserAccess');
   }
 
   get canUpdateBalance(): boolean {

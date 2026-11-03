@@ -162,7 +162,7 @@ async function linkNumber(from, code) {
 }
 
 async function sendBalances(from, user, accounts) {
-  const { canSeeBalances } = await effectivePermissions({
+  const { canSeeBalancesOnWhatsapp } = await effectivePermissions({
     userId: user.id,
     loginType: 'user'
   });
@@ -170,11 +170,11 @@ async function sendBalances(from, user, accounts) {
   // WhatsApp is linked to the account, not to an admin session, so it answers
   // as the normal user. Without the balance permission it must not read them
   // out either, or the admin password is bypassable from a phone.
-  if (!canSeeBalances) {
+  if (!canSeeBalancesOnWhatsapp) {
     return sendText(
       from,
-      'Balances are hidden for this account. Sign in on the website with your ' +
-      'admin password to see them.'
+      'Balances are not shown over WhatsApp for this account. Check them on the ' +
+      'website instead.'
     );
   }
 
@@ -255,12 +255,15 @@ async function undoLast(from, userId) {
       return sendText(from, 'Nothing to undo — you have not added anything here yet.');
     }
 
-    const { canSeeBalances } = await effectivePermissions({ userId, loginType: 'user' });
+    const { canSeeBalancesOnWhatsapp } = await effectivePermissions({
+      userId,
+      loginType: 'user'
+    });
 
     let tail = '';
 
     if (removed.refunded) {
-      tail = canSeeBalances
+      tail = canSeeBalancesOnWhatsapp
         ? `
 ${removed.source_category} now ${money(removed.balanceAfter)}.`
         : `
@@ -358,7 +361,7 @@ async function addExpense(from, user, parsed, accounts) {
     if (result.insufficient) {
       return sendText(
         from,
-        permissions.canSeeBalances
+        permissions.canSeeBalancesOnWhatsapp
           ? `Not enough in ${result.source.category} — it has ${money(result.source.balance)}, ` +
             `and that expense is ${money(parsed.amount)}.
 
@@ -375,7 +378,7 @@ Nothing was recorded.`
 
     // Naming the account is fine; quoting what is left in it is a balance.
     const after =
-      result.debit && permissions.canSeeBalances
+      result.debit && permissions.canSeeBalancesOnWhatsapp
         ? `
 ${result.source.category} now ${money(result.remaining)}`
         : '';
@@ -441,7 +444,7 @@ async function addMoneyIn(from, user, parsed) {
     const filedAs = created.category ? ` · ${created.category}` : '';
 
     // Naming the account is fine; quoting what is in it is a balance.
-    const after = permissions.canSeeBalances
+    const after = permissions.canSeeBalancesOnWhatsapp
       ? `\n${parsed.account.category} now ${money(created.balanceAfter)}`
       : '';
 
@@ -472,12 +475,15 @@ async function undoIncome(from, userId) {
     );
   }
 
-  const { canSeeBalances } = await effectivePermissions({ userId, loginType: 'user' });
+  const { canSeeBalancesOnWhatsapp } = await effectivePermissions({
+    userId,
+    loginType: 'user'
+  });
 
   let tail = '';
 
   if (removed.reversed) {
-    tail = canSeeBalances
+    tail = canSeeBalancesOnWhatsapp
       ? `\n${removed.target_category} now ${money(removed.balanceAfter)}.`
       : `\nTaken back out of ${removed.target_category}.`;
   }

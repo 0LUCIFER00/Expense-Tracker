@@ -101,14 +101,6 @@
   color: var(--ink-3);
 }
 
-.strip-icon svg {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.9;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
 .figure {
   margin: 0.625rem 0 0;
   font-size: clamp(2.25rem, 6vw, 3.375rem);
@@ -347,64 +339,6 @@ app-spend-chart {
   color: var(--warn-ink);
 }
 
-/* ---- the strips along the foot ---- */
-
-.strips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.strip {
-  flex: 1 1 320px;
-  min-width: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.875rem;
-  padding: 0.75rem 1.25rem;
-}
-
-.strip-icon {
-  flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 10px;
-  background-color: var(--sunken);
-  color: var(--ink-2);
-}
-
-.strip-icon.whatsapp {
-  background-color: var(--good-soft);
-  color: var(--good-ink);
-}
-
-.strip-icon.waiting {
-  background-color: var(--warn-soft);
-  color: var(--warn-ink);
-}
-
-.strip-text {
-  flex: 999 1 220px;
-  min-width: 0;
-}
-
-.strip-title {
-  margin: 0 0 0.125rem;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.strip-body {
-  margin: 0;
-  font-size: 0.75rem;
-  color: var(--ink-2);
-  line-height: 1.45;
-}
-
 /* ================= One screen, no page scroll ================= */
 /*
  * Where the window has the room the whole page fits it: the strips keep their
@@ -444,7 +378,7 @@ app-spend-chart {
     margin-top: auto;
   }
 
-  .strips {
+  .et-strips {
     flex: 0 0 auto;
     flex-wrap: nowrap;
   }
@@ -460,7 +394,7 @@ app-spend-chart {
 
   .panels,
   .side,
-  .strips {
+  .et-strips {
     gap: 0.5rem;
   }
 
@@ -489,7 +423,7 @@ app-spend-chart {
     font-size: 1rem;
   }
 
-  .strip {
+  .et-strip {
     padding: 0.5rem 1rem;
   }
 }

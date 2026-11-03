@@ -25,6 +25,10 @@ export class SettingsComponent implements OnInit {
 
   addBalanceUserAccess = true;
 
+  addMoneyUserAccess = true;
+
+  whatsappBalanceUserAccess = true;
+
   updatePermissionUser = true;
 
   viewPermissionUser = true;
@@ -141,6 +145,8 @@ export class SettingsComponent implements OnInit {
 
   private applySettings(settings: Settings): void {
     this.addBalanceUserAccess = settings.balanceUserAccess;
+    this.addMoneyUserAccess = settings.addMoneyUserAccess;
+    this.whatsappBalanceUserAccess = settings.whatsappBalanceUserAccess;
     this.addExpenseUserAccess = settings.expenseUserAccess;
     this.updatePermissionUser = settings.updatePermissionUser;
     this.viewPermissionUser = settings.viewPermissionUser;
@@ -151,6 +157,8 @@ export class SettingsComponent implements OnInit {
     this.settingsService
       .update({
         balanceUserAccess: this.addBalanceUserAccess,
+        addMoneyUserAccess: this.addMoneyUserAccess,
+        whatsappBalanceUserAccess: this.whatsappBalanceUserAccess,
         expenseUserAccess: this.addExpenseUserAccess,
         updatePermissionUser: this.updatePermissionUser,
         viewPermissionUser: this.viewPermissionUser,

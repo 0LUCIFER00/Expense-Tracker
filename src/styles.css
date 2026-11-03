@@ -490,3 +490,77 @@ html[data-theme='dark'] {
     padding: 0.875rem 1.125rem;
   }
 }
+
+/*
+ * The strips along the foot of each dashboard: a small icon, a line of text,
+ * and sometimes a button. Both layouts use them, so they live here rather than
+ * being written out twice.
+ */
+
+.et-strips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.et-strip {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 1.25rem;
+  background-color: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.et-strip-icon {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background-color: var(--sunken);
+  color: var(--ink-2);
+}
+
+.et-strip-icon svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.et-strip-icon.whatsapp {
+  background-color: var(--good-soft);
+  color: var(--good-ink);
+}
+
+.et-strip-icon.waiting {
+  background-color: var(--warn-soft);
+  color: var(--warn-ink);
+}
+
+.et-strip-text {
+  flex: 999 1 220px;
+  min-width: 0;
+}
+
+.et-strip-title {
+  margin: 0 0 0.125rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.et-strip-body {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--ink-2);
+  line-height: 1.45;
+}

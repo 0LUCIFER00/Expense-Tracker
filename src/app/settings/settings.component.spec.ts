@@ -245,8 +245,8 @@ describe('SettingsComponent — who may edit permissions', () => {
   it('shows the full matrix to an admin session', () => {
     build('admin', true);
 
-    expect(host().querySelectorAll('.settings-row').length).toBe(5);
-    expect(host().querySelectorAll('.setting-toggle input').length).toBe(5);
+    expect(host().querySelectorAll('.settings-row').length).toBe(7);
+    expect(host().querySelectorAll('.setting-toggle input').length).toBe(7);
     expect(host().querySelector('.matrix-head')).not.toBeNull();
     expect(host().querySelector('.permissions-note')).toBeNull();
   });

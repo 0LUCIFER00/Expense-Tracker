@@ -107,6 +107,56 @@ describe('SettingsService', () => {
     });
   });
 
+  describe('the two switches under seeing balances', () => {
+    it('lets Add Money be reached without balances being visible', () => {
+      signIn('user');
+      loadWith(allGranted({ balanceUserAccess: false, addMoneyUserAccess: true }));
+
+      expect(settings.canSeeBalances).toBeFalse();
+      expect(settings.canAddMoney).toBeTrue();
+    });
+
+    it('hides Add Money on its own switch', () => {
+      signIn('user');
+      loadWith(allGranted({ addMoneyUserAccess: false }));
+
+      expect(settings.canSeeBalances).toBeTrue();
+      expect(settings.canAddMoney).toBeFalse();
+    });
+
+    it('gives an admin both whatever the flags say', () => {
+      signIn('admin');
+      loadWith(allGranted({ balanceUserAccess: false, addMoneyUserAccess: false }));
+
+      expect(settings.canSeeBalances).toBeTrue();
+      expect(settings.canAddMoney).toBeTrue();
+    });
+  });
+
+  describe('addMoneyAccess$', () => {
+    it('follows the toggle for a user session', () => {
+      signIn('user');
+
+      const seen: boolean[] = [];
+      settings.addMoneyAccess$.subscribe(value => seen.push(value));
+
+      loadWith(allGranted({ addMoneyUserAccess: false }));
+
+      expect(seen[seen.length - 1]).toBeFalse();
+    });
+
+    it('stays on for an admin session with the toggle off', () => {
+      signIn('admin');
+
+      const seen: boolean[] = [];
+      settings.addMoneyAccess$.subscribe(value => seen.push(value));
+
+      loadWith(allGranted({ addMoneyUserAccess: false }));
+
+      expect(seen[seen.length - 1]).toBeTrue();
+    });
+  });
+
   describe('balanceAccess$', () => {
     it('follows the toggle for a user session', () => {
       signIn('user');

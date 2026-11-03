@@ -218,7 +218,7 @@
 }
 
 .stat {
-  flex: 1 1 140px;
+  flex: 1 1 110px;
   min-width: 0;
   background-color: var(--sunken);
   border-radius: 10px;
@@ -366,72 +366,12 @@
   color: var(--warn-ink);
 }
 
-/* ---- the WhatsApp strip ---- */
-
-.whatsapp-strip {
-  flex: 0 0 auto;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.875rem;
-  padding: 0.75rem 1.25rem;
-}
-
-.whatsapp-icon {
-  flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 10px;
-  background-color: var(--good-soft);
-}
-
-.whatsapp-icon svg {
-  fill: none;
-  stroke: var(--good-ink);
-  stroke-width: 1.9;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.whatsapp-text {
-  flex: 999 1 300px;
-  min-width: 0;
-}
-
-.whatsapp-title {
-  margin: 0 0 0.125rem;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.whatsapp-body {
-  margin: 0;
-  font-size: 0.75rem;
-  color: var(--ink-2);
-}
-
-.secondary-action {
-  border: 1px solid var(--accent);
-  color: var(--accent-ink);
-}
-
-.secondary-action:hover {
-  background-color: var(--accent-soft);
-}
-
-.primary-action:hover {
-  background-color: var(--accent-hover);
-}
-
 /* ================= One screen, no page scroll ================= */
 /*
- * Where the window has the room the whole page fits it: the strip and the
- * WhatsApp card keep their own height and the panels take the rest. A list
- * that still cannot fit scrolls inside its own card rather than taking the
- * page with it — with a handful of accounts it never does.
+ * Where the window has the room the whole page fits it: the account tiles and
+ * the strips keep their own height and the panels take the rest. A list that
+ * still cannot fit scrolls inside its own card rather than taking the page
+ * with it — with a handful of accounts it never does.
  */
 @media (min-width: 900px) and (min-height: 560px) {
   .layout {
@@ -469,6 +409,11 @@
 
   .stats {
     margin-top: auto;
+  }
+
+  .et-strips {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
   }
 }
 
@@ -510,7 +455,11 @@
     font-size: 1rem;
   }
 
-  .whatsapp-strip {
+  .et-strips {
+    gap: 0.5rem;
+  }
+
+  .et-strip {
     padding: 0.5rem 1rem;
   }
 }

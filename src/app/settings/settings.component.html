@@ -68,6 +68,45 @@
 
       <div class="settings-row">
         <div class="setting-label">
+          <span class="setting-name">Use the Add Money page</span>
+          <span class="setting-note">
+            Where money coming in is recorded. The balances it shows beside each
+            account follow the switch above, so this can stay on while they are
+            hidden.
+          </span>
+        </div>
+
+        <div class="setting-toggle">
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="addMoneyUserAccess" (change)="onAccessChange()">
+            <span class="slider"></span>
+            <span class="sr-only">Use the Add Money page</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div class="setting-label">
+          <span class="setting-name">See balances over WhatsApp</span>
+          <span class="setting-note">
+            Whether a reply may quote what an account holds — the
+            <strong>balance</strong> command, and the figure after an expense.
+            Turning the switch above off hides them here too, whatever this says.
+          </span>
+        </div>
+
+        <div class="setting-toggle">
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="whatsappBalanceUserAccess"
+              [disabled]="!addBalanceUserAccess" (change)="onAccessChange()">
+            <span class="slider"></span>
+            <span class="sr-only">See balances over WhatsApp</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div class="setting-label">
           <span class="setting-name">Spend from an account</span>
           <span class="setting-note">
             Lets an expense reduce a balance, rather than only being logged

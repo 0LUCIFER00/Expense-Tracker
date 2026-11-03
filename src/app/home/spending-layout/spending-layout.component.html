@@ -123,23 +123,23 @@
     </div>
   </div>
 
-  <div class="strips">
+  <div class="et-strips">
 
     <!-- Only when there is something waiting; nobody needs to be told "none". -->
-    <section class="card strip" *ngIf="data.pending">
-      <span class="strip-icon waiting" aria-hidden="true">
+    <section class="et-strip" *ngIf="data.pending">
+      <span class="et-strip-icon waiting" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="18" height="18">
           <circle cx="12" cy="12" r="8.5" />
           <path d="M12 7.6V12l2.8 2" />
         </svg>
       </span>
 
-      <div class="strip-text">
-        <p class="strip-title">
+      <div class="et-strip-text">
+        <p class="et-strip-title">
           {{ data.pending }}
           {{ data.pending === 1 ? 'entry is' : 'entries are' }} waiting for an admin
         </p>
-        <p class="strip-body">
+        <p class="et-strip-body">
           They were dated other than today, so no money has moved yet.
         </p>
       </div>
@@ -147,16 +147,16 @@
       <a class="secondary-action" routerLink="/view-expenses">Review</a>
     </section>
 
-    <section class="card strip" *ngIf="data.offerWhatsapp">
-      <span class="strip-icon whatsapp" aria-hidden="true">
+    <section class="et-strip" *ngIf="data.offerWhatsapp">
+      <span class="et-strip-icon whatsapp" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="18" height="18">
           <path d="M21 11.6a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-5A8.5 8.5 0 1 1 21 11.6Z" />
         </svg>
       </span>
 
-      <div class="strip-text">
-        <p class="strip-title">Add from WhatsApp without signing in</p>
-        <p class="strip-body">
+      <div class="et-strip-text">
+        <p class="et-strip-title">Add from WhatsApp without signing in</p>
+        <p class="et-strip-body">
           Send <strong>250 coffee paytm</strong> and it is recorded.
         </p>
       </div>

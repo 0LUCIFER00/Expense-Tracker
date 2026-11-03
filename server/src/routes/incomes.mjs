@@ -67,6 +67,12 @@ incomesRouter.post('/', asyncRoute(async (req, res) => {
 
   const permissions = await effectivePermissions(req.session);
 
+  if (!permissions.canAddMoney) {
+    return res.status(403).json({
+      error: 'Adding money is switched off for this account.'
+    });
+  }
+
   /*
    * Adding money raises a balance, so it needs the same permission as spending
    * from one. Without it there is nothing useful to do here: the entry could

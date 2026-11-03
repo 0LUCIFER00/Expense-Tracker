@@ -23,6 +23,7 @@ import { ThemeService } from '../shared/theme.service';
 export class HeaderComponent implements OnInit, OnDestroy {
 
   showBalanceManagement = false;
+  showAddMoney = false;
   showProfileMenu = false;
 
   /** Collapsed nav on small screens; the CSS ignores this above the breakpoint. */
@@ -52,6 +53,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.settingsService.balanceAccess$.subscribe(access => {
         this.showBalanceManagement = access;
+      })
+    );
+
+    this.subscriptions.add(
+      this.settingsService.addMoneyAccess$.subscribe(access => {
+        this.showAddMoney = access;
       })
     );
 

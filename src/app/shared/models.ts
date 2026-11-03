@@ -70,6 +70,10 @@ export interface NewExpense {
 export interface Settings {
   /** May see account balances at all. The reason the admin password exists. */
   balanceUserAccess: boolean;
+  /** May reach the Add Money page; its amounts still follow the flag above. */
+  addMoneyUserAccess: boolean;
+  /** WhatsApp replies may quote a balance, when the flag above allows it too. */
+  whatsappBalanceUserAccess: boolean;
   expenseUserAccess: boolean;
   updatePermissionUser: boolean;
   viewPermissionUser: boolean;
@@ -78,6 +82,8 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   balanceUserAccess: true,
+  addMoneyUserAccess: true,
+  whatsappBalanceUserAccess: true,
   expenseUserAccess: true,
   updatePermissionUser: true,
   viewPermissionUser: true,

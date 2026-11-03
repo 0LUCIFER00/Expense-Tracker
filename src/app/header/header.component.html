@@ -5,7 +5,7 @@
     <a routerLink="/home" (click)="closeMenu()">Home</a>
     <a routerLink="/add-expense" (click)="closeMenu()">Add Expense</a>
     <a routerLink="/view-expenses" (click)="closeMenu()">View Expenses</a>
-    <a *ngIf="showBalanceManagement" routerLink="/add-money" (click)="closeMenu()">Add Money</a>
+    <a *ngIf="showAddMoney" routerLink="/add-money" (click)="closeMenu()">Add Money</a>
     <a *ngIf="showBalanceManagement" routerLink="/money" (click)="closeMenu()">Money Management</a>
   </nav>
 

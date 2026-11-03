@@ -10,6 +10,10 @@ import { query } from './db.mjs';
 export const FLAGS = {
   /** May see account balances at all — the reason the admin password exists. */
   balanceUserAccess: 'balance_user_access',
+  /** May reach the Add Money page; its amounts still follow the flag above. */
+  addMoneyUserAccess: 'add_money_user_access',
+  /** WhatsApp replies may quote a balance, when the flag above allows it too. */
+  whatsappBalanceUserAccess: 'whatsapp_balance_user_access',
   expenseUserAccess: 'expense_user_access',
   updatePermissionUser: 'update_permission_user',
   viewPermissionUser: 'view_permission_user',
@@ -60,6 +64,23 @@ export async function effectivePermissions(session) {
      * Balance Management page and in WhatsApp replies — not just the nav link.
      */
     canSeeBalances: admin || settings.balanceUserAccess,
+
+    /**
+     * The Add Money page. Separate from seeing balances: someone may be
+     * trusted to put money in without being shown what is already there, and
+     * the amounts on that page follow canSeeBalances on their own.
+     */
+    canAddMoney: admin || settings.addMoneyUserAccess,
+
+    /**
+     * Whether a WhatsApp reply may quote a balance.
+     *
+     * Both switches have to allow it. Hiding balances is about a screen
+     * someone else might see, and a phone is a screen someone else might see;
+     * so the master switch still wins, and this only narrows it further.
+     */
+    canSeeBalancesOnWhatsapp:
+      admin || (settings.balanceUserAccess && settings.whatsappBalanceUserAccess),
 
     canUpdateBalance: admin || settings.expenseUserAccess,
     canBackdate: admin || settings.updatePermissionUser,

@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './auth.guard';
 import { balanceGuard } from './balance.guard';
+import { addMoneyGuard } from './add-money.guard';
 
 /*
  * Every page past the login screen is loaded on demand.
@@ -41,7 +42,7 @@ export const routes: Routes = [
   },
   {
     path: 'add-money',
-    canActivate: [authGuard],
+    canActivate: [authGuard, addMoneyGuard],
     loadComponent: () =>
       import('./add-money/add-money.component').then(m => m.AddMoneyComponent)
   },
