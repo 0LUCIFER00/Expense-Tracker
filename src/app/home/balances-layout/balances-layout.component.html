@@ -1,0 +1,133 @@
+<div class="layout">
+
+  <!-- The accounts are the one list always populated, so they anchor the page. -->
+  <section class="account-strip" *ngIf="data.canSeeBalances && data.accounts.length">
+    <div class="account-tile" *ngFor="let account of data.accounts">
+      <p class="tile-name">{{ account.name }}</p>
+      <p class="tile-amount tnum">₹{{ account.balance | number }}</p>
+      <p class="tile-kind">{{ account.kind }}</p>
+    </div>
+  </section>
+
+  <div class="panels">
+
+    <section class="card focus-card">
+      <div class="focus-top">
+        <div>
+          <p class="today">{{ data.today | date: 'EEEE, d MMMM' }}</p>
+
+          <p class="figure tnum">₹{{ data.spent | number }}</p>
+
+          <p class="caption">
+            <span>spent in {{ data.monthName }}</span>
+
+            <span class="delta" *ngIf="data.difference" [class.more]="data.spentMore"
+              [class.less]="!data.spentMore">
+              ₹{{ data.difference | number }}
+              {{ data.spentMore ? 'more' : 'less' }} than {{ data.lastMonthName }}
+            </span>
+          </p>
+        </div>
+
+        <a class="primary-action" routerLink="/add-expense">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Add expense
+        </a>
+      </div>
+
+      <!-- Pinned to the foot, so the card reads full whatever is above it. -->
+      <div class="stats">
+        <div class="stat" *ngIf="data.canSeeBalances">
+          <p class="stat-label">Held across accounts</p>
+          <p class="stat-value tnum">₹{{ data.accountsTotal | number }}</p>
+        </div>
+
+        <div class="stat">
+          <p class="stat-label">Daily average</p>
+          <p class="stat-value tnum">₹{{ data.dailyAverage | number }}</p>
+        </div>
+
+        <div class="stat">
+          <p class="stat-label">Entries this month</p>
+          <p class="stat-value tnum">{{ data.entries }}</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="side">
+
+      <!-- One bar, not a list: one category fills it, six divide it. -->
+      <section class="card spend-card">
+        <div class="card-head">
+          <h2 class="card-title">Where it went</h2>
+          <span class="card-meta">{{ data.monthName }}</span>
+        </div>
+
+        <p class="card-empty" *ngIf="!slices.length">Nothing recorded this month yet.</p>
+
+        <ng-container *ngIf="slices.length">
+          <span class="bar" aria-hidden="true">
+            <span class="bar-slice" *ngFor="let slice of slices" [attr.data-tone]="slice.tone"
+              [style.width.%]="slice.width"></span>
+          </span>
+
+          <div class="legend">
+            <span class="legend-item" *ngFor="let slice of slices">
+              <span class="legend-dot" aria-hidden="true" [attr.data-tone]="slice.tone"></span>
+              {{ slice.name }}
+              <span class="legend-amount tnum">₹{{ slice.total | number }}</span>
+            </span>
+          </div>
+        </ng-container>
+      </section>
+
+      <section class="card recent-card">
+        <h2 class="card-title">Recent</h2>
+
+        <p class="card-empty" *ngIf="!data.recent.length">
+          Your last few expenses will show up here.
+        </p>
+
+        <div class="scroll-area">
+          <div class="recent-row" *ngFor="let item of data.recent">
+            <span class="recent-date tnum">{{ item.date | date: 'd MMM' }}</span>
+
+            <span class="recent-what">
+              {{ item.description }}
+              <span class="recent-meta" *ngIf="item.sourceCategory || item.category">
+                · {{ item.sourceCategory || item.category }}
+              </span>
+            </span>
+
+            <span class="recent-amount tnum" [class.pending]="item.isPendingApproval">
+              ₹{{ item.amount | number }}
+            </span>
+          </div>
+        </div>
+
+        <a class="card-link" routerLink="/view-expenses">See all expenses</a>
+      </section>
+
+    </div>
+  </div>
+
+  <section class="card whatsapp-strip" *ngIf="data.offerWhatsapp">
+    <span class="whatsapp-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="20" height="20">
+        <path d="M21 11.6a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-5A8.5 8.5 0 1 1 21 11.6Z" />
+      </svg>
+    </span>
+
+    <div class="whatsapp-text">
+      <p class="whatsapp-title">Add from WhatsApp without signing in</p>
+      <p class="whatsapp-body">
+        Send <strong>250 coffee paytm</strong> and it is recorded against that account.
+      </p>
+    </div>
+
+    <a class="secondary-action" routerLink="/settings">Connect</a>
+  </section>
+
+</div>

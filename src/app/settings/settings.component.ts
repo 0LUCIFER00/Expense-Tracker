@@ -6,6 +6,10 @@ import { AuthService } from '../auth.service';
 import { SettingsService } from '../shared/settings.service';
 import { Settings } from '../shared/models';
 import { WhatsappService, WhatsappLinkStatus } from '../shared/whatsapp.service';
+import {
+  DashboardLayout,
+  DashboardLayoutService
+} from '../shared/dashboard-layout.service';
 
 @Component({
   selector: 'app-settings',
@@ -18,6 +22,33 @@ export class SettingsComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly settingsService = inject(SettingsService);
   private readonly whatsapp = inject(WhatsappService);
+  private readonly layoutService = inject(DashboardLayoutService);
+
+  /**
+   * Which dashboard arrangement to use. A display preference, not a
+   * permission, so every session may change it — including a normal user, who
+   * sees none of the toggles below.
+   */
+  readonly layouts: { id: DashboardLayout; name: string; note: string }[] = [
+    {
+      id: 'balances',
+      name: 'Balances first',
+      note: 'Your accounts across the top, the month and what it went on underneath'
+    },
+    {
+      id: 'ledger',
+      name: 'Ledger',
+      note: 'Accounts down the side, your expenses as a table you can filter'
+    }
+  ];
+
+  get dashboardLayout(): DashboardLayout {
+    return this.layoutService.layout;
+  }
+
+  onPickLayout(layout: DashboardLayout): void {
+    this.layoutService.set(layout);
+  }
 
   addExpenseUserAccess = true;
 

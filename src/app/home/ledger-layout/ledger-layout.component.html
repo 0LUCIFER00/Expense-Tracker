@@ -1,0 +1,132 @@
+<div class="layout">
+
+  <!--
+    A rail, not a card: full height is the right shape for the one list that is
+    always populated, and it needs no box around it.
+  -->
+  <aside class="rail" *ngIf="data.canSeeBalances">
+    <p class="rail-label">Held across accounts</p>
+    <p class="rail-total tnum">₹{{ data.accountsTotal | number }}</p>
+
+    <p class="rail-empty" *ngIf="!data.accounts.length">
+      No accounts yet. Add one and your balances appear here.
+    </p>
+
+    <div class="scroll-area">
+      <div class="rail-row" *ngFor="let account of data.accounts">
+        <div class="rail-head">
+          <span class="rail-name">{{ account.name }}</span>
+          <span class="rail-amount tnum">₹{{ account.balance | number }}</span>
+        </div>
+        <span class="rail-kind">{{ account.kind }}</span>
+      </div>
+    </div>
+
+    <a class="rail-link" routerLink="/bal-mnt">Manage accounts</a>
+  </aside>
+
+  <div class="main">
+
+    <div class="summary">
+      <div class="summary-figure">
+        <p class="figure tnum">₹{{ data.spent | number }}</p>
+        <p class="figure-caption">spent in {{ data.monthName }}</p>
+      </div>
+
+      <span class="delta" *ngIf="data.difference" [class.more]="data.spentMore"
+        [class.less]="!data.spentMore">
+        ₹{{ data.difference | number }}
+        {{ data.spentMore ? 'more' : 'less' }} than {{ data.lastMonthName }}
+      </span>
+
+      <div class="stat">
+        <p class="stat-label">Daily average</p>
+        <p class="stat-value tnum">₹{{ data.dailyAverage | number }}</p>
+      </div>
+
+      <div class="stat">
+        <p class="stat-label">Entries this month</p>
+        <p class="stat-value tnum">{{ data.entries }}</p>
+      </div>
+
+      <a class="primary-action" routerLink="/add-expense">
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+        Add expense
+      </a>
+    </div>
+
+    <!-- Categories as filter chips: one reads as a filter, eight still fit. -->
+    <div class="chips" *ngIf="data.categories.length">
+      <button type="button" class="chip" [class.on]="!selected" (click)="onPick('')">
+        All
+      </button>
+
+      <button type="button" class="chip" *ngFor="let category of data.categories"
+        [class.on]="selected === category.name" (click)="onPick(category.name)">
+        {{ category.name }}
+        <span class="chip-amount tnum">₹{{ category.total | number }}</span>
+      </button>
+    </div>
+
+    <section class="table">
+      <div class="table-head" role="row">
+        <span role="columnheader">Date</span>
+        <span role="columnheader">Description</span>
+        <span role="columnheader">Category</span>
+        <span role="columnheader" *ngIf="data.canSeeBalances">Account</span>
+        <span role="columnheader" class="right">Amount</span>
+      </div>
+
+      <div class="scroll-area">
+        <div class="table-row" *ngFor="let row of rows" [class.no-account]="!data.canSeeBalances">
+          <span class="cell-date tnum">{{ row.date | date: 'd MMM' }}</span>
+
+          <span class="cell-what">{{ row.description }}</span>
+
+          <span class="cell-category">
+            <span class="tag" [attr.data-cat]="row.category || 'None'">
+              {{ row.category || 'Uncategorised' }}
+            </span>
+          </span>
+
+          <span class="cell-account" *ngIf="data.canSeeBalances">
+            {{ row.sourceCategory || '—' }}
+          </span>
+
+          <span class="cell-amount tnum" [class.pending]="row.isPendingApproval">
+            ₹{{ row.amount | number }}
+          </span>
+        </div>
+
+        <!-- The room left over says something useful rather than nothing. -->
+        <p class="table-note" *ngIf="rows.length">
+          That is everything on screen. Add another from
+          <a routerLink="/add-expense">Add Expense</a><ng-container *ngIf="data.offerWhatsapp">, or
+          <a routerLink="/settings">connect WhatsApp</a> and send
+          <span class="command tnum">250 coffee hdfc</span></ng-container>.
+        </p>
+
+        <p class="table-note" *ngIf="!rows.length && selected">
+          Nothing filed under {{ selected }} yet.
+        </p>
+
+        <p class="table-note" *ngIf="!rows.length && !selected">
+          Nothing recorded yet. Add your first expense from
+          <a routerLink="/add-expense">Add Expense</a>.
+        </p>
+      </div>
+
+      <div class="table-foot">
+        <a class="rail-link" routerLink="/view-expenses">See all expenses</a>
+
+        <span class="foot-total tnum">
+          {{ rows.length }} {{ rows.length === 1 ? 'entry' : 'entries' }}
+          · <strong>₹{{ shownTotal | number }}</strong>
+        </span>
+      </div>
+    </section>
+
+  </div>
+</div>

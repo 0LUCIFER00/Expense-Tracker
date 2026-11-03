@@ -1,0 +1,53 @@
+import { Expense } from './models';
+
+/**
+ * What the dashboard shows, worked out once by HomeComponent and handed to
+ * whichever layout is in use.
+ *
+ * The two layouts arrange the same facts differently; keeping the arithmetic
+ * out of them means a figure cannot come out different depending on which one
+ * you happen to be looking at.
+ */
+
+/** One of the account rows, with its share of the largest for the bar. */
+export interface DashboardAccount {
+  name: string;
+  kind: string;
+  /** Null when this session may not see amounts. */
+  balance: number | null;
+  share: number;
+}
+
+/** One category's spending this month, as a share of the largest. */
+export interface DashboardCategory {
+  name: string;
+  total: number;
+  share: number;
+  /** Position in the colour ramp, 0 being the largest. */
+  tone: number;
+}
+
+export interface DashboardData {
+  today: Date;
+  monthName: string;
+  lastMonthName: string;
+
+  /** Settled spending in the month being shown. */
+  spent: number;
+  /** The gap to last month as a positive figure; `spentMore` carries the sign. */
+  difference: number;
+  spentMore: boolean;
+  /** Spend so far this month over the days elapsed, not the whole month. */
+  dailyAverage: number;
+  entries: number;
+
+  accounts: DashboardAccount[];
+  accountsTotal: number;
+  canSeeBalances: boolean;
+
+  categories: DashboardCategory[];
+  recent: Expense[];
+
+  /** True while there is a phone to connect and nothing connected yet. */
+  offerWhatsapp: boolean;
+}

@@ -7,6 +7,7 @@ import {
 import { provideRouter } from '@angular/router';
 import { HomeComponent } from './home.component';
 import { BalanceAccount, DEFAULT_SETTINGS, Expense, Settings } from '../shared/models';
+import { DashboardData } from '../shared/dashboard';
 
 function expense(overrides: Partial<Expense> = {}): Expense {
   return {
@@ -67,6 +68,19 @@ describe('HomeComponent', () => {
 
   afterEach(() => http.verify());
 
+
+  /** The summary the component built, asserted on by every test below. */
+  function data(): DashboardData {
+    expect(component.data).not.toBeNull();
+    return component.data as DashboardData;
+  }
+
+  /** Last month is not on the summary; it is the figure the delta came from. */
+  function lastMonthSpent(): number {
+    const d = data();
+    return d.spentMore ? d.spent - d.difference : d.spent + d.difference;
+  }
+
   function load(
     expenses: Expense[],
     accounts: BalanceAccount[] = [],
@@ -96,8 +110,8 @@ describe('HomeComponent', () => {
         expense({ id: 'e2', date: dateInMonth(1), amount: 200 })
       ]);
 
-      expect(component.currentMonthSpent).toBe(300);
-      expect(component.lastMonthSpent).toBe(200);
+      expect(data().spent).toBe(300);
+      expect(lastMonthSpent()).toBe(200);
     });
 
     it('reports how much more was spent, and that it was more', () => {
@@ -106,8 +120,8 @@ describe('HomeComponent', () => {
         expense({ id: 'e2', date: dateInMonth(1), amount: 200 })
       ]);
 
-      expect(component.monthDifference).toBe(100);
-      expect(component.spentMore).toBeTrue();
+      expect(data().difference).toBe(100);
+      expect(data().spentMore).toBeTrue();
     });
 
     // The pill reads "less than October", so the figure itself stays positive.
@@ -117,8 +131,8 @@ describe('HomeComponent', () => {
         expense({ id: 'e2', date: dateInMonth(1), amount: 200 })
       ]);
 
-      expect(component.monthDifference).toBe(150);
-      expect(component.spentMore).toBeFalse();
+      expect(data().difference).toBe(150);
+      expect(data().spentMore).toBeFalse();
     });
 
     it('has no difference to show when the two months match', () => {
@@ -127,13 +141,13 @@ describe('HomeComponent', () => {
         expense({ id: 'e2', date: dateInMonth(1), amount: 200 })
       ]);
 
-      expect(component.monthDifference).toBe(0);
+      expect(data().difference).toBe(0);
     });
 
     it('averages over the days gone by, not the whole month', () => {
       load([expense({ date: dateInMonth(0), amount: 300 })]);
 
-      expect(component.dailyAverage).toBe(Math.round(300 / new Date().getDate()));
+      expect(data().dailyAverage).toBe(Math.round(300 / new Date().getDate()));
     });
 
     it('counts this month’s entries only', () => {
@@ -143,7 +157,7 @@ describe('HomeComponent', () => {
         expense({ id: 'e3', date: dateInMonth(1) })
       ]);
 
-      expect(component.monthEntries).toBe(2);
+      expect(data().entries).toBe(2);
     });
   });
 
@@ -155,7 +169,7 @@ describe('HomeComponent', () => {
         expense({ id: 'e3', date: dateInMonth(1), amount: 900, category: 'Shopping' })
       ]);
 
-      expect(component.categoryBars.map(bar => bar.category)).toEqual([
+      expect(data().categories.map(bar => bar.name)).toEqual([
         'Groceries',
         'Travel'
       ]);
@@ -167,25 +181,30 @@ describe('HomeComponent', () => {
         expense({ id: 'e2', date: dateInMonth(0), amount: 100, category: 'Groceries' })
       ]);
 
-      expect(component.categoryBars.map(bar => bar.share)).toEqual([100, 50]);
+      expect(data().categories.map(bar => bar.share)).toEqual([100, 50]);
     });
 
     it('is empty when this month has nothing in it', () => {
       load([expense({ date: dateInMonth(1), amount: 500 })]);
 
-      expect(component.categoryBars).toEqual([]);
+      expect(data().categories).toEqual([]);
     });
   });
 
   describe('the rest of the summary', () => {
-    it('shows five entries, most recently spent first', () => {
+    // Twelve is what the ledger layout's table can show; the other layout
+    // draws as many as its card has room for.
+    it('caps the list at twelve, most recently spent first', () => {
       load(
-        Array.from({ length: 7 }, (_, i) =>
-          expense({ id: `e${i}`, date: `2026-10-${String(i + 10)}` })
+        Array.from({ length: 15 }, (_, i) =>
+          expense({ id: `e${i}`, date: `2026-10-${String(i + 10).padStart(2, '0')}` })
         )
       );
 
-      expect(component.recent.map(e => e.id)).toEqual(['e6', 'e5', 'e4', 'e3', 'e2']);
+      const ids = data().recent.map(e => e.id);
+
+      expect(ids.length).toBe(12);
+      expect(ids.slice(0, 3)).toEqual(['e14', 'e13', 'e12']);
     });
 
     // Two entries on the same day fall back to the order they were added.
@@ -195,7 +214,7 @@ describe('HomeComponent', () => {
         expense({ id: 'newer', date: '2026-10-20', createdAt: '2026-10-20T19:00:00.000Z' })
       ]);
 
-      expect(component.recent.map(e => e.id)).toEqual(['newer', 'older']);
+      expect(data().recent.map(e => e.id)).toEqual(['newer', 'older']);
     });
 
     it('puts a recent spend above one entered later but dated earlier', () => {
@@ -204,7 +223,7 @@ describe('HomeComponent', () => {
         expense({ id: 'recent', date: '2026-10-20', createdAt: '2026-10-20T10:00:00.000Z' })
       ]);
 
-      expect(component.recent.map(e => e.id)).toEqual(['recent', 'backdated']);
+      expect(data().recent.map(e => e.id)).toEqual(['recent', 'backdated']);
     });
 
     it('totals only the saved accounts', () => {
@@ -217,8 +236,8 @@ describe('HomeComponent', () => {
         ]
       );
 
-      expect(component.accountRows.length).toBe(2);
-      expect(component.accountsTotal).toBe(1500);
+      expect(data().accounts.length).toBe(2);
+      expect(data().accountsTotal).toBe(1500);
     });
 
     it('orders the accounts by balance and sizes them against the largest', () => {
@@ -230,11 +249,11 @@ describe('HomeComponent', () => {
         ]
       );
 
-      expect(component.accountRows.map(row => row.account.category)).toEqual([
+      expect(data().accounts.map(row => row.name)).toEqual([
         'HDFC Bank',
         'Paytm'
       ]);
-      expect(component.accountRows.map(row => row.share)).toEqual([100, 25]);
+      expect(data().accounts.map(row => row.share)).toEqual([100, 25]);
     });
 
     // A zero balance would otherwise render as an invisible bar.
@@ -247,13 +266,13 @@ describe('HomeComponent', () => {
         ]
       );
 
-      expect(component.accountRows[1].share).toBe(2);
+      expect(data().accounts[1].share).toBe(2);
     });
 
     it('keeps the accounts panel shut when balances are hidden', () => {
       load([], [account()], { balanceUserAccess: false });
 
-      expect(component.canSeeBalances).toBeFalse();
+      expect(data().canSeeBalances).toBeFalse();
     });
   });
 });
