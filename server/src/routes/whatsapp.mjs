@@ -10,6 +10,8 @@ import { guessCategory, guessIncomeCategory } from '../categories.mjs';
 import {
   WHATSAPP_VERIFY_TOKEN,
   extractTextMessage,
+  isStale,
+  messageAgeMs,
   normaliseNumber,
   sendText,
   verifySignature
@@ -49,6 +51,27 @@ whatsappRouter.post('/webhook', asyncRoute(async (req, res) => {
   if (!message) {
     return;
   }
+
+  /*
+   * Meta retries a webhook it could not deliver for days afterwards, and a
+   * replayed message carries a new id, so the processed-message table cannot
+   * tell it apart from something just sent. Acting on it books a spend the
+   * owner made long ago and has usually already recorded by hand.
+   */
+  if (isStale(message)) {
+    console.warn(
+      `[whatsapp] ignored a message sent ${Math.round(messageAgeMs(message) / 60_000)} ` +
+      `minutes ago (${message.messageId})`
+    );
+    return;
+  }
+
+  // Logged on every message, so that if one is ever acted on late there is a
+  // number in the record rather than a guess.
+  console.info(
+    `[whatsapp] handling ${message.messageId}, sent ` +
+    `${Math.round((messageAgeMs(message) ?? 0) / 1000)}s ago`
+  );
 
   /*
    * Not a bare await: once the response is flushed, a serverless instance may

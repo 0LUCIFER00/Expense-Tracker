@@ -174,6 +174,14 @@ paid 1,250.50 for dinner   →  filler words are ignored
 Naming a saved balance account debits it, subject to the same permission the
 web form uses. Other commands: `balance`, `today`, `undo`, `help`.
 
+A message is ignored if it was sent more than fifteen minutes before it arrived.
+Meta keeps a webhook it could not deliver and retries it for days, which is right
+for a notification and wrong for a ledger: a message sent while the webhook pointed
+somewhere dead turns up later and records a spend that has usually been entered by
+hand in the meantime. The replay carries a new message id, so
+`whatsapp_processed_messages` cannot recognise it — only the time it was sent can.
+Every message logs its age, so a late one leaves a number behind rather than a guess.
+
 Two scripts for when it is not behaving: `npm run wa:check` reads the configuration
 and asks Meta what it thinks the number is, and `npm run wa:recent` lists what has
 actually arrived. The second one exists as a script rather than a one-liner because

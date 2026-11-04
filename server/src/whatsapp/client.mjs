@@ -73,8 +73,37 @@ export function extractTextMessage(body) {
     messageId: message.id,
     from: message.from,
     text: message.text?.body ?? '',
-    contactName: value?.contacts?.[0]?.profile?.name ?? null
+    contactName: value?.contacts?.[0]?.profile?.name ?? null,
+    // Seconds since the epoch, as Meta sends it. When the message was sent,
+    // which is not the same as when it arrived: see isStale.
+    sentAt: Number(message.timestamp) || null
   };
+}
+
+/**
+ * How late a message may be and still be acted on.
+ *
+ * Meta queues a webhook it could not deliver and retries it for days. That is
+ * the right thing for a notification and the wrong thing for a ledger: a
+ * message sent on Monday, undeliverable because the webhook pointed somewhere
+ * dead, arrives on Tuesday and records a spend the owner made and forgot about
+ * — or entered by hand in the meantime, which is how this was found. The
+ * duplicate carries a new message id, so the processed-message table cannot
+ * recognise it.
+ *
+ * A genuine retry of a live webhook lands within seconds. Fifteen minutes is
+ * far longer than that and far shorter than a replay.
+ */
+const MAX_AGE_MS = 15 * 60_000;
+
+export function messageAgeMs(message) {
+  return message?.sentAt ? Date.now() - message.sentAt * 1000 : null;
+}
+
+export function isStale(message) {
+  const age = messageAgeMs(message);
+
+  return age !== null && age > MAX_AGE_MS;
 }
 
 /** Sends a plain text reply. Failures are logged, never thrown at the webhook. */
