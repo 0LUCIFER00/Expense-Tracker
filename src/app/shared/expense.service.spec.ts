@@ -165,6 +165,27 @@ describe('ExpenseService', () => {
     it('is zero for an empty list', () => {
       expect(service.totalOf([])).toBe(0);
     });
+
+    /*
+     * ₹1,455 of vegetables left the account, but split four ways only ₹363 of
+     * it was the owner's own spending — the rest they fronted for others.
+     */
+    it('counts only your share of a split expense', () => {
+      const total = service.totalOf([
+        expense({ amount: 1455, splitMembers: 4, splitShare: 364, personalShare: 363 }),
+        expense({ amount: 100 })
+      ]);
+
+      expect(total).toBe(463);
+    });
+
+    it('files only your share of a split under its category', () => {
+      const totals = service.byCategory([
+        expense({ amount: 1455, category: 'Groceries', splitMembers: 4, personalShare: 363 })
+      ]);
+
+      expect(totals).toEqual([{ category: 'Groceries', total: 363 }]);
+    });
   });
 
   describe('listCategories', () => {

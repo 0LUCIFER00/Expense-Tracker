@@ -67,7 +67,7 @@ export class AuthService {
     return this.pendingLookup;
   }
 
-  /** Forces a re-read, e.g. after the admin password changes. */
+  /** Forces a re-read, e.g. after the full-access password changes. */
   refreshSession(): Observable<Session | null> {
     this.sessionSubject.next(null);
     this.pendingLookup = null;
@@ -104,7 +104,7 @@ export class AuthService {
    * Both of these change hasAdminPassword, so re-read the session after.
    *
    * @param currentAdminPassword required by the server only when replacing an
-   *   existing admin password from a normal session; creating the first one, or
+   *   existing full-access password from a normal session; creating the first one, or
    *   changing it while signed in as admin, needs nothing.
    */
   setAdminPassword(

@@ -4,11 +4,11 @@ import { query } from './db.mjs';
  * API name (camelCase) -> column name.
  *
  * These describe the NORMAL user only. An admin session implicitly has every
- * permission: the admin password is the owner's own second key, and the owner
+ * permission: the full-access password is the owner's own second key, and the owner
  * is who sets these flags, so an admin restricting itself could just undo it.
  */
 export const FLAGS = {
-  /** May see account balances at all — the reason the admin password exists. */
+  /** May see account balances at all — the reason the full-access password exists. */
   balanceUserAccess: 'balance_user_access',
   /** May reach the Add Money page; its amounts still follow the flag above. */
   addMoneyUserAccess: 'add_money_user_access',

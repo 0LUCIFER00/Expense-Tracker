@@ -1,31 +1,103 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { Expense } from '../shared/models';
+import { Expense, Income, SplitSummary } from '../shared/models';
 import { ExpenseService, UNCATEGORISED } from '../shared/expense.service';
+import { IncomeService } from '../shared/income.service';
 import { downloadCsv } from '../shared/csv';
 import { ToastService } from '../shared/toast.service';
 import { SettingsService } from '../shared/settings.service';
 import { parseLocalDate } from '../shared/date-utils';
+import { SplitHistoryComponent } from '../shared/split-history/split-history.component';
 
+/** Which half of the ledger is on screen. */
+export type TransactionTab = 'all' | 'out' | 'in';
+
+/** How a repayment is labelled where an income would show its source. */
+export const REPAYMENT = 'Repayment';
+
+/**
+ * One line of the ledger: an expense or money in, in a shape the table can
+ * sort, filter and draw without caring which it is.
+ */
+export interface TransactionRow {
+  /** Unique across both kinds, since an expense and an income may share an id. */
+  key: string;
+  kind: 'out' | 'in';
+  date: string;
+  amount: number;
+  description: string;
+  /** The expense category, or where money in came from. */
+  category: string;
+  /** The account it left or arrived in; null when this session may not see it. */
+  account: string | null;
+  /** Sorts and reads as "Done", "Waiting" or "In". */
+  status: string;
+  createdAt: string;
+  expense?: Expense;
+  income?: Income;
+}
+
+type SortColumn = 'date' | 'amount' | 'description' | 'category' | 'account' | 'status';
+
+const TABS: TransactionTab[] = ['all', 'out', 'in'];
+
+/**
+ * Transactions — what used to be View Expenses, now with money in beside it.
+ *
+ * One page rather than a second list for money in: the filters, sorting,
+ * export and expanding rows all apply to both, and a repayment reads best in
+ * date order next to the split it pays back. The Money out tab is the old page
+ * exactly, so nothing anyone relied on there has moved.
+ */
 @Component({
   selector: 'app-expense-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SplitHistoryComponent],
   templateUrl: './expense-list.component.html',
   styleUrl: './expense-list.component.css'
 })
 export class ExpenseListComponent implements OnInit {
   private readonly expenseService = inject(ExpenseService);
+  private readonly incomeService = inject(IncomeService);
   private readonly settingsService = inject(SettingsService);
   private readonly toast = inject(ToastService);
+  // Optional so the component still builds where no router is provided.
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
 
-  /** Everything the server returned; `expenses` is the filtered view of it. */
+  readonly tabs: { value: TransactionTab; label: string }[] = [
+    { value: 'all', label: 'All' },
+    { value: 'out', label: 'Debit' },
+    { value: 'in', label: 'Credit' }
+  ];
+
+  tab: TransactionTab = 'all';
+
+  /** Everything the server returned; the lists below are filtered views of it. */
   private allExpenses: Expense[] = [];
+  private allIncomes: Income[] = [];
 
+  /** Expenses that pass the filters, sorted — whichever tab is showing. */
   expenses: Expense[] = [];
+  /** Money in that passes the filters, sorted. */
+  incomes: Income[] = [];
+  /** What the table draws: the tab's share of the two lists above. */
+  rows: TransactionRow[] = [];
+
+  /** The owner's own spending: of a split expense, only their share. */
   total = 0;
+  /** Money that came in as income — repayments are not income. */
+  moneyIn = 0;
+  /** Money people handed back for their part of a split. */
+  paidBack = 0;
+
+  /** Split expenses by id, with their repayments, for the rows that expand. */
+  splits = new Map<string, SplitSummary>();
+  /** The row whose split history is open; one at a time. */
+  expandedId: string | null = null;
 
   loading = true;
 
@@ -44,7 +116,7 @@ export class ExpenseListComponent implements OnInit {
   canViewSourceDetails = false;
   canRemoveExpenses = false;
 
-  sortColumn: keyof Expense | null = null;
+  sortColumn: SortColumn | null = null;
   sortDirection: 'asc' | 'desc' | 'default' = 'default';
 
   years = [
@@ -73,16 +145,26 @@ export class ExpenseListComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    const requested = this.route?.snapshot.queryParamMap.get('tab') as TransactionTab | null;
+
+    if (requested && TABS.includes(requested)) {
+      this.tab = requested;
+    }
+
     this.reload();
   }
 
   private reload(): void {
     forkJoin({
       expenses: this.expenseService.list(),
+      incomes: this.incomeService.list(),
+      splits: this.expenseService.listSplits(),
       settings: this.settingsService.load(true)
     }).subscribe({
-      next: ({ expenses }) => {
+      next: ({ expenses, incomes, splits }) => {
         this.allExpenses = expenses;
+        this.allIncomes = incomes;
+        this.splits = new Map(splits.map(split => [split.id, split]));
         this.collectCategories();
         this.setViewPermission();
         this.applyFilters();
@@ -95,10 +177,22 @@ export class ExpenseListComponent implements OnInit {
     });
   }
 
+  /** What a piece of money in is filed under, for the filter and the chip. */
+  private incomeCategory(income: Income): string {
+    return income.splitExpenseId ? REPAYMENT : income.category ?? UNCATEGORISED;
+  }
+
+  /** The categories in use on the tab showing, so each tab filters by its own. */
   private collectCategories(): void {
-    const names = new Set(
-      this.allExpenses.map(expense => expense.category ?? UNCATEGORISED)
-    );
+    const names = new Set<string>();
+
+    if (this.tab !== 'in') {
+      this.allExpenses.forEach(expense => names.add(expense.category ?? UNCATEGORISED));
+    }
+
+    if (this.tab !== 'out') {
+      this.allIncomes.forEach(income => names.add(this.incomeCategory(income)));
+    }
 
     this.usedCategories = [...names].sort();
 
@@ -115,6 +209,24 @@ export class ExpenseListComponent implements OnInit {
     this.canRemoveExpenses = this.settingsService.canRemove;
   }
 
+  /** Switches half of the ledger, and records it in the address for a refresh. */
+  onTab(tab: TransactionTab): void {
+    if (tab === this.tab) {
+      return;
+    }
+
+    this.tab = tab;
+    this.expandedId = null;
+    this.collectCategories();
+    this.applyFilters();
+
+    this.router?.navigate([], {
+      relativeTo: this.route ?? undefined,
+      queryParams: { tab: tab === 'all' ? null : tab },
+      replaceUrl: true
+    });
+  }
+
   onApprovePending(expense: Expense): void {
     this.expenseService.approve(expense.id).subscribe({
       next: () => {
@@ -127,15 +239,59 @@ export class ExpenseListComponent implements OnInit {
     });
   }
 
+  /** The split a row belongs to: its own if it was split, or the one a repayment pays back. */
+  splitFor(row: TransactionRow): SplitSummary | null {
+    const id = row.expense?.splitMembers ? row.expense.id : row.income?.splitExpenseId;
+
+    return id ? this.splits.get(id) ?? null : null;
+  }
+
+  /** Opens a split's repayment history under its row, or closes it. */
+  onToggleSplit(row: TransactionRow): void {
+    if (!this.splitFor(row)) {
+      return;
+    }
+
+    this.expandedId = this.expandedId === row.key ? null : row.key;
+  }
+
   onDelete(expense: Expense): void {
     this.expenseService.remove(expense.id).subscribe({
       next: removed => {
+        // Repayments made against it stay, as ordinary money in; saying so
+        // explains why they are still listed.
+        const detached = removed.detachedRepayments
+          ? ` Its ${removed.detachedRepayments} repayment(s) stay as money in.`
+          : '';
+
         // Say so when money went back, otherwise the balance silently changing
         // looks like a second bug.
         this.toast.success(
-          removed.refunded
+          (removed.refunded
             ? `Removed. ₹${Number(expense.amount).toLocaleString()} put back ` +
               `into ${removed.sourceCategory}.`
+            : 'Removed.') + detached
+        );
+
+        this.reload();
+      },
+      error: error => {
+        this.toast.error(error.message);
+      }
+    });
+  }
+
+  /**
+   * Removing money in takes it back out of the account. The server refuses
+   * when the account has since been spent below it, and says why.
+   */
+  onDeleteIncome(income: Income): void {
+    this.incomeService.remove(income.id).subscribe({
+      next: removed => {
+        this.toast.success(
+          removed.reversed
+            ? `Removed. ₹${Number(income.amount).toLocaleString()} taken back out ` +
+              `of ${removed.targetCategory}.`
             : 'Removed.'
         );
 
@@ -162,37 +318,83 @@ export class ExpenseListComponent implements OnInit {
     this.applyFilters();
   }
 
-  applyFilters(): void {
-    let filtered = [...this.allExpenses];
+  /** True when a date falls inside the chosen year and month. */
+  private inPeriod(date: string): boolean {
+    const parsed = parseLocalDate(date);
 
-    if (this.selectedMonth !== 0) {
-      filtered = filtered.filter(
-        expense => parseLocalDate(expense.date).getMonth() === this.selectedMonth - 1
-      );
+    if (this.selectedMonth !== 0 && parsed.getMonth() !== this.selectedMonth - 1) {
+      return false;
     }
 
     if (this.selectedYear === -1) {
-      const limitYear = this.currentYear - this.recentYearsCount + 1;
-      filtered = filtered.filter(
-        expense => parseLocalDate(expense.date).getFullYear() < limitYear
-      );
-    } else if (this.selectedYear !== 0) {
-      filtered = filtered.filter(
-        expense => parseLocalDate(expense.date).getFullYear() === this.selectedYear
-      );
+      return parsed.getFullYear() < this.currentYear - this.recentYearsCount + 1;
     }
 
-    if (this.selectedCategory) {
-      filtered = filtered.filter(
-        expense => (expense.category ?? UNCATEGORISED) === this.selectedCategory
-      );
-    }
-
-    this.expenses = this.applySorting(filtered);
-    this.total = this.expenseService.totalOf(this.expenses);
+    return this.selectedYear === 0 || parsed.getFullYear() === this.selectedYear;
   }
 
-  onSort(column: keyof Expense): void {
+  applyFilters(): void {
+    const expenseRows = this.allExpenses
+      .filter(expense => this.inPeriod(expense.date))
+      .filter(expense =>
+        !this.selectedCategory ||
+        (expense.category ?? UNCATEGORISED) === this.selectedCategory
+      )
+      .map(expense => this.fromExpense(expense));
+
+    const incomeRows = this.allIncomes
+      .filter(income => this.inPeriod(income.date))
+      .filter(income =>
+        !this.selectedCategory || this.incomeCategory(income) === this.selectedCategory
+      )
+      .map(income => this.fromIncome(income));
+
+    const sorted = this.applySorting([...expenseRows, ...incomeRows]);
+
+    this.expenses = sorted.filter(row => row.expense).map(row => row.expense!);
+    this.incomes = sorted.filter(row => row.income).map(row => row.income!);
+    this.rows = this.tab === 'all' ? sorted : sorted.filter(row => row.kind === this.tab);
+
+    this.total = this.expenseService.totalOf(this.expenses);
+    this.moneyIn = this.sum(this.incomes.filter(income => !income.splitExpenseId));
+    this.paidBack = this.sum(this.incomes.filter(income => income.splitExpenseId));
+  }
+
+  private sum(incomes: Income[]): number {
+    return incomes.reduce((total, income) => total + Number(income.amount), 0);
+  }
+
+  private fromExpense(expense: Expense): TransactionRow {
+    return {
+      key: `out:${expense.id}`,
+      kind: 'out',
+      date: expense.date,
+      amount: Number(expense.amount),
+      description: expense.description,
+      category: expense.category ?? UNCATEGORISED,
+      account: expense.sourceCategory,
+      status: expense.isPendingApproval ? 'Pending approval' : 'Completed',
+      createdAt: expense.createdAt,
+      expense
+    };
+  }
+
+  private fromIncome(income: Income): TransactionRow {
+    return {
+      key: `in:${income.id}`,
+      kind: 'in',
+      date: income.date,
+      amount: Number(income.amount),
+      description: income.description,
+      category: this.incomeCategory(income),
+      account: income.targetCategory,
+      status: 'Credit',
+      createdAt: income.createdAt,
+      income
+    };
+  }
+
+  onSort(column: SortColumn): void {
     if (this.sortColumn !== column) {
       this.sortColumn = column;
       this.sortDirection = 'asc';
@@ -208,48 +410,40 @@ export class ExpenseListComponent implements OnInit {
     this.applyFilters();
   }
 
-  applySorting(expenses: Expense[]): Expense[] {
+  applySorting(rows: TransactionRow[]): TransactionRow[] {
     // Default is the order the entries were created in.
     if (!this.sortColumn || this.sortDirection === 'default') {
-      return [...expenses].sort(
+      return [...rows].sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
     }
 
     const column = this.sortColumn;
+    const direction = this.sortDirection === 'asc' ? 1 : -1;
 
-    return [...expenses].sort((a: any, b: any) => {
-      let valueA = a[column as string];
-      let valueB = b[column as string];
-
+    const value = (row: TransactionRow): number | string => {
       if (column === 'date') {
-        valueA = parseLocalDate(valueA).getTime();
-        valueB = parseLocalDate(valueB).getTime();
+        return parseLocalDate(row.date).getTime();
       }
 
       if (column === 'amount') {
-        valueA = Number(valueA);
-        valueB = Number(valueB);
+        return row.amount;
       }
 
-      if (typeof valueA === 'string') {
-        valueA = valueA.toLowerCase();
-      }
+      return String(row[column] ?? '').toLowerCase();
+    };
 
-      if (typeof valueB === 'string') {
-        valueB = valueB.toLowerCase();
-      }
+    return [...rows].sort((a, b) => {
+      const valueA = value(a);
+      const valueB = value(b);
 
-      if (valueA < valueB) {
-        return this.sortDirection === 'asc' ? -1 : 1;
-      }
-
-      if (valueA > valueB) {
-        return this.sortDirection === 'asc' ? 1 : -1;
-      }
-
-      return 0;
+      return valueA < valueB ? -direction : valueA > valueB ? direction : 0;
     });
+  }
+
+  /** True when the tab showing has anything to export. */
+  get canExport(): boolean {
+    return this.rows.length > 0;
   }
 
   /**
@@ -257,20 +451,35 @@ export class ExpenseListComponent implements OnInit {
    *
    * Built here rather than on the server: the list is already loaded, and
    * exporting what the user can actually see means the permission rules are
-   * applied once instead of twice.
+   * applied once instead of twice. Each tab exports its own shape; Money out
+   * is the same file the old View Expenses page produced.
    */
   onExportCsv(): void {
-    if (this.expenses.length === 0) {
+    if (!this.canExport) {
       return;
     }
 
+    const today = new Date().toISOString().slice(0, 10);
+
+    if (this.tab === 'out') {
+      downloadCsv(`expenses-${today}.csv`, ...this.expenseCsv());
+    } else if (this.tab === 'in') {
+      downloadCsv(`money-in-${today}.csv`, ...this.incomeCsv());
+    } else {
+      downloadCsv(`transactions-${today}.csv`, ...this.allCsv());
+    }
+  }
+
+  private expenseCsv(): [string[], string[][]] {
     const headers = ['Date', 'Amount', 'Description', 'Category'];
 
     if (this.canViewSourceDetails) {
       headers.push('Source Type', 'Account');
     }
 
-    headers.push('Status', 'Remarks');
+    // Last, so a sheet built on the earlier columns keeps reading them where
+    // they were. Blank on an expense that was not split.
+    headers.push('Status', 'Remarks', 'Split Between', 'Your Share');
 
     const rows = this.expenses.map(expense => {
       const cells = [
@@ -284,19 +493,84 @@ export class ExpenseListComponent implements OnInit {
         cells.push(expense.sourceType ?? '', expense.sourceCategory ?? '');
       }
 
-      cells.push(expense.status, expense.remarks ?? '');
+      cells.push(
+        expense.status,
+        expense.remarks ?? '',
+        expense.splitMembers ? String(expense.splitMembers) : '',
+        expense.splitMembers ? String(expense.personalShare) : ''
+      );
 
       return cells;
     });
 
-    downloadCsv(
-      `expenses-${new Date().toISOString().slice(0, 10)}.csv`,
-      headers,
-      rows
-    );
+    return [headers, rows];
   }
 
-  getSortIcon(column: keyof Expense): string {
+  private incomeCsv(): [string[], string[][]] {
+    const headers = ['Date', 'Amount', 'Description', 'Where It Came From'];
+
+    if (this.canViewSourceDetails) {
+      headers.push('Account');
+    }
+
+    headers.push('Pays Back');
+
+    const rows = this.incomes.map(income => {
+      const cells = [
+        income.date,
+        String(income.amount),
+        income.description,
+        this.incomeCategory(income)
+      ];
+
+      if (this.canViewSourceDetails) {
+        cells.push(income.targetCategory ?? '');
+      }
+
+      cells.push(income.splitDescription ?? '');
+
+      return cells;
+    });
+
+    return [headers, rows];
+  }
+
+  /** Both kinds in one sheet, with a Type column to tell them apart. */
+  private allCsv(): [string[], string[][]] {
+    const headers = ['Date', 'Type', 'Amount', 'Description', 'Category'];
+
+    if (this.canViewSourceDetails) {
+      headers.push('Account');
+    }
+
+    headers.push('Status', 'Your Share', 'Pays Back');
+
+    const rows = this.rows.map(row => {
+      const cells = [
+        row.date,
+        row.kind === 'out' ? 'Debit' : 'Credit',
+        String(row.amount),
+        row.description,
+        row.category
+      ];
+
+      if (this.canViewSourceDetails) {
+        cells.push(row.account ?? '');
+      }
+
+      cells.push(
+        row.status,
+        row.expense?.splitMembers ? String(row.expense.personalShare) : '',
+        row.income?.splitDescription ?? ''
+      );
+
+      return cells;
+    });
+
+    return [headers, rows];
+  }
+
+  getSortIcon(column: SortColumn): string {
     if (this.sortColumn !== column) {
       return '';
     }

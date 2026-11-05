@@ -204,7 +204,7 @@ export class SettingsComponent implements OnInit {
         // The server resets every permission to granted when the last admin
         // password goes, so pull the fresh values rather than showing stale ones.
         this.settingsService.reset();
-        this.toast.success('Admin access removed. Every permission is granted again.');
+        this.toast.success('Full access removed. Every permission is granted again.');
         this.loadSettingsPage();
       },
       error: error => {
@@ -232,7 +232,7 @@ export class SettingsComponent implements OnInit {
         this.adminPassword = '';
         this.confirmPassword = '';
         this.setPasswordError = '';
-        this.toast.success('Admin access created. Sign in with it to manage permissions.');
+        this.toast.success('Full access created. Sign in with it to manage permissions.');
         this.loadSettingsPage();
       },
       error: error => {

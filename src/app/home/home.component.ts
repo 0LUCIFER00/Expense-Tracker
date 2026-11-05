@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { BalanceAccount, Expense } from '../shared/models';
-import { CategoryTotal, ExpenseService } from '../shared/expense.service';
+import { BalanceAccount, Expense, SplitSummary } from '../shared/models';
+import { CategoryTotal, ExpenseService, personalAmount } from '../shared/expense.service';
 import { BalanceService } from '../shared/balance.service';
 import { SettingsService } from '../shared/settings.service';
 import { WhatsappService } from '../shared/whatsapp.service';
@@ -28,7 +28,7 @@ import { SpendingLayoutComponent } from './spending-layout/spending-layout.compo
  *
  * Which one is drawn follows the permission, not a preference: a session that
  * may see balances gets the layout built around them, and one that may not gets
- * the layout built without them. That is the admin password's whole purpose, so
+ * the layout built without them. That is the full-access password's whole purpose, so
  * it is not something to leave to a setting someone could forget to turn on.
  */
 @Component({
@@ -60,14 +60,17 @@ export class HomeComponent implements OnInit {
       settings: this.settingsService.load(true),
       // The dashboard is still worth showing if this one fails, so it resolves
       // to null rather than taking the whole page down.
-      whatsapp: this.whatsappService.status().pipe(catchError(() => of(null)))
+      whatsapp: this.whatsappService.status().pipe(catchError(() => of(null))),
+      // Likewise: without it the split rows just do not open.
+      splits: this.expenseService.listSplits().pipe(catchError(() => of([])))
     }).subscribe({
-      next: ({ expenses, balances, whatsapp }) => {
+      next: ({ expenses, balances, whatsapp, splits }) => {
         this.data = this.summarise(
           expenses,
           // Unsaved rows are drafts on the Money Management page, not accounts.
           balances.filter(account => account.saved),
-          Boolean(whatsapp?.available && !whatsapp?.connected)
+          Boolean(whatsapp?.available && !whatsapp?.connected),
+          splits
         );
       },
       error: error => {
@@ -79,7 +82,8 @@ export class HomeComponent implements OnInit {
   private summarise(
     expenses: Expense[],
     accounts: BalanceAccount[],
-    offerWhatsapp: boolean
+    offerWhatsapp: boolean,
+    splits: SplitSummary[] = []
   ): DashboardData {
     const now = new Date();
 
@@ -116,6 +120,7 @@ export class HomeComponent implements OnInit {
 
       categories: this.toCategories(this.expenseService.byCategory(thisMonth)),
       recent: this.toRecent(expenses),
+      splits: Object.fromEntries(splits.map(split => [split.id, split])),
 
       days,
       busiestDay: Math.max(0, ...days.map(day => day.total)),
@@ -190,7 +195,8 @@ export class HomeComponent implements OnInit {
       }
 
       const key = String(expense.date).slice(0, 10);
-      byDay.set(key, (byDay.get(key) ?? 0) + Number(expense.amount));
+      // The chart is the owner's spending, so a split counts as their share.
+      byDay.set(key, (byDay.get(key) ?? 0) + personalAmount(expense));
     }
 
     const days: DashboardDay[] = [];

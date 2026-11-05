@@ -1,0 +1,76 @@
+/*
+ * Opens under the row that was clicked, so it is quieter than the row itself:
+ * a rule down the left ties it to that row, and it carries no card of its own.
+ */
+:host {
+  display: block;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.625rem 0.875rem 0.625rem 1rem;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  background-color: var(--surface);
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.split-terms {
+  margin: 0 0 0.5rem;
+}
+
+.split-terms strong {
+  color: var(--ink);
+}
+
+.split-paid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.split-paid li {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr) auto;
+  gap: 0.625rem;
+  align-items: baseline;
+  padding: 0.3125rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+.paid-date,
+.paid-meta {
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+
+.paid-what {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.paid-amount {
+  font-weight: 700;
+  color: var(--good-ink);
+}
+
+.split-none {
+  margin: 0;
+  padding: 0.3125rem 0;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-3);
+}
+
+.split-status {
+  margin: 0;
+  padding-top: 0.4375rem;
+  border-top: 1px solid var(--rule);
+}
+
+/* Owed to the owner, not a problem — so amber, not the red of an error. */
+.split-status strong {
+  color: var(--warn-ink);
+}
+
+.split-status.settled {
+  color: var(--good-ink);
+  font-weight: 700;
+}

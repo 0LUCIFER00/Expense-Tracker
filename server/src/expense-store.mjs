@@ -15,7 +15,8 @@ const COLUMNS = `
  * Pass `expenseId` to remove a specific entry, or `lastFromChannel` to remove
  * the most recent one that arrived over that channel.
  *
- * @returns the removed row plus `refunded`, or null when there was nothing to remove.
+ * @returns the removed row plus `refunded` and `detachedRepayments`, or null
+ *   when there was nothing to remove.
  */
 export function removeExpense(userId, { expenseId = null, lastFromChannel = null } = {}) {
   return transaction(async client => {
@@ -61,8 +62,15 @@ export function removeExpense(userId, { expenseId = null, lastFromChannel = null
       balanceAfter = credited[0]?.balance ?? null;
     }
 
+    // Counted before the delete, which unlinks them (on delete set null). They
+    // stay as ordinary money in — that money did arrive — and the caller says so.
+    const { rows: linked } = await client.query(
+      'select count(*)::int as n from incomes where split_expense_id = $1',
+      [expense.id]
+    );
+
     await client.query('delete from expenses where id = $1', [expense.id]);
 
-    return { ...expense, refunded, balanceAfter };
+    return { ...expense, refunded, balanceAfter, detachedRepayments: linked[0].n };
   });
 }

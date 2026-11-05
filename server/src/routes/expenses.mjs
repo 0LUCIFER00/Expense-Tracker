@@ -12,6 +12,8 @@ import {
 import { effectivePermissions } from '../settings-store.mjs';
 import { removeExpense } from '../expense-store.mjs';
 import { CATEGORIES, normaliseCategory } from '../categories.mjs';
+import { MAX_MEMBERS, MIN_MEMBERS, parseMembers, splitAmount } from '../split.mjs';
+import { listSplits } from '../split-store.mjs';
 
 export const expensesRouter = Router();
 
@@ -21,6 +23,14 @@ const DESCRIPTION_MAX = 200;
 expensesRouter.use(requireAuth);
 
 expensesRouter.get('/categories', (_req, res) => res.json(CATEGORIES));
+
+/**
+ * Every split expense, with how much has come back on each. Add Money lists the
+ * ones still owed on, so a repayment can be filed against the right one.
+ */
+expensesRouter.get('/splits', asyncRoute(async (req, res) => {
+  res.json(await listSplits(req.session.userId));
+}));
 
 const STATUS_LABEL = {
   done: 'Done',
@@ -46,14 +56,23 @@ function toApi(row, { canViewSource }) {
     status: STATUS_LABEL[row.status],
     remarks: row.remarks,
     isPendingApproval: row.status === 'pending',
-    createdAt: row.created_at
+    createdAt: row.created_at,
+    // Null for an ordinary expense. A split one counts only personalShare
+    // towards the owner's spending; the whole amount still left the account.
+    splitMembers: row.split_members,
+    splitShare: row.split_share,
+    personalShare: row.personal_share,
+    // Paid back so far. Only the list query works it out; anywhere else a new
+    // or just-approved entry has had nothing paid back against it yet.
+    splitReceived: Number(row.split_received ?? 0)
   };
 }
 
 const SELECT_COLUMNS = `
   id, amount, description, spent_on, category,
   source_id, source_type, source_category,
-  expense_access, update_permission, balance_updated, status, remarks, created_at
+  expense_access, update_permission, balance_updated, status, remarks, created_at,
+  split_members, split_share, personal_share
 `;
 
 /**
@@ -75,7 +94,10 @@ expensesRouter.get('/', asyncRoute(async (req, res) => {
   const permissions = await effectivePermissions(req.session);
 
   const { rows } = await query(
-    `select ${SELECT_COLUMNS}
+    `select ${SELECT_COLUMNS},
+            (select coalesce(sum(i.amount), 0)
+               from incomes i
+              where i.split_expense_id = expenses.id) as split_received
        from expenses
       where user_id = $1
       order by created_at`,
@@ -96,6 +118,12 @@ expensesRouter.post('/', asyncRoute(async (req, res) => {
   const category = normaliseCategory(req.body?.category);
   const wantsBalanceUpdate = Boolean(req.body?.updateBalance);
 
+  // Absent, null or empty means an ordinary expense; anything else has to be a
+  // real head count, or the shares worked out from it mean nothing.
+  const rawMembers = req.body?.splitMembers;
+  const wantsSplit = rawMembers !== undefined && rawMembers !== null && rawMembers !== '';
+  const members = wantsSplit ? parseMembers(rawMembers) : null;
+
   if (amount === null) {
     return badRequest(res, 'Amount must be between 1 and 100000');
   }
@@ -111,6 +139,15 @@ expensesRouter.post('/', asyncRoute(async (req, res) => {
   if (req.body?.category && !category) {
     return badRequest(res, 'That is not one of the expense categories');
   }
+
+  if (wantsSplit && members === null) {
+    return badRequest(
+      res,
+      `Split it between ${MIN_MEMBERS} and ${MAX_MEMBERS} people, counting yourself.`
+    );
+  }
+
+  const split = members ? splitAmount(amount, members) : null;
 
   const permissions = await effectivePermissions(req.session);
   const updateBalance = wantsBalanceUpdate && permissions.canUpdateBalance;
@@ -170,14 +207,16 @@ expensesRouter.post('/', asyncRoute(async (req, res) => {
         `insert into expenses (
            user_id, amount, description, spent_on, category,
            source_id, source_type, source_category,
-           expense_access, update_permission, balance_updated, status, remarks
+           expense_access, update_permission, balance_updated, status, remarks,
+           split_members, split_share, personal_share
          )
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
          returning ${SELECT_COLUMNS}`,
         [
           req.session.userId, amount, description.value, date, category,
           source?.id ?? null, source?.type ?? null, source?.category ?? null,
-          updateBalance, permissions.canBackdate, debit, status, remarks
+          updateBalance, permissions.canBackdate, debit, status, remarks,
+          members, split?.share ?? null, split?.personal ?? null
         ]
       );
 
@@ -289,6 +328,9 @@ expensesRouter.delete('/:id', asyncRoute(async (req, res) => {
   res.json({
     id: removed.id,
     refunded: removed.refunded,
-    sourceCategory: removed.source_category
+    sourceCategory: removed.source_category,
+    // Repayments made against it stay, as ordinary money in: that money did
+    // arrive, whatever happens to the expense.
+    detachedRepayments: removed.detachedRepayments
   });
 }));

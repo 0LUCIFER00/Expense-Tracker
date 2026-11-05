@@ -229,16 +229,16 @@ describe('SettingsComponent — who may edit permissions', () => {
     expect(host().querySelector('.matrix-head')).toBeNull();
   });
 
-  it('tells a normal user with an admin password how to get in', () => {
+  it('tells a normal user with a full-access password how to get in', () => {
     build('user', true);
 
-    expect(host().textContent).toContain('admin password to change them');
+    expect(host().textContent).toContain('full-access password to change them');
   });
 
-  it('tells a user with no admin password to create one first', () => {
+  it('tells a user with no full-access password to create one first', () => {
     build('user', false);
 
-    expect(host().textContent).toContain('Create admin access');
+    expect(host().textContent).toContain('Create full access');
     expect(host().querySelectorAll('.settings-row').length).toBe(0);
   });
 

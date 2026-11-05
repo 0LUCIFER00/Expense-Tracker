@@ -49,7 +49,7 @@ async function requireBalanceAccess(req, res) {
 
   if (!canSeeBalances) {
     res.status(403).json({
-      error: 'Sign in with your admin password to manage balances.'
+      error: 'Sign in with your full-access password to manage balances.'
     });
     return false;
   }

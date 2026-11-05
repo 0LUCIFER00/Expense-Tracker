@@ -75,7 +75,7 @@ authRouter.post('/register', registerLimit, asyncRoute(async (req, res) => {
   }
 
   if (adminPassword && adminPassword === password) {
-    return badRequest(res, 'The admin password must differ from the account password');
+    return badRequest(res, 'The full-access password must differ from the account password');
   }
 
   const existing = await query('select 1 from users where email = $1', [email]);
@@ -273,7 +273,7 @@ authRouter.put('/password', requireAuth, passwordLimit, asyncRoute(async (req, r
   // The two passwords are what tell a normal session from an admin one, so
   // they must not become the same value.
   if (await verifyPassword(newPassword, rows[0].admin_password_hash)) {
-    return badRequest(res, 'That is your admin password — pick a different one');
+    return badRequest(res, 'That is your full-access password — pick a different one');
   }
 
   await query('update users set password_hash = $1 where id = $2', [
@@ -285,13 +285,13 @@ authRouter.put('/password', requireAuth, passwordLimit, asyncRoute(async (req, r
 }));
 
 /**
- * Creates the account's admin password, or replaces an existing one.
+ * Creates the account's full-access password, or replaces an existing one.
  *
- * Creating the first one needs nothing beyond a session: with no admin password
+ * Creating the first one needs nothing beyond a session: with no full-access password
  * yet, the normal user already has every permission, so there is nothing to
  * climb past.
  *
- * Replacing one is different. The admin password is what the permission matrix
+ * Replacing one is different. The full-access password is what the permission matrix
  * is enforced against, so a normal user who could overwrite it could set one of
  * their own, sign in with it and grant themselves everything the owner had
  * switched off — balances, Add Money, approvals, deletions. Changing it
@@ -303,7 +303,7 @@ authRouter.put('/admin-password', requireAuth, passwordLimit, asyncRoute(async (
   const currentAdminPassword = String(req.body?.currentAdminPassword ?? '');
 
   if (adminPassword.length < 6) {
-    return badRequest(res, 'Admin password must be at least 6 characters');
+    return badRequest(res, 'Full-access password must be at least 6 characters');
   }
 
   const { rows } = await query(
@@ -318,13 +318,13 @@ authRouter.put('/admin-password', requireAuth, passwordLimit, asyncRoute(async (
 
     if (!proven) {
       return res.status(403).json({
-        error: 'Enter the current admin password to change it.'
+        error: 'Enter the current full-access password to change it.'
       });
     }
   }
 
   if (rows[0] && await verifyPassword(adminPassword, rows[0].password_hash)) {
-    return badRequest(res, 'The admin password must differ from the account password');
+    return badRequest(res, 'The full-access password must differ from the account password');
   }
 
   const hash = await hashPassword(adminPassword);
@@ -347,12 +347,12 @@ authRouter.post('/admin-password/remove', requireAuth, passwordLimit, asyncRoute
   );
 
   if (!rows[0] || !await verifyPassword(currentPassword, rows[0].admin_password_hash)) {
-    return res.status(403).json({ error: 'Invalid admin password' });
+    return res.status(403).json({ error: 'Invalid full-access password' });
   }
 
   // With no admin there is nobody who could change the permission matrix
   // again, so leaving it half-restricted would lock the account out of its own
-  // features. Removing the admin password resets the flags to all-granted.
+  // features. Removing the full-access password resets the flags to all-granted.
   await transaction(async client => {
     await client.query('update users set admin_password_hash = null where id = $1', [
       req.session.userId

@@ -3,7 +3,7 @@
   <form [formGroup]="expenseForm" class="card form-card">
 
     <div class="form-head">
-      <h1 class="form-title">Add an expense</h1>
+      <h1 class="form-title">Add expense</h1>
       <p class="form-subtitle">Amount first — the rest can wait</p>
     </div>
 
@@ -20,35 +20,60 @@
       </div>
 
       <div class="field field-what">
-        <label class="field-label" for="description">What was it for</label>
+        <label class="field-label" for="description">Description</label>
         <input id="description" class="text-field" formControlName="description" type="text"
           placeholder="Coffee, auto fare, groceries…">
       </div>
 
-      <fieldset class="field field-category">
-        <legend class="field-label">Category</legend>
-        <p class="field-hint">Groups your spending, so the dashboard can show where it goes.</p>
+      <div class="field field-category">
+        <label class="field-label" for="category">Category</label>
 
-        <div class="chip-row">
-          <button type="button" class="chip" [class.on]="!expenseForm.get('category')?.value"
-            (click)="onPickCategory('')">
-            None
-          </button>
+        <select id="category" class="text-field" formControlName="category">
+          <option value="">None</option>
+          <option *ngFor="let name of categories" [value]="name">{{ name }}</option>
+        </select>
 
-          <button type="button" class="chip" *ngFor="let name of categories"
-            [class.on]="expenseForm.get('category')?.value === name" (click)="onPickCategory(name)">
-            {{ name }}
-          </button>
+        <p class="field-note">Groups your spending, so the dashboard can show where it goes.</p>
+      </div>
+
+      <!-- Paid for a group. The whole amount still leaves the account; only your
+           share counts as your spending. -->
+      <div class="field field-split">
+        <span class="field-label">Split</span>
+
+        <div class="split-row">
+          <label class="split-check">
+            <input type="checkbox" formControlName="split">
+            Split bill
+          </label>
+
+          <label class="split-count" *ngIf="isSplit">
+            between
+            <input class="text-field members-input tnum" formControlName="members" type="number"
+              inputmode="numeric" [min]="minMembers" [max]="maxMembers" aria-label="Number of people">
+            people
+          </label>
         </div>
-      </fieldset>
+
+        <p class="field-note good" *ngIf="splitPreview as split">
+          Your share ₹{{ split.personal | number }} · ₹{{ split.share | number }} each from the
+          other {{ split.members - 1 }}
+        </p>
+
+        <p class="field-note" *ngIf="isSplit && !splitPreview">
+          Enter the amount, and between {{ minMembers }} and {{ maxMembers }} people, you included.
+        </p>
+
+        <p class="field-note" *ngIf="!isSplit">Paid for a group? Count yourself in.</p>
+      </div>
 
       <div class="field field-source">
-        <label class="field-label" for="source">Spend from</label>
+        <label class="field-label" for="source">Debit from</label>
 
         <select id="source" class="text-field" formControlName="source"
           [attr.disabled]="!expenseAccess ? true : null">
 
-          <option value="">Don't take it from an account</option>
+          <option value="">Don't debit any account</option>
 
           <option *ngFor="let item of availableBalances" [value]="item.id">
             {{ item.category }}<ng-container *ngIf="item.balance !== null"> — ₹{{ item.balance | number }}</ng-container>
@@ -95,7 +120,7 @@
 
     <!-- Only once an account is chosen, and only if its figure may be shown. -->
     <section class="card" *ngIf="selectedAccount && canSeeBalances">
-      <h2 class="card-title">After this expense</h2>
+      <h2 class="card-title">Balance after</h2>
 
       <div class="after-row">
         <span class="after-label">{{ selectedAccount.category }} now</span>
@@ -119,7 +144,7 @@
     </section>
 
     <section class="card">
-      <h2 class="card-title">Faster, from your phone</h2>
+      <h2 class="card-title">Add via WhatsApp</h2>
       <p class="aside-body">The same expense over WhatsApp, no sign-in:</p>
 
       <p class="command tnum">{{ sampleCommand }}</p>

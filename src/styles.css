@@ -340,6 +340,43 @@ html[data-theme='dark'] {
 }
 
 /*
+ * A split expense's row, on View Expenses and the dashboard: clicking it opens
+ * who has paid back. Here because both pages need it, and each of their own
+ * stylesheets is close to its size budget.
+ */
+.et-splittable {
+  cursor: pointer;
+}
+
+.et-splittable:focus-visible {
+  outline: 2px solid var(--focus-border);
+  outline-offset: 2px;
+}
+
+.et-split-tag {
+  display: block;
+  margin-top: 0.125rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-ink);
+}
+
+.et-split-caret {
+  display: inline-block;
+  transition: transform 0.15s;
+}
+
+.et-open .et-split-caret {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .et-split-caret {
+    transition: none;
+  }
+}
+
+/*
  * Pages that fit the window.
  *
  * FitsScreenDirective puts this class on <body> while such a page is open. The

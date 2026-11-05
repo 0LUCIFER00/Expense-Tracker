@@ -22,7 +22,37 @@
       <strong>cash</strong>) takes the money from it. Leave it out and the expense
       is only recorded. If two accounts share a word, you are asked which one
       rather than guessed at. A message starting with <strong>+</strong> is money
-      coming in, and that one always needs an account.
+      coming in, and that one always needs an account. Paid for a group? Splitting
+      is just below.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">Splitting a bill over WhatsApp</h2>
+    <p class="card-body">
+      You pay the whole bill, the others pay you back. Only your share counts as your
+      spending, and what they hand back is a repayment, not income.
+    </p>
+
+    <ol class="split-steps">
+      <li *ngFor="let step of splitSteps">
+        <p class="step-title">{{ step.title }}</p>
+
+        <div class="command-row">
+          <code class="command tnum">{{ step.send }}</code>
+          <span class="command-does">{{ step.does }}</span>
+        </div>
+      </li>
+    </ol>
+
+    <p class="card-note">
+      <strong>split 4</strong> counts you, and can go anywhere in the message —
+      <strong>split by 4</strong> and <strong>split 4 ways</strong> work too.
+      <strong>share</strong> goes with a <strong>+</strong> and the account; a word
+      from the expense's name picks which split, and with only one waiting no name is
+      needed. Sending more than is still owed is refused, so the same repayment cannot
+      be recorded twice. On the website it is the <strong>Split bill</strong>
+      box on Add Expense and <strong>Split repayment</strong> on Add Income.
     </p>
   </section>
 
@@ -53,7 +83,7 @@
         </div>
 
         <div class="status-row">
-          <span class="status-label">Admin access</span>
+          <span class="status-label">Full access</span>
           <span class="chip" [class.info]="hasAdminPassword">
             {{ hasAdminPassword ? 'On' : 'Off' }}
           </span>

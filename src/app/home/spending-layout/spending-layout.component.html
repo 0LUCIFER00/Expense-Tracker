@@ -67,7 +67,7 @@
       <!-- One bar, not a list: one category fills it, six divide it. -->
       <section class="card spend-card">
         <div class="card-head">
-          <h2 class="card-title">Where it went</h2>
+          <h2 class="card-title">Spending by category</h2>
           <span class="card-meta">{{ data.monthName }}</span>
         </div>
 
@@ -97,27 +97,43 @@
         </p>
 
         <div class="scroll-area">
-          <div class="recent-row" *ngFor="let item of data.recent">
-            <span class="recent-date tnum">{{ item.date | date: 'd MMM' }}</span>
+          <ng-container *ngFor="let item of data.recent">
+            <!-- A split one opens who has paid back; the card scrolls, so it has room. -->
+            <div class="recent-row" [class.et-splittable]="item.splitMembers"
+              [class.et-open]="expandedId === item.id"
+              [attr.role]="item.splitMembers ? 'button' : null"
+              [attr.tabindex]="item.splitMembers ? 0 : null"
+              [attr.aria-expanded]="item.splitMembers ? expandedId === item.id : null"
+              (click)="onToggleSplit(item)" (keydown.enter)="onToggleSplit(item)">
+              <span class="recent-date tnum">{{ item.date | date: 'd MMM' }}</span>
 
-            <!--
-              The account is named, not its balance: which account money came
-              from is not what the admin password hides.
-            -->
-            <span class="recent-what">
-              {{ item.description }}
-              <span class="recent-meta" *ngIf="item.sourceCategory || item.category">
-                · {{ item.sourceCategory || item.category }}
+              <!--
+                The account is named, not its balance: which account money came
+                from is not what the full-access password hides. Nor is a split.
+              -->
+              <span class="recent-what">
+                {{ item.description }}
+                <span class="recent-meta" *ngIf="item.sourceCategory || item.category">
+                  · {{ item.sourceCategory || item.category }}
+                </span>
+                <span class="et-split-tag" *ngIf="item.splitMembers">
+                  Split {{ item.splitMembers }} · yours ₹{{ item.personalShare | number }}
+                  <span class="et-split-caret" aria-hidden="true">▾</span>
+                </span>
               </span>
-            </span>
 
-            <span class="recent-amount tnum" [class.pending]="item.isPendingApproval">
-              ₹{{ item.amount | number }}
-            </span>
-          </div>
+              <span class="recent-amount tnum" [class.pending]="item.isPendingApproval">
+                ₹{{ item.amount | number }}
+              </span>
+            </div>
+
+            <app-split-history *ngIf="expandedId === item.id && data.splits[item.id] as split"
+              [split]="split">
+            </app-split-history>
+          </ng-container>
         </div>
 
-        <a class="card-link" routerLink="/view-expenses">See all expenses</a>
+        <a class="card-link" routerLink="/transactions" [queryParams]="{ tab: 'out' }">See all debits</a>
       </section>
 
     </div>
@@ -144,7 +160,7 @@
         </p>
       </div>
 
-      <a class="secondary-action" routerLink="/view-expenses">Review</a>
+      <a class="secondary-action" routerLink="/transactions" [queryParams]="{ tab: 'out' }">Pending approvals</a>
     </section>
 
     <section class="et-strip" *ngIf="data.offerWhatsapp">

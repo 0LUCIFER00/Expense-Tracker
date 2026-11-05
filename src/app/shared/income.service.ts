@@ -2,12 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { shareReplay } from 'rxjs/operators';
 import { ApiService } from './api.service';
-import { Income, NewIncome } from './models';
+import { Income, NewIncome, SplitSummary } from './models';
 
 /** What the server reports after money was added. */
 export interface AddedIncome extends Income {
   /** The account's balance afterwards; null when amounts are hidden. */
   balanceAfter: number | null;
+  /** When this paid back part of a split: how that split stands now. */
+  split?: Omit<SplitSummary, 'repayments'> | null;
 }
 
 export interface RemovedIncome {

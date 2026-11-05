@@ -93,7 +93,7 @@ describe('SettingsService', () => {
       expect(settings.canRemove).toBeFalse();
     });
 
-    // The flags describe the normal user; the admin password is the owner's
+    // The flags describe the normal user; the full-access password is the owner's
     // own key, so an admin keeps everything whatever they are set to.
     it('ignores the flags for an admin session', () => {
       signIn('admin');

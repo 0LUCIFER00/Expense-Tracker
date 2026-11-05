@@ -170,42 +170,8 @@
   margin: 0;
 }
 
-/* The amount and the description share the first line; the chips take both. */
-.field-category {
-  grid-column: 1 / -1;
-}
-
 .field-note {
   margin: 0.4375rem 0 0;
-}
-
-.chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.chip {
-  min-height: 38px;
-  padding: 0 0.9375rem;
-  border: 1px solid var(--field-border);
-  border-radius: 999px;
-  background-color: var(--surface);
-  color: var(--ink-2);
-  font-family: inherit;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.chip:hover {
-  border-color: var(--focus-border);
-}
-
-.chip.on {
-  border-color: var(--accent);
-  background-color: var(--accent);
-  color: #fff;
 }
 
 /* ---- the two buttons ---- */

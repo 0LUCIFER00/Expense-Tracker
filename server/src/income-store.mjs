@@ -1,9 +1,13 @@
 import { transaction } from './db.mjs';
+import { lockSplit } from './split-store.mjs';
 
 const COLUMNS = `
   id, amount, description, received_on, category,
-  target_id, target_type, target_category, balance_updated, source_channel, created_at
+  target_id, target_type, target_category, balance_updated, source_channel, created_at,
+  split_expense_id
 `;
+
+const money = value => `₹${Number(value).toLocaleString('en-IN')}`;
 
 export const INCOME_COLUMNS = COLUMNS;
 
@@ -13,11 +17,49 @@ export const INCOME_COLUMNS = COLUMNS;
  * Shared by the website and WhatsApp, so the two cannot drift apart: both
  * record the entry and move the money together, or neither does.
  *
+ * With `splitExpenseId` it is someone paying back their part of a split
+ * expense, rather than income. It is refused when that split has nothing left
+ * owing, or less than this — which is almost always the same repayment being
+ * recorded twice.
+ *
  * @returns the stored row plus `balanceAfter`, which comes from the UPDATE
- *   rather than being recomputed, so a reply can quote the real figure.
+ *   rather than being recomputed, so a reply can quote the real figure; and
+ *   `split`, the split as it stands afterwards, when this was a repayment.
  */
 export function addIncome(userId, entry) {
   return transaction(async client => {
+    /*
+     * The split is locked before the account. removeExpense takes the expense
+     * first and the balance second; taking them in the other order here would
+     * let a repayment and a removal each hold what the other is waiting for.
+     */
+    let split = null;
+
+    if (entry.splitExpenseId) {
+      split = await lockSplit(client, userId, entry.splitExpenseId);
+
+      if (!split) {
+        throw Object.assign(new Error('That split expense was not found.'), { status: 400 });
+      }
+
+      if (split.remaining <= 0) {
+        throw Object.assign(
+          new Error(`${split.description} is already fully paid back.`),
+          { status: 409 }
+        );
+      }
+
+      if (Number(entry.amount) > split.remaining) {
+        throw Object.assign(
+          new Error(
+            `Only ${money(split.remaining)} is still owed on ${split.description}, ` +
+            `not ${money(entry.amount)}.`
+          ),
+          { status: 409 }
+        );
+      }
+    }
+
     let target = null;
 
     if (entry.targetId) {
@@ -55,18 +97,29 @@ export function addIncome(userId, entry) {
     const { rows } = await client.query(
       `insert into incomes (
          user_id, amount, description, received_on, category,
-         target_id, target_type, target_category, balance_updated, source_channel
+         target_id, target_type, target_category, balance_updated, source_channel,
+         split_expense_id
        )
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
        returning ${COLUMNS}`,
       [
-        userId, entry.amount, entry.description, entry.receivedOn, entry.category,
+        userId, entry.amount, entry.description, entry.receivedOn,
+        // A repayment is not income from anywhere, so it is not filed as one.
+        split ? null : entry.category,
         target?.id ?? null, target?.type ?? null, target?.category ?? null,
-        credit, entry.channel ?? 'web'
+        credit, entry.channel ?? 'web',
+        split?.id ?? null
       ]
     );
 
-    return { ...rows[0], balanceAfter };
+    // As it stands with this repayment counted, for the reply.
+    const after = split && {
+      ...split,
+      received: Math.round((split.received + Number(entry.amount)) * 100) / 100,
+      remaining: Math.max(0, Math.round((split.remaining - Number(entry.amount)) * 100) / 100)
+    };
+
+    return { ...rows[0], balanceAfter, split: after };
   });
 }
 

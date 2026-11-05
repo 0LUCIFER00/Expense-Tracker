@@ -22,7 +22,7 @@ settingsRouter.get('/', asyncRoute(async (req, res) => {
 settingsRouter.patch('/', asyncRoute(async (req, res) => {
   if (req.session.loginType !== 'admin') {
     return res.status(403).json({
-      error: 'Sign in with your admin password to change permissions.'
+      error: 'Sign in with your full-access password to change permissions.'
     });
   }
 

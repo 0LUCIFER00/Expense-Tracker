@@ -1,6 +1,7 @@
 /*
- * View expenses, as the design draws it: filters and the total across the top,
- * then a table with a tinted header strip and each row on its own sunken panel.
+ * Transactions (once View Expenses), as the design draws it: tabs, filters and
+ * the totals across the top, then a table with a tinted header strip and each
+ * row on its own sunken panel.
  * Colours come from the tokens in styles.css, so this one stylesheet serves
  * both themes.
  */
@@ -22,6 +23,46 @@
   border-radius: 14px;
   padding: 1.5rem 1.625rem;
   box-shadow: var(--shadow);
+}
+
+/* ---- which half of the ledger ---- */
+
+/* One bordered control, so the three read as a choice rather than three buttons. */
+.tab-bar {
+  display: inline-flex;
+  margin-bottom: 1.125rem;
+  border: 1px solid var(--field-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.tab {
+  padding: 0.5625rem 1.125rem;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tab + .tab {
+  border-left: 1px solid var(--field-border);
+}
+
+.tab:hover:not(.on) {
+  color: var(--accent-ink);
+}
+
+.tab.on {
+  background-color: var(--accent);
+  color: #fff;
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--focus-border);
+  outline-offset: -2px;
 }
 
 /* ---- filters ---- */
@@ -61,6 +102,7 @@
 .filter-actions {
   margin-left: auto;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.625rem;
 }
@@ -109,6 +151,13 @@
   white-space: nowrap;
 }
 
+/* Money in, and what came back from splits: the same pill, in the good colour. */
+.total-pill.in,
+.total-pill.back {
+  background-color: var(--good-soft);
+  color: var(--good-ink);
+}
+
 /* ---- the table ---- */
 
 /*
@@ -154,10 +203,30 @@
 }
 
 .table-row {
+  --stripe: transparent;
+
   margin-top: 0.375rem;
   padding: 0.6875rem 0.875rem;
   border-radius: 8px;
   background-color: var(--sunken);
+  box-shadow: inset 3px 0 0 var(--stripe);
+}
+
+/*
+ * Money out and money in read apart at a glance: a stripe down the left and a
+ * faint wash of the same colour over the row. Mixed from each theme's own red
+ * and green, so light and dark each get a shade that suits them without a
+ * second set of rules. The stripe is a shadow rather than a border so the
+ * rounded corners stay round.
+ */
+.table-row.row-out {
+  --stripe: var(--bad);
+  background-color: color-mix(in srgb, var(--bad) 6%, var(--sunken));
+}
+
+.table-row.row-in {
+  --stripe: var(--good);
+  background-color: color-mix(in srgb, var(--good) 10%, var(--sunken));
 }
 
 .cell-date {
@@ -175,6 +244,21 @@
   font-size: 0.875rem;
   color: var(--ink);
   overflow-wrap: anywhere;
+}
+
+/*
+ * On a phone each cell is a label-and-value grid, and the tag would otherwise
+ * become a grid item of its own and drop into the label column.
+ */
+.cell-what > .et-split-tag {
+  grid-column: 2;
+}
+
+/* The rest of a split row's look is shared with the dashboard, in styles.css. */
+/* The outline adds to the colour stripe rather than replacing it. */
+.table-row.et-splittable:hover,
+.table-row.et-open {
+  box-shadow: inset 3px 0 0 var(--stripe), inset 0 0 0 1px var(--focus-border);
 }
 
 .cell-account {
@@ -219,14 +303,25 @@
   color: var(--accent-ink);
 }
 
-.chip[data-status='done'] {
+.chip[data-status='completed'] {
   background-color: var(--accent-soft);
   color: var(--accent-ink);
 }
 
-.chip[data-status='waiting'] {
+.chip[data-status='pending approval'] {
   background-color: var(--bad-soft);
   color: var(--bad-ink);
+}
+
+/* Money in reads green wherever it appears: amount, status and repayments. */
+.cell-amount.in {
+  color: var(--good-ink);
+}
+
+.chip[data-status='credit'],
+.chip[data-cat='Repayment'] {
+  background-color: var(--good-soft);
+  color: var(--good-ink);
 }
 
 /* ---- row actions ---- */
@@ -318,6 +413,15 @@
   .filter-actions {
     flex: 1 1 100%;
     margin-left: 0;
+  }
+
+  .tab-bar {
+    display: flex;
+  }
+
+  .tab {
+    flex: 1;
+    padding-inline: 0.5rem;
   }
 
   .export-btn {

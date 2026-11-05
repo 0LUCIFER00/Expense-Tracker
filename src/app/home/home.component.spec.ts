@@ -94,6 +94,7 @@ describe('HomeComponent', () => {
       number: null,
       businessNumber: '919000000000'
     });
+    http.expectOne('/api/expenses/splits').flush([]);
 
     fixture.detectChanges();
   }
@@ -335,7 +336,7 @@ describe('HomeComponent', () => {
 
   /*
    * The layout follows the permission rather than a preference. Hiding
-   * balances is the admin password's whole purpose, so it cannot be left to
+   * balances is the full-access password's whole purpose, so it cannot be left to
    * a setting someone could forget.
    */
   describe('which layout is drawn', () => {
@@ -375,6 +376,7 @@ describe('HomeComponent', () => {
         number: null,
         businessNumber: null
       });
+      http.expectOne('/api/expenses/splits').flush([]);
     });
   });
 });

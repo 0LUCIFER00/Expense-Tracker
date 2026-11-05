@@ -2,12 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { DashboardData } from '../../shared/dashboard';
+import { Expense } from '../../shared/models';
 import { SpendChartComponent } from '../../shared/spend-chart/spend-chart.component';
+import { SplitHistoryComponent } from '../../shared/split-history/split-history.component';
 
 /**
  * The dashboard for a session whose balances are hidden.
  *
- * That is the admin password's whole purpose: signing in as a normal user in
+ * That is the full-access password's whole purpose: signing in as a normal user in
  * public should put no account balance on screen. So this draws the same month
  * without any of it — no account tiles, no total held, no figure after an
  * expense — and spends the room on what was spent instead, which is not the
@@ -19,12 +21,23 @@ import { SpendChartComponent } from '../../shared/spend-chart/spend-chart.compon
 @Component({
   selector: 'app-spending-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, SpendChartComponent],
+  imports: [CommonModule, RouterModule, SpendChartComponent, SplitHistoryComponent],
   templateUrl: './spending-layout.component.html',
   styleUrl: './spending-layout.component.css'
 })
 export class SpendingLayoutComponent {
   @Input({ required: true }) data!: DashboardData;
+
+  /** The split row in Recent whose repayment history is open; one at a time. */
+  expandedId: string | null = null;
+
+  onToggleSplit(item: Expense): void {
+    if (!item.splitMembers) {
+      return;
+    }
+
+    this.expandedId = this.expandedId === item.id ? null : item.id;
+  }
 
   /** The busiest single day this fortnight, which the chart is scaled against. */
   get busiestDay(): number {

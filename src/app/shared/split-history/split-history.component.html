@@ -1,0 +1,29 @@
+<p class="split-terms">
+  Split {{ split.members }} ways · your share
+  <strong class="tnum">₹{{ split.personal | number }}</strong> ·
+  <span class="tnum">₹{{ split.share | number }}</span> each from the other {{ split.members - 1 }}
+</p>
+
+<ul class="split-paid" *ngIf="split.repayments.length; else nobody">
+  <li *ngFor="let paid of split.repayments">
+    <span class="paid-date tnum">{{ paid.date | date: 'd MMM' }}</span>
+    <span class="paid-what">
+      {{ paid.description }}<span class="paid-meta" *ngIf="paid.account"> · {{ paid.account }}</span>
+    </span>
+    <span class="paid-amount tnum">+₹{{ paid.amount | number }}</span>
+  </li>
+</ul>
+
+<ng-template #nobody>
+  <p class="split-none">Nobody has paid back yet.</p>
+</ng-template>
+
+<p class="split-status" [class.settled]="split.remaining === 0">
+  <ng-container *ngIf="split.remaining > 0; else settled">
+    <span class="tnum">₹{{ split.received | number }}</span> of
+    <span class="tnum">₹{{ split.owed | number }}</span> back ·
+    <strong class="tnum">₹{{ split.remaining | number }}</strong> still to come
+  </ng-container>
+
+  <ng-template #settled>✓ All <span class="tnum">₹{{ split.owed | number }}</span> paid back</ng-template>
+</p>

@@ -3,13 +3,13 @@
   <form [formGroup]="moneyForm" class="card form-card">
 
     <div class="form-head">
-      <h1 class="form-title">Add money</h1>
+      <h1 class="form-title">Add income</h1>
       <p class="form-subtitle">Salary, a refund, anything that came in</p>
     </div>
 
     <p class="form-error" *ngIf="!canUpdateBalance">
       This account may not change balances, so money cannot be added here. Sign in
-      with your admin password.
+      with your full-access password.
     </p>
 
     <div class="form-grid">
@@ -25,30 +25,56 @@
       </div>
 
       <div class="field field-what">
-        <label class="field-label" for="description">What was it</label>
+        <label class="field-label" for="description">Description</label>
         <input id="description" class="text-field" formControlName="description" type="text"
           placeholder="October salary, Amazon refund…">
       </div>
 
-      <fieldset class="field field-category">
-        <legend class="field-label">Where it came from</legend>
-        <p class="field-hint">Optional, and separate from the expense categories.</p>
+      <!-- Side by side, the same as Category and Split on Add Expense. -->
+      <div class="field field-category">
+        <label class="field-label" for="category">Income source</label>
 
-        <div class="chip-row">
-          <button type="button" class="chip" [class.on]="!moneyForm.get('category')?.value"
-            (click)="onPickCategory('')">
-            None
-          </button>
+        <select id="category" class="text-field" formControlName="category">
+          <option value="">None</option>
+          <option *ngFor="let name of categories" [value]="name">{{ name }}</option>
+        </select>
 
-          <button type="button" class="chip" *ngFor="let name of categories"
-            [class.on]="moneyForm.get('category')?.value === name" (click)="onPickCategory(name)">
-            {{ name }}
-          </button>
-        </div>
-      </fieldset>
+        <p class="field-note" *ngIf="!selectedSplit">Optional, and separate from the expense categories.</p>
+        <p class="field-note" *ngIf="selectedSplit">Not needed: a repayment is not income.</p>
+      </div>
+
+      <!--
+        Always shown, so the feature can be found. With nothing waiting to be
+        paid back it is disabled and says how to start one, rather than hiding.
+      -->
+      <div class="field field-split">
+        <label class="field-label" for="splitFor">Split repayment</label>
+
+        <select id="splitFor" class="text-field" formControlName="splitFor" (change)="onSplitChange()">
+          <option value="">
+            {{ openSplits.length ? 'Not a repayment' : 'Nothing to pay back yet' }}
+          </option>
+
+          <option *ngFor="let split of openSplits" [value]="split.id">
+            {{ split.description }} — ₹{{ split.remaining | number }} owed
+          </option>
+        </select>
+
+        <p class="field-note good" *ngIf="selectedSplit as split">
+          ₹{{ split.received | number }} of ₹{{ split.owed | number }} back · ₹{{ split.share | number }} each
+        </p>
+
+        <p class="field-note" *ngIf="!openSplits.length">
+          Tick <strong>Split bill</strong> on <a routerLink="/add-expense">Add Expense</a> to start one.
+        </p>
+
+        <p class="field-note" *ngIf="openSplits.length && !selectedSplit">
+          Pick one if someone is paying you back their share.
+        </p>
+      </div>
 
       <div class="field field-source">
-        <label class="field-label" for="target">Add to</label>
+        <label class="field-label" for="target">Credit to</label>
 
         <select id="target" class="text-field" formControlName="target">
           <option value="">Choose an account</option>
@@ -74,7 +100,7 @@
     <div class="form-actions">
       <button type="button" class="btn-good" [disabled]="isInvalid || submitting || !canUpdateBalance"
         (click)="onSubmit()">
-        {{ submitting ? 'Saving…' : 'Add money' }}
+        {{ submitting ? 'Saving…' : 'Add income' }}
       </button>
     </div>
   </form>
@@ -82,7 +108,7 @@
   <aside class="add-aside">
 
     <section class="card" *ngIf="selectedAccount && canSeeBalances">
-      <h2 class="card-title">After this</h2>
+      <h2 class="card-title">Balance after</h2>
 
       <div class="after-row">
         <span class="after-label">{{ selectedAccount.category }} now</span>
@@ -98,7 +124,7 @@
     </section>
 
     <section class="card">
-      <h2 class="card-title">Faster, from your phone</h2>
+      <h2 class="card-title">Add via WhatsApp</h2>
       <p class="aside-body">The same over WhatsApp, no sign-in. A leading + is what makes it money in:</p>
 
       <p class="command tnum">{{ sampleCommand }}</p>
@@ -107,7 +133,7 @@
     </section>
 
     <section class="card recent-card" *ngIf="recent.length">
-      <h2 class="card-title">Recently added</h2>
+      <h2 class="card-title">Recent income</h2>
 
       <div class="recent-row" *ngFor="let item of recent">
         <span class="recent-date tnum">{{ item.date | date: 'd MMM' }}</span>
@@ -115,10 +141,13 @@
         <span class="recent-what">
           {{ item.description }}
           <span class="recent-meta" *ngIf="item.targetCategory"> · {{ item.targetCategory }}</span>
+          <span class="recent-meta" *ngIf="item.splitDescription"> · repayment for {{ item.splitDescription }}</span>
         </span>
 
         <span class="recent-amount tnum">+₹{{ item.amount | number }}</span>
       </div>
+
+      <a class="card-link" routerLink="/transactions" [queryParams]="{ tab: 'in' }">See all credits</a>
     </section>
 
   </aside>

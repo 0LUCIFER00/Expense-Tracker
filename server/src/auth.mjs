@@ -12,7 +12,7 @@ export function hashPassword(plain) {
 
 export function verifyPassword(plain, hash) {
   if (!hash) {
-    // Still burn a comparison so a missing admin password is not detectably
+    // Still burn a comparison so a missing full-access password is not detectably
     // faster than a wrong one.
     return bcrypt.compare(plain, '$2a$12$' + 'x'.repeat(53)).then(() => false);
   }

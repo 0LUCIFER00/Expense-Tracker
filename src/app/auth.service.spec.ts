@@ -175,7 +175,7 @@ describe('AuthService', () => {
     http.expectOne('/api/auth/me').flush(null, { status: 401, statusText: 'Unauthorized' });
   });
 
-  describe('admin password', () => {
+  describe('full-access password', () => {
     it('re-reads the session after setting one', () => {
       auth.setAdminPassword('admin123').subscribe();
 
@@ -194,13 +194,13 @@ describe('AuthService', () => {
     it('surfaces a wrong password when removing', done => {
       auth.removeAdminPassword('nope').subscribe({
         error: error => {
-          expect(error.message).toBe('Invalid admin password');
+          expect(error.message).toBe('Invalid full-access password');
           done();
         }
       });
 
       http.expectOne('/api/auth/admin-password/remove').flush(
-        { error: 'Invalid admin password' },
+        { error: 'Invalid full-access password' },
         { status: 403, statusText: 'Forbidden' }
       );
     });

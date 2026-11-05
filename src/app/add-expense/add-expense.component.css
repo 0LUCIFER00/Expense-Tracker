@@ -163,42 +163,50 @@
   margin: 0;
 }
 
-/* The amount and the description share the first line; the chips take both. */
-.field-category {
-  grid-column: 1 / -1;
-}
-
 .field-note {
   margin: 0.4375rem 0 0;
 }
 
-.chip-row {
+/* ---- split, beside the category ---- */
+
+/* Sized to a field's height, so the cell lines up with the dropdown beside it. */
+.split-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  min-height: 2.875rem;
 }
 
-.chip {
-  min-height: 38px;
-  padding: 0 0.9375rem;
-  border: 1px solid var(--field-border);
-  border-radius: 999px;
-  background-color: var(--surface);
-  color: var(--ink-2);
-  font-family: inherit;
-  font-size: 0.8125rem;
-  font-weight: 600;
+.split-check,
+.split-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  color: var(--ink);
+}
+
+.split-check {
   cursor: pointer;
 }
 
-.chip:hover {
-  border-color: var(--focus-border);
+.split-check input {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
-.chip.on {
-  border-color: var(--accent);
-  background-color: var(--accent);
-  color: #fff;
+.split-count {
+  color: var(--ink-2);
+}
+
+.members-input {
+  width: 4.25rem;
+  padding: 0.5rem 0.5rem;
+  text-align: center;
 }
 
 /* ---- the two buttons ---- */

@@ -48,6 +48,21 @@ export interface Expense {
   remarks: string | null;
   isPendingApproval: boolean;
   createdAt: string;
+
+  /*
+   * Set only when the expense was split between people. The whole amount
+   * still left the account; personalShare is the part that is the owner's own
+   * spending. Optional because nothing recorded before splitting existed has
+   * them, and an absent split means the whole amount was the owner's.
+   */
+  /** How many it was split between, the owner included. */
+  splitMembers?: number | null;
+  /** What each of the others owes. */
+  splitShare?: number | null;
+  /** The owner's own part. */
+  personalShare?: number | null;
+  /** Paid back so far by the others. */
+  splitReceived?: number;
 }
 
 /** What the add-expense form sends. The server decides the resulting status. */
@@ -61,14 +76,45 @@ export interface NewExpense {
   updateBalance: boolean;
   /** Minutes behind UTC, so the server can tell what "today" means here. */
   tzOffset: number;
+  /** Split between this many people, the owner included; null when it is not. */
+  splitMembers?: number | null;
+}
+
+/** A split expense and how much of it has been paid back. */
+export interface SplitSummary {
+  id: string;
+  description: string;
+  date: string;
+  status: 'done' | 'pending';
+  amount: number;
+  members: number;
+  /** What each of the others owes. */
+  share: number;
+  /** The owner's own part. */
+  personal: number;
+  /** What the others owe between them. */
+  owed: number;
+  received: number;
+  remaining: number;
+  /** Who has paid back so far, oldest first. */
+  repayments: SplitRepayment[];
+}
+
+export interface SplitRepayment {
+  id: string;
+  amount: number;
+  description: string;
+  date: string;
+  /** The account it went into. */
+  account: string | null;
 }
 
 /**
  * What a NORMAL user may do. An admin session always has everything — the
- * admin password is the owner's own second key, so restricting it is pointless.
+ * full-access password is the owner's own second key, so restricting it is pointless.
  */
 export interface Settings {
-  /** May see account balances at all. The reason the admin password exists. */
+  /** May see account balances at all. The reason the full-access password exists. */
   balanceUserAccess: boolean;
   /** May reach the Add Money page; its amounts still follow the flag above. */
   addMoneyUserAccess: boolean;
@@ -106,6 +152,10 @@ export interface Income {
 
   balanceUpdated: boolean;
   createdAt: string;
+
+  /** Set when this was someone paying back their part of a split expense. */
+  splitExpenseId?: string | null;
+  splitDescription?: string | null;
 }
 
 /** What the Add Money form sends. */
@@ -116,4 +166,6 @@ export interface NewIncome {
   category: string | null;
   /** Required: money has to arrive somewhere, or the balances go wrong. */
   targetId: string;
+  /** The split expense this pays back part of, when it does. */
+  splitExpenseId?: string | null;
 }

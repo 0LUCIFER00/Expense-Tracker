@@ -7,6 +7,8 @@ import { addIncome, removeIncome } from '../income-store.mjs';
 import { afterResponse } from '../after-response.mjs';
 import { HELP_TEXT, parseMessage } from '../whatsapp/parser.mjs';
 import { guessCategory, guessIncomeCategory } from '../categories.mjs';
+import { matchSplit, splitAmount } from '../split.mjs';
+import { listOpenSplits, listSplits } from '../split-store.mjs';
 import {
   WHATSAPP_VERIFY_TOKEN,
   extractTextMessage,
@@ -155,6 +157,9 @@ async function handleMessage(message) {
     case 'list':
       return sendToday(from, user.id);
 
+    case 'splits':
+      return sendSplits(from, user.id);
+
     case 'undo':
       return undoLast(from, user.id);
 
@@ -219,7 +224,7 @@ async function sendBalances(from, user, accounts) {
 
   // WhatsApp is linked to the account, not to an admin session, so it answers
   // as the normal user. Without the balance permission it must not read them
-  // out either, or the admin password is bypassable from a phone.
+  // out either, or the full-access password is bypassable from a phone.
   if (!canSeeBalancesOnWhatsapp) {
     return sendText(
       from,
@@ -246,7 +251,7 @@ async function sendBalances(from, user, accounts) {
 
 async function sendToday(from, userId) {
   const { rows } = await query(
-    `select amount, description, status from expenses
+    `select amount, description, status, split_members, personal_share from expenses
       where user_id = $1 and spent_on = current_date
       order by created_at`,
     [userId]
@@ -256,13 +261,19 @@ async function sendToday(from, userId) {
     return sendText(from, 'Nothing recorded today.');
   }
 
-  const lines = rows.map(
-    row => `• ${money(row.amount)} — ${row.description}${row.status === 'pending' ? ' (awaiting admin)' : ''}`
-  );
+  const lines = rows.map(row => {
+    const split = row.split_members
+      ? ` (split ${row.split_members}, yours ${money(row.personal_share)})`
+      : '';
+    const pending = row.status === 'pending' ? ' (awaiting admin)' : '';
 
+    return `• ${money(row.amount)} — ${row.description}${split}${pending}`;
+  });
+
+  // The owner's own spending: of a split expense, only their share.
   const total = rows
     .filter(row => row.status === 'done')
-    .reduce((sum, row) => sum + Number(row.amount), 0);
+    .reduce((sum, row) => sum + Number(row.personal_share ?? row.amount), 0);
 
   return sendText(from, `*Today*\n${lines.join('\n')}\n\nTotal: ${money(total)}`);
 }
@@ -320,6 +331,12 @@ ${removed.source_category} now ${money(removed.balanceAfter)}.`
 Put back into ${removed.source_category}.`;
     }
 
+    if (removed.detachedRepayments > 0) {
+      tail +=
+        `\n${removed.detachedRepayments} repayment(s) made against it stay, ` +
+        'as ordinary money in.';
+    }
+
     return sendText(from, `Removed ${money(removed.amount)} — ${removed.description}${tail}`);
   } catch (error) {
     console.error('[whatsapp] undo failed', error);
@@ -328,6 +345,16 @@ Put back into ${removed.source_category}.`;
 }
 
 async function addExpense(from, user, parsed, accounts) {
+  if (parsed.splitInvalid) {
+    return sendText(
+      from,
+      'Split it between 2 and 50 people, counting yourself, like ' +
+      `*${parsed.amount} ${parsed.description} split 4*.\n\nNothing was recorded.`
+    );
+  }
+
+  const split = parsed.splitMembers ? splitAmount(parsed.amount, parsed.splitMembers) : null;
+
   // A name shared by several accounts ("bank" with two banks) must not be
   // guessed at — the wrong one would silently debit the wrong balance.
   if (parsed.ambiguousAccounts?.length) {
@@ -390,9 +417,10 @@ async function addExpense(from, user, parsed, accounts) {
            user_id, amount, description, spent_on, category,
            source_id, source_type, source_category,
            expense_access, update_permission, balance_updated,
-           status, remarks, source_channel
+           status, remarks, source_channel,
+           split_members, split_share, personal_share
          )
-         values ($1,$2,$3,current_date,$4,$5,$6,$7,$8,$9,$10,'done',$11,'whatsapp')
+         values ($1,$2,$3,current_date,$4,$5,$6,$7,$8,$9,$10,'done',$11,'whatsapp',$12,$13,$14)
          returning id, category`,
         [
           user.id, parsed.amount, parsed.description,
@@ -401,7 +429,8 @@ async function addExpense(from, user, parsed, accounts) {
           guessCategory(parsed.description),
           source?.id ?? null, source?.type ?? null, source?.category ?? null,
           wantsDebit, permissions.canBackdate, debit,
-          debit ? 'Added via WhatsApp and balance updated' : 'Added via WhatsApp'
+          debit ? 'Added via WhatsApp and balance updated' : 'Added via WhatsApp',
+          parsed.splitMembers, split?.share ?? null, split?.personal ?? null
         ]
       );
 
@@ -426,6 +455,11 @@ Nothing was recorded.`
     const where = result.source ? ` · ${result.source.category}` : '';
     const filedAs = result.category ? ` · ${result.category}` : '';
 
+    const splitLine = split
+      ? `\nSplit ${parsed.splitMembers} ways: your share ${money(split.personal)}, ` +
+        `${money(split.share)} each from the other ${parsed.splitMembers - 1}.`
+      : '';
+
     // Naming the account is fine; quoting what is left in it is a balance.
     const after =
       result.debit && permissions.canSeeBalancesOnWhatsapp
@@ -435,7 +469,7 @@ ${result.source.category} now ${money(result.remaining)}`
 
     return sendText(
       from,
-      `✅ ${money(parsed.amount)} · ${parsed.description}${where}${filedAs}${after}\n\nSend *undo* to remove it.`
+      `✅ ${money(parsed.amount)} · ${parsed.description}${where}${filedAs}${splitLine}${after}\n\nSend *undo* to remove it.`
     );
   } catch (error) {
     console.error('[whatsapp] add expense failed', error);
@@ -482,7 +516,7 @@ async function addMoneyIn(from, user, parsed) {
     return sendText(
       from,
       'Adding money is switched off for this account. Sign in on the website ' +
-      'with your admin password to turn it back on.'
+      'with your full-access password to turn it back on.'
     );
   }
 
@@ -490,8 +524,45 @@ async function addMoneyIn(from, user, parsed) {
     return sendText(
       from,
       'This account may not change balances. Sign in on the website with your ' +
-      'admin password.'
+      'full-access password.'
     );
+  }
+
+  /*
+   * "share" marks someone paying back their part of a split expense. Which one
+   * is read from the rest of the words. When that is unclear it asks rather
+   * than guesses: a repayment filed against the wrong split leaves two splits
+   * wrong, where asking costs one more message.
+   */
+  let splitExpenseId = null;
+  let noSplitNote = '';
+
+  if (parsed.repayment) {
+    const match = matchSplit(parsed.description, await listOpenSplits(user.id));
+
+    if (match.ambiguous) {
+      const options = match.ambiguous
+        .slice(0, 5)
+        .map(split => `• ${split.description} — ${money(split.remaining)} still to come`)
+        .join('\n');
+
+      const example = String(match.ambiguous[0].description).split(/\s+/).pop().toLowerCase();
+      const account = String(parsed.account.category).split(/\s+/)[0].toLowerCase();
+
+      return sendText(
+        from,
+        `Which split is this for?\n\n${options}\n\n` +
+        `Send it again with a word from its name, like *+${parsed.amount} ${example} share ${account}*.` +
+        '\n\nNothing was recorded.'
+      );
+    }
+
+    if (match.split) {
+      splitExpenseId = match.split.id;
+    } else {
+      // Nothing is owed on any split, so "share" can only be part of the name.
+      noSplitNote = '\nNo split is waiting to be paid back, so this is ordinary money in.';
+    }
   }
 
   try {
@@ -502,10 +573,19 @@ async function addMoneyIn(from, user, parsed) {
       // Nobody types a category from a phone, so it is read out of the words.
       category: guessIncomeCategory(parsed.description),
       targetId: parsed.account.id,
+      splitExpenseId,
       channel: 'whatsapp'
     });
 
     const filedAs = created.category ? ` · ${created.category}` : '';
+
+    const towards = created.split
+      ? `\nTowards ${created.split.description}: ` +
+        (created.split.remaining > 0
+          ? `${money(created.split.received)} of ${money(created.split.owed)} back, ` +
+            `${money(created.split.remaining)} still to come.`
+          : `all ${money(created.split.owed)} back ✅`)
+      : noSplitNote;
 
     // Naming the account is fine; quoting what is in it is a balance.
     const after = permissions.canSeeBalancesOnWhatsapp
@@ -515,12 +595,53 @@ async function addMoneyIn(from, user, parsed) {
     return sendText(
       from,
       `➕ ${money(parsed.amount)} into ${parsed.account.category} · ` +
-      `${parsed.description}${filedAs}${after}\n\nSend *undo* to remove it.`
+      `${parsed.description}${filedAs}${towards}${after}\n\nSend *undo* to remove it.`
     );
   } catch (error) {
+    // The store's own refusals — already fully paid back, more than is owed —
+    // are written for the person, so they go out as they are.
+    if (error.status) {
+      return sendText(
+        from,
+        `${error.message}\n\nNothing was recorded. Not paying back a split? ` +
+        'Send it again without the word *share*.'
+      );
+    }
+
     console.error('[whatsapp] add money failed', error);
     return sendText(from, 'Could not save that, sorry. Please try again.');
   }
+}
+
+/** What people still owe, split by split. */
+async function sendSplits(from, userId) {
+  const splits = await listSplits(userId);
+  const open = splits.filter(split => split.remaining > 0);
+
+  if (open.length === 0) {
+    return sendText(
+      from,
+      splits.length === 0
+        ? 'Nothing has been split yet. Add *split* and how many people to an ' +
+          'expense, like *1455 vegetables hdfc split 4*.'
+        : 'Everyone has paid you back ✅'
+    );
+  }
+
+  const lines = open.slice(0, 10).map(split =>
+    `• *${split.description}* — ${money(split.amount)} ÷ ${split.members}\n` +
+    `  ${money(split.share)} each · ${money(split.received)} of ${money(split.owed)} back · ` +
+    `*${money(split.remaining)}* to come`
+  );
+
+  const total = open.reduce((sum, split) => sum + split.remaining, 0);
+
+  return sendText(
+    from,
+    `*Still owed to you*\n${lines.join('\n')}\n\nTotal: ${money(total)}\n\n` +
+    `When someone pays, send *+${money(open[0].share).slice(1)} ` +
+    `${String(open[0].description).split(/\s+/).pop().toLowerCase()} share* and the account.`
+  );
 }
 
 /** The money-in half of "undo". */

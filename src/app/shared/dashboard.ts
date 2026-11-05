@@ -1,4 +1,4 @@
-import { Expense } from './models';
+import { Expense, SplitSummary } from './models';
 
 /**
  * What the dashboard shows, worked out once by HomeComponent and handed to
@@ -59,6 +59,8 @@ export interface DashboardData {
 
   categories: DashboardCategory[];
   recent: Expense[];
+  /** Split expenses by id, with their repayments, for recent rows that open. */
+  splits: Record<string, SplitSummary>;
 
   /** The last fortnight, a bar each, so a quiet month still reads as a chart. */
   days: DashboardDay[];

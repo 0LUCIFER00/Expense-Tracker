@@ -16,6 +16,12 @@ import { ExpenseDatePopupComponent } from './expense-date-popup/expense-date-pop
 import { RouterModule } from '@angular/router';
 import { FitsScreenDirective } from '../shared/fits-screen.directive';
 import { ToastService } from '../shared/toast.service';
+import {
+  MAX_SPLIT_MEMBERS,
+  MIN_SPLIT_MEMBERS,
+  SplitPreview,
+  splitAmount
+} from '../shared/split';
 
 @Component({
   selector: 'app-add-expense',
@@ -42,8 +48,17 @@ export class AddExpenseComponent implements OnInit {
     category: [''],
     amount: ['', [Validators.required, Validators.min(1), Validators.max(100000)]],
     description: ['', Validators.required],
-    date: [today(), Validators.required]
+    date: [today(), Validators.required],
+    // Paid for a group: how many it is split between, the owner included.
+    split: [false],
+    members: [
+      MIN_SPLIT_MEMBERS,
+      [Validators.min(MIN_SPLIT_MEMBERS), Validators.max(MAX_SPLIT_MEMBERS)]
+    ]
   });
+
+  readonly minMembers = MIN_SPLIT_MEMBERS;
+  readonly maxMembers = MAX_SPLIT_MEMBERS;
 
   availableBalances: BalanceAccount[] = [];
   categories: string[] = [];
@@ -96,7 +111,7 @@ export class AddExpenseComponent implements OnInit {
     }
   }
 
-  /** The account chosen under "Spend from", or null while none is. */
+  /** The account chosen under "Debit from", or null while none is. */
   get selectedAccount(): BalanceAccount | null {
     const id = this.expenseForm.get('source')?.value;
 
@@ -120,6 +135,25 @@ export class AddExpenseComponent implements OnInit {
     return Math.round((Number(account.balance) - amount) * 100) / 100;
   }
 
+  get isSplit(): boolean {
+    return Boolean(this.expenseForm.get('split')?.value);
+  }
+
+  /**
+   * What each person's part comes to, while "Split" is ticked and there is an
+   * amount and a head count to work from; null otherwise.
+   */
+  get splitPreview(): SplitPreview | null {
+    if (!this.isSplit) {
+      return null;
+    }
+
+    return splitAmount(
+      Number(this.expenseForm.get('amount')?.value),
+      Number(this.expenseForm.get('members')?.value)
+    );
+  }
+
   /** A WhatsApp message that would file the expense being typed. */
   get sampleCommand(): string {
     const amount = Number(this.expenseForm.get('amount')?.value);
@@ -138,19 +172,22 @@ export class AddExpenseComponent implements OnInit {
       words.push(account.category.split(/\s+/)[0].toLowerCase());
     }
 
-    return words.join(' ');
-  }
+    const split = this.splitPreview;
 
-  /** The category chips are a picker over the same form control as before. */
-  onPickCategory(name: string): void {
-    this.expenseForm.get('category')?.setValue(name);
+    if (split) {
+      words.push('split', String(split.members));
+    }
+
+    return words.join(' ');
   }
 
   isMainFormInvalid(): boolean {
     return !!(
       this.expenseForm.get('amount')?.invalid ||
       this.expenseForm.get('description')?.invalid ||
-      this.expenseForm.get('date')?.invalid
+      this.expenseForm.get('date')?.invalid ||
+      // Ticked but with no usable head count, it would save as something else.
+      (this.isSplit && !this.splitPreview)
     );
   }
 
@@ -201,16 +238,24 @@ export class AddExpenseComponent implements OnInit {
         category: form.category || null,
         sourceId: this.pendingUpdateBalance && form.source ? String(form.source) : null,
         updateBalance: this.pendingUpdateBalance,
-        tzOffset: new Date().getTimezoneOffset()
+        tzOffset: new Date().getTimezoneOffset(),
+        splitMembers: form.split ? Number(form.members) : null
       })
       .subscribe({
         next: expense => {
           this.submitting = false;
 
+          const outcome = expense.status === 'Done'
+            ? 'Expense added.'
+            : 'Sent to an admin for approval.';
+
+          // The server's figures, which are the ones that were stored.
           this.toast.success(
-            expense.status === 'Done'
-              ? 'Expense added.'
-              : 'Sent to an admin for approval.'
+            expense.splitMembers
+              ? `${outcome} Your share ₹${Number(expense.personalShare).toLocaleString()}; ` +
+                `₹${Number(expense.splitShare).toLocaleString()} each from the other ` +
+                `${expense.splitMembers - 1}.`
+              : outcome
           );
 
           this.resetForm();
@@ -228,7 +273,9 @@ export class AddExpenseComponent implements OnInit {
       category: '',
       amount: '',
       description: '',
-      date: today()
+      date: today(),
+      split: false,
+      members: MIN_SPLIT_MEMBERS
     });
 
     this.reload();

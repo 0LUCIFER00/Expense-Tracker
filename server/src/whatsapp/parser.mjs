@@ -7,10 +7,25 @@
  * testable without a WhatsApp account.
  */
 
+import { parseMembers } from '../split.mjs';
+
 const HELP_WORDS = new Set(['help', 'hi', 'hello', 'hey', 'start', '?']);
 const BALANCE_WORDS = new Set(['balance', 'bal', 'balances']);
 const UNDO_WORDS = new Set(['undo', 'delete', 'remove', 'cancel', 'oops']);
 const LIST_WORDS = new Set(['today', 'list', 'recent']);
+const SPLITS_WORDS = new Set(['splits', 'split', 'owed', 'dues']);
+
+/*
+ * "split 4", "split by 4", "split between 4 people" — how many ways an expense
+ * was split, the sender included. Found and removed before the amount is
+ * looked for: the amount is the first standalone number in the message, so
+ * "split 4 1455 vegetables" would otherwise record ₹4.
+ */
+const SPLIT_PATTERN =
+  /(?:^|\s)split\s*(?:by\s+|between\s+|into\s+)?(\d{1,3})(?:\s*(?:ways?|people|persons|members))?(?=\s|$)/i;
+
+/** In a "+" message, marks it as someone paying back their part of a split. */
+const SHARE_WORDS = new Set(['share', 'shared']);
 
 /*
  * Words that mark a message as money coming in rather than going out.
@@ -197,14 +212,25 @@ export function parseMessage(raw, accounts = []) {
     if (LIST_WORDS.has(word)) {
       return { kind: 'list' };
     }
+
+    if (SPLITS_WORDS.has(word)) {
+      return { kind: 'splits' };
+    }
   }
+
+  const splitMatch = text.match(SPLIT_PATTERN);
+  const splitMembers = splitMatch ? parseMembers(splitMatch[1]) : null;
+  const withoutSplit = splitMatch
+    ? text.slice(0, splitMatch.index) + ' ' + text.slice(splitMatch.index + splitMatch[0].length)
+    : text;
 
   /*
    * A leading "+" means money in. It is stripped before the amount is matched,
    * because the amount pattern would otherwise not recognise "+5000".
    */
-  const plusMarked = /^\+\s*/.test(text);
-  const body = plusMarked ? text.replace(/^\+\s*/, '') : text;
+  const trimmed = withoutSplit.trim();
+  const plusMarked = /^\+\s*/.test(trimmed);
+  const body = plusMarked ? trimmed.replace(/^\+\s*/, '') : trimmed;
 
   const firstWord = normalise(tokenise(body)[0] ?? '');
   const incoming = plusMarked || INCOME_WORDS.has(firstWord);
@@ -249,7 +275,13 @@ export function parseMessage(raw, accounts = []) {
     amount: Math.round(amount * 100) / 100,
     description: cleanDescription(words) || (incoming ? 'Money in' : 'Expense'),
     account: accountMatch?.account ?? null,
-    ambiguousAccounts: accountMatch?.ambiguous ?? null
+    ambiguousAccounts: accountMatch?.ambiguous ?? null,
+    // Splitting only means anything for money going out.
+    splitMembers: incoming ? null : splitMembers,
+    // "split 1" or "split 900": asked for a split, but not one that can exist.
+    splitInvalid: !incoming && Boolean(splitMatch) && splitMembers === null,
+    // A "+" message with "share" in it is somebody paying back their part.
+    repayment: incoming && words.some(word => SHARE_WORDS.has(normalise(word)))
   };
 }
 
@@ -267,7 +299,16 @@ export const HELP_TEXT = [
   '  *+50000 salary hdfc*',
   '  *+300 refund paytm*',
   '',
+  'Paid for a group? Add *split* and how many people, you included:',
+  '',
+  '  *1455 vegetables hdfc split 4*',
+  '',
+  'When someone pays you back, add *share*:',
+  '',
+  '  *+364 vegetables share hdfc*',
+  '',
   'Other commands:',
+  '  *splits* — what people still owe you',
   '  *balance* — show your accounts',
   '  *today* — today’s expenses',
   '  *undo* — remove the last one you sent'

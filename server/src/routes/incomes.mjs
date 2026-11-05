@@ -34,7 +34,11 @@ function toApi(row, { canViewSource }) {
     targetType: canViewSource ? row.target_type : null,
     targetCategory: canViewSource ? row.target_category : null,
     balanceUpdated: row.balance_updated,
-    createdAt: row.created_at
+    createdAt: row.created_at,
+    // Set when this was someone paying back their part of a split expense,
+    // rather than income. The description is only looked up for the list.
+    splitExpenseId: row.split_expense_id ?? null,
+    splitDescription: row.split_description ?? null
   };
 }
 
@@ -42,7 +46,10 @@ incomesRouter.get('/', asyncRoute(async (req, res) => {
   const permissions = await effectivePermissions(req.session);
 
   const { rows } = await query(
-    `select ${INCOME_COLUMNS}
+    `select ${INCOME_COLUMNS},
+            (select e.description
+               from expenses e
+              where e.id = incomes.split_expense_id) as split_description
        from incomes
       where user_id = $1
       order by received_on desc, created_at desc`,
@@ -61,6 +68,7 @@ incomesRouter.post('/', asyncRoute(async (req, res) => {
   const date = parseDate(req.body?.date);
   const targetId = req.body?.targetId ? String(req.body.targetId) : null;
   const category = normaliseIncomeCategory(req.body?.category);
+  const splitExpenseId = req.body?.splitExpenseId ? String(req.body.splitExpenseId) : null;
 
   if (amount === null) {
     return badRequest(res, 'Amount must be between 1 and 100000');
@@ -94,7 +102,7 @@ incomesRouter.post('/', asyncRoute(async (req, res) => {
    */
   if (!permissions.canUpdateBalance) {
     return res.status(403).json({
-      error: 'This account may not change balances. Sign in with your admin password.'
+      error: 'This account may not change balances. Sign in with your full-access password.'
     });
   }
 
@@ -109,11 +117,14 @@ incomesRouter.post('/', asyncRoute(async (req, res) => {
       receivedOn: date,
       category,
       targetId,
+      splitExpenseId,
       channel: 'web'
     });
 
     res.status(201).json({
-      ...toApi(created, permissions),
+      ...toApi({ ...created, split_description: created.split?.description }, permissions),
+      // How the split stands now, so the page can say what is still to come.
+      split: created.split ?? null,
       // Only when this session may see amounts at all.
       balanceAfter: permissions.canSeeBalances ? created.balanceAfter : null
     });

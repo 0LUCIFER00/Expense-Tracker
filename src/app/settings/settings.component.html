@@ -9,15 +9,15 @@
   </div>
 
   <p class="page-subtitle">
-    A normal user sees only “Create admin access”; the permissions appear once you
-    sign in with the admin password.
+    A normal user sees only “Create full access”; the permissions appear once you
+    sign in with the full-access password.
   </p>
 
   <section class="card">
 
     <div class="admin-row">
       <div class="admin-text">
-        <h2 class="card-title">Admin access</h2>
+        <h2 class="card-title">Full access</h2>
         <p class="card-body">
           A second password on this account that unlocks the permissions below
         </p>
@@ -26,17 +26,17 @@
       <label class="switch">
         <input type="checkbox" [(ngModel)]="isEnabled" (change)="onToggleChange()">
         <span class="slider"></span>
-        <span class="sr-only">Create admin access</span>
+        <span class="sr-only">Create full access</span>
       </label>
     </div>
 
     <p class="permissions-note" *ngIf="!isAdminSession">
       <ng-container *ngIf="hasAdminPassword">
-        Permissions are managed by the admin. Sign out and sign in with your admin
+        Permissions are managed by the admin. Sign out and sign in with your full-access
         password to change them.
       </ng-container>
       <ng-container *ngIf="!hasAdminPassword">
-        Turn on <strong>Create admin access</strong> above to set an admin password.
+        Turn on <strong>Create full access</strong> above to set a full-access password.
         You can then sign in with it to control what a normal user may do.
       </ng-container>
     </p>
@@ -52,7 +52,7 @@
         <div class="setting-label">
           <span class="setting-name">See account balances</span>
           <span class="setting-note">
-            Turn it off to hide every amount: the Money Management page, the
+            Turn it off to hide every amount: the Cash &amp; Accounts page, the
             WhatsApp balance reply and the figure after an expense
           </span>
         </div>
@@ -68,9 +68,9 @@
 
       <div class="settings-row">
         <div class="setting-label">
-          <span class="setting-name">Add money coming in</span>
+          <span class="setting-name">Add income</span>
           <span class="setting-note">
-            The Add Money page, and the same thing sent over WhatsApp. The
+            The Add Income page, and the same thing sent over WhatsApp. The
             balances it shows beside each account follow the switch above, so
             this can stay on while they are hidden.
           </span>
@@ -80,7 +80,7 @@
           <label class="switch">
             <input type="checkbox" [(ngModel)]="addMoneyUserAccess" (change)="onAccessChange()">
             <span class="slider"></span>
-            <span class="sr-only">Add money coming in</span>
+            <span class="sr-only">Add income</span>
           </label>
         </div>
       </div>
@@ -107,7 +107,7 @@
 
       <div class="settings-row">
         <div class="setting-label">
-          <span class="setting-name">Spend from an account</span>
+          <span class="setting-name">Debit from an account</span>
           <span class="setting-note">
             Lets an expense reduce a balance, rather than only being logged
           </span>
@@ -117,14 +117,14 @@
           <label class="switch">
             <input type="checkbox" [(ngModel)]="addExpenseUserAccess" (change)="onAccessChange()">
             <span class="slider"></span>
-            <span class="sr-only">Spend from an account</span>
+            <span class="sr-only">Debit from an account</span>
           </label>
         </div>
       </div>
 
       <div class="settings-row">
         <div class="setting-label">
-          <span class="setting-name">Backdate or post-date an expense</span>
+          <span class="setting-name">Change transaction dates</span>
           <span class="setting-note">
             Without it, an entry dated other than today waits for an admin to approve it
           </span>
@@ -134,7 +134,7 @@
           <label class="switch">
             <input type="checkbox" [(ngModel)]="updatePermissionUser" (change)="onAccessChange()">
             <span class="slider"></span>
-            <span class="sr-only">Backdate or post-date an expense</span>
+            <span class="sr-only">Change transaction dates</span>
           </label>
         </div>
       </div>
@@ -174,7 +174,7 @@
       </div>
 
       <p class="card-note">
-        Each row says what it does in plain words. Signed in with your admin
+        Each row says what it does in plain words. Signed in with your full-access
         password you always have everything, so there is nothing to set for yourself.
       </p>
 
@@ -269,10 +269,10 @@
 
 </div>
 
-<!-- Enable Admin Access Popup -->
+<!-- Enable Full Access Popup -->
 <div class="et-overlay" *ngIf="showPopup">
   <div class="et-popup">
-    <h3>Create admin access</h3>
+    <h3>Create full access</h3>
 
     <p class="et-popup-body">
       This becomes a second password for the same account. Sign in with it to
@@ -285,15 +285,15 @@
     </div>
 
     <div class="form-group">
-      <label for="popupAdminPassword">Admin password</label>
+      <label for="popupAdminPassword">Full-access password</label>
       <input id="popupAdminPassword" type="password" class="et-field" [(ngModel)]="adminPassword"
         placeholder="At least 6 characters">
     </div>
 
     <div class="form-group">
-      <label for="popupConfirmPassword">Confirm admin password</label>
+      <label for="popupConfirmPassword">Confirm full-access password</label>
       <input id="popupConfirmPassword" type="password" class="et-field"
-        [(ngModel)]="confirmPassword" placeholder="Repeat the admin password">
+        [(ngModel)]="confirmPassword" placeholder="Repeat the full-access password">
     </div>
 
     <p class="et-field-error" *ngIf="confirmPassword && adminPassword !== confirmPassword">
@@ -313,10 +313,10 @@
   </div>
 </div>
 
-<!-- Disable Admin Access Popup -->
+<!-- Disable Full Access Popup -->
 <div class="et-overlay" *ngIf="showChancelPopup">
   <div class="et-popup">
-    <h3>Remove admin access</h3>
+    <h3>Remove full access</h3>
 
     <p class="et-popup-body">
       Every permission goes back to granted, because with no admin there is nobody
@@ -329,9 +329,9 @@
     </div>
 
     <div class="form-group">
-      <label for="cancelAdminPassword">Admin password</label>
+      <label for="cancelAdminPassword">Full-access password</label>
       <input id="cancelAdminPassword" type="password" class="et-field"
-        [(ngModel)]="adminCancelPassword" placeholder="Enter the admin password">
+        [(ngModel)]="adminCancelPassword" placeholder="Enter the full-access password">
     </div>
 
     <p class="et-field-error" *ngIf="cancelPasswordError">{{ cancelPasswordError }}</p>

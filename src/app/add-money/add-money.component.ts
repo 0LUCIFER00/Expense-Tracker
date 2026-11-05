@@ -9,9 +9,10 @@ import {
 import { RouterModule } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { BalanceService } from '../shared/balance.service';
+import { ExpenseService } from '../shared/expense.service';
 import { IncomeService } from '../shared/income.service';
 import { SettingsService } from '../shared/settings.service';
-import { BalanceAccount, Income } from '../shared/models';
+import { BalanceAccount, Income, SplitSummary } from '../shared/models';
 import { today } from '../shared/date-utils';
 import { FitsScreenDirective } from '../shared/fits-screen.directive';
 import { ToastService } from '../shared/toast.service';
@@ -33,6 +34,7 @@ import { ToastService } from '../shared/toast.service';
 export class AddMoneyComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly incomeService = inject(IncomeService);
+  private readonly expenseService = inject(ExpenseService);
   private readonly balanceService = inject(BalanceService);
   private readonly settingsService = inject(SettingsService);
   private readonly toast = inject(ToastService);
@@ -42,12 +44,16 @@ export class AddMoneyComponent implements OnInit {
     category: [''],
     amount: ['', [Validators.required, Validators.min(1), Validators.max(100000)]],
     description: ['', Validators.required],
-    date: [today(), Validators.required]
+    date: [today(), Validators.required],
+    // The split expense this pays back part of; empty for ordinary money in.
+    splitFor: ['']
   });
 
   accounts: BalanceAccount[] = [];
   categories: string[] = [];
   recent: Income[] = [];
+  /** Splits somebody still owes something on — the only ones worth offering. */
+  openSplits: SplitSummary[] = [];
 
   canUpdateBalance = false;
   canSeeBalances = false;
@@ -63,12 +69,25 @@ export class AddMoneyComponent implements OnInit {
       balances: this.balanceService.list(),
       categories: this.incomeService.listCategories(),
       incomes: this.incomeService.list(),
+      splits: this.expenseService.listSplits(),
       settings: this.settingsService.load(true)
     }).subscribe({
-      next: ({ balances, categories, incomes }) => {
+      next: ({ balances, categories, incomes, splits }) => {
         this.accounts = balances.filter(account => account.saved);
         this.categories = categories;
         this.recent = incomes.slice(0, 6);
+        this.openSplits = splits.filter(split => split.remaining > 0);
+
+        // Shown either way so it can be found, but only choosable when there
+        // is something to choose.
+        const splitFor = this.moneyForm.get('splitFor');
+
+        if (this.openSplits.length) {
+          splitFor?.enable();
+        } else {
+          splitFor?.setValue('');
+          splitFor?.disable();
+        }
 
         this.canUpdateBalance = this.settingsService.canUpdateBalance;
         this.canSeeBalances = this.settingsService.canSeeBalances;
@@ -95,6 +114,44 @@ export class AddMoneyComponent implements OnInit {
     return id ? this.accounts.find(account => account.id === id) ?? null : null;
   }
 
+  /** The split being paid back, or null for ordinary money in. */
+  get selectedSplit(): SplitSummary | null {
+    const id = this.moneyForm.get('splitFor')?.value;
+
+    return id ? this.openSplits.find(split => split.id === id) ?? null : null;
+  }
+
+  /**
+   * Choosing a split fills in what is usually true of a repayment — one
+   * person's share, labelled with what it was for — but only where nothing has
+   * been typed yet, so it never overwrites the user.
+   */
+  onSplitChange(): void {
+    const split = this.selectedSplit;
+    const category = this.moneyForm.get('category');
+
+    if (!split) {
+      category?.enable();
+      return;
+    }
+
+    const amount = this.moneyForm.get('amount');
+    const description = this.moneyForm.get('description');
+
+    if (!amount?.value) {
+      amount?.setValue(String(Math.min(split.share, split.remaining)));
+    }
+
+    if (!description?.value) {
+      description?.setValue(`${split.description} share`);
+    }
+
+    // A repayment is not income from anywhere, so it is not filed under one.
+    // Disabled rather than hidden, so the row beside it does not jump.
+    category?.setValue('');
+    category?.disable();
+  }
+
   /** What that account would hold once this money is in. */
   get balanceAfter(): number | null {
     const account = this.selectedAccount;
@@ -112,10 +169,20 @@ export class AddMoneyComponent implements OnInit {
     const amount = Number(this.moneyForm.get('amount')?.value);
     const description = String(this.moneyForm.get('description')?.value ?? '').trim();
 
-    const words = [
-      '+' + (Number.isFinite(amount) && amount > 0 ? String(amount) : '50000'),
-      description ? description.split(/\s+/)[0].toLowerCase() : 'salary'
-    ];
+    const split = this.selectedSplit;
+
+    // A repayment is matched to its split by a word of the split's name, and
+    // marked by "share" — the last word of a name is usually the telling one.
+    const words = split
+      ? [
+          '+' + (Number.isFinite(amount) && amount > 0 ? String(amount) : String(split.share)),
+          split.description.split(/\s+/).pop()!.toLowerCase(),
+          'share'
+        ]
+      : [
+          '+' + (Number.isFinite(amount) && amount > 0 ? String(amount) : '50000'),
+          description ? description.split(/\s+/)[0].toLowerCase() : 'salary'
+        ];
 
     const account = this.selectedAccount;
 
@@ -124,10 +191,6 @@ export class AddMoneyComponent implements OnInit {
     }
 
     return words.join(' ');
-  }
-
-  onPickCategory(name: string): void {
-    this.moneyForm.get('category')?.setValue(name);
   }
 
   get isInvalid(): boolean {
@@ -148,19 +211,30 @@ export class AddMoneyComponent implements OnInit {
         amount: Number(form.amount),
         description: form.description,
         date: form.date,
-        category: form.category || null,
-        targetId: String(form.target)
+        category: form.splitFor ? null : form.category || null,
+        targetId: String(form.target),
+        splitExpenseId: form.splitFor || null
       })
       .subscribe({
         next: added => {
           this.submitting = false;
 
+          const rupees = (value: number) => `₹${Number(value).toLocaleString()}`;
+
+          const balance = added.balanceAfter === null
+            ? ''
+            // Grouped, so it reads the same as every other figure on screen.
+            : ` ${added.targetCategory} now ${rupees(added.balanceAfter)}.`;
+
+          const towards = added.split
+            ? added.split.remaining > 0
+              ? ` ${rupees(added.split.received)} of ${rupees(added.split.owed)} back, ` +
+                `${rupees(added.split.remaining)} still to come.`
+              : ` All ${rupees(added.split.owed)} paid back.`
+            : '';
+
           this.toast.success(
-            added.balanceAfter === null
-              ? 'Money added.'
-              // Grouped, so it reads the same as every other figure on screen.
-              : `Money added. ${added.targetCategory} now ` +
-                `₹${Number(added.balanceAfter).toLocaleString()}.`
+            `${added.split ? 'Repayment recorded.' : 'Income added.'}${towards}${balance}`
           );
 
           this.moneyForm.reset({
@@ -168,8 +242,12 @@ export class AddMoneyComponent implements OnInit {
             category: '',
             amount: '',
             description: '',
-            date: today()
+            date: today(),
+            splitFor: ''
           });
+
+          // A repayment left it disabled; the next entry starts from ordinary.
+          this.moneyForm.get('category')?.enable();
 
           this.reload();
         },

@@ -2,6 +2,15 @@
 
   <div class="card">
 
+    <!-- Which half of the ledger. Debit is the old View Expenses page. -->
+    <div class="tab-bar" role="tablist" aria-label="Transactions">
+      <button type="button" role="tab" class="tab" *ngFor="let t of tabs"
+        [class.on]="tab === t.value" [attr.aria-selected]="tab === t.value"
+        (click)="onTab(t.value)">
+        {{ t.label }}
+      </button>
+    </div>
+
     <div class="filter-bar">
       <div class="filter">
         <label for="yearFilter">Year</label>
@@ -21,20 +30,25 @@
         <label for="categoryFilter">Category</label>
         <select id="categoryFilter" (change)="onFilterCategory($event)">
           <option value="">All</option>
-          <option *ngFor="let name of usedCategories" [value]="name">{{ name }}</option>
+          <option *ngFor="let name of usedCategories" [value]="name"
+            [selected]="name === selectedCategory">{{ name }}</option>
         </select>
       </div>
 
       <div class="filter-actions">
-        <button type="button" class="export-btn" [disabled]="expenses.length === 0"
-          (click)="onExportCsv()">
+        <button type="button" class="export-btn" [disabled]="!canExport" (click)="onExportCsv()">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
             <path d="M12 3v12M7.5 10.5 12 15l4.5-4.5M4 19h16" />
           </svg>
           Export CSV
         </button>
 
-        <span class="total-pill tnum">Total ₹{{ total | number }}</span>
+        <!-- Debit is your share only; a repayment is never counted as money in. -->
+        <span class="total-pill tnum" *ngIf="tab !== 'in'">Debit ₹{{ total | number }}</span>
+        <span class="total-pill in tnum" *ngIf="tab !== 'out'">Credit ₹{{ moneyIn | number }}</span>
+        <span class="total-pill back tnum" *ngIf="tab !== 'out' && paidBack">
+          Repaid ₹{{ paidBack | number }}
+        </span>
       </div>
     </div>
 
@@ -52,11 +66,11 @@
           Description{{ getSortIcon('description') }}
         </span>
         <span class="sortable" role="columnheader" (click)="onSort('category')">
-          Category{{ getSortIcon('category') }}
+          {{ tab === 'in' ? 'Source' : 'Category' }}{{ getSortIcon('category') }}
         </span>
         <span class="sortable" role="columnheader" *ngIf="canViewSourceDetails"
-          (click)="onSort('sourceCategory')">
-          Account{{ getSortIcon('sourceCategory') }}
+          (click)="onSort('account')">
+          Account{{ getSortIcon('account') }}
         </span>
         <span class="sortable" role="columnheader" (click)="onSort('status')">
           Status{{ getSortIcon('status') }}
@@ -64,41 +78,69 @@
         <span class="action-head">Action</span>
       </div>
 
-      <div class="table-row" *ngFor="let e of expenses"
-        [class.no-account]="!canViewSourceDetails">
+      <ng-container *ngFor="let row of rows">
 
-        <span class="cell-date tnum" data-label="Date">{{ e.date | date:'d MMM' }}</span>
+      <!--
+        A row tied to a split opens its repayment history: the split expense
+        itself, or a repayment against one. An ordinary row does nothing.
+      -->
+      <div class="table-row" [class.no-account]="!canViewSourceDetails"
+        [class.row-out]="row.kind === 'out'" [class.row-in]="row.kind === 'in'"
+        [class.et-splittable]="splitFor(row)" [class.et-open]="expandedId === row.key"
+        [attr.role]="splitFor(row) ? 'button' : null"
+        [attr.tabindex]="splitFor(row) ? 0 : null"
+        [attr.aria-expanded]="splitFor(row) ? expandedId === row.key : null"
+        (click)="onToggleSplit(row)" (keydown.enter)="onToggleSplit(row)">
 
-        <span class="cell-amount tnum" data-label="Amount">₹{{ e.amount | number }}</span>
+        <span class="cell-date tnum" data-label="Date">{{ row.date | date:'d MMM' }}</span>
 
-        <span class="cell-what" data-label="Description">{{ e.description }}</span>
+        <span class="cell-amount tnum" data-label="Amount" [class.in]="row.kind === 'in'">
+          {{ row.kind === 'in' ? '+' : '' }}₹{{ row.amount | number }}
+        </span>
 
-        <span class="cell-category" data-label="Category">
-          <span class="chip" [attr.data-cat]="e.category || 'None'">
-            {{ e.category || 'Uncategorised' }}
+        <span class="cell-what" data-label="Description">
+          {{ row.description }}
+          <span class="et-split-tag" *ngIf="row.expense?.splitMembers">
+            Split {{ row.expense?.splitMembers }} · yours ₹{{ row.expense?.personalShare | number }}
+            <span class="et-split-caret" aria-hidden="true">▾</span>
           </span>
+          <span class="et-split-tag" *ngIf="row.income?.splitDescription">
+            Repayment for {{ row.income?.splitDescription }}
+            <span class="et-split-caret" aria-hidden="true">▾</span>
+          </span>
+        </span>
+
+        <span class="cell-category" [attr.data-label]="row.kind === 'in' ? 'Source' : 'Category'">
+          <span class="chip" [attr.data-cat]="row.category">{{ row.category }}</span>
         </span>
 
         <span class="cell-account" data-label="Account" *ngIf="canViewSourceDetails">
-          {{ e.sourceCategory || '—' }}
+          {{ row.account || '—' }}
         </span>
 
         <span class="cell-status" data-label="Status">
-          <span class="chip" [attr.data-status]="e.isPendingApproval ? 'waiting' : 'done'">
-            {{ e.isPendingApproval ? 'Waiting' : 'Done' }}
-          </span>
+          <span class="chip" [attr.data-status]="row.status.toLowerCase()">{{ row.status }}</span>
         </span>
 
         <span class="cell-actions">
-          <button type="button" class="icon-btn approve" *ngIf="e.isPendingApproval && canApprovePending"
-            aria-label="Approve this expense" (click)="onApprovePending(e)">
-            <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
-              <path d="m5 12.5 4.5 4.5L19 7" />
-            </svg>
-          </button>
+          <ng-container *ngIf="row.expense as e">
+            <button type="button" class="icon-btn approve" *ngIf="e.isPendingApproval && canApprovePending"
+              aria-label="Approve this expense" (click)="$event.stopPropagation(); onApprovePending(e)">
+              <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
+                <path d="m5 12.5 4.5 4.5L19 7" />
+              </svg>
+            </button>
 
-          <button type="button" class="icon-btn remove" *ngIf="canRemoveExpenses"
-            aria-label="Remove this expense" (click)="onDelete(e)">
+            <button type="button" class="icon-btn remove" *ngIf="canRemoveExpenses"
+              aria-label="Remove this expense" (click)="$event.stopPropagation(); onDelete(e)">
+              <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
+                <path d="M6 6l12 12M18 6 6 18" />
+              </svg>
+            </button>
+          </ng-container>
+
+          <button type="button" class="icon-btn remove" *ngIf="row.income && canRemoveExpenses"
+            aria-label="Remove this income" (click)="$event.stopPropagation(); onDeleteIncome(row.income)">
             <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
               <path d="M6 6l12 12M18 6 6 18" />
             </svg>
@@ -106,14 +148,19 @@
         </span>
       </div>
 
+      <app-split-history *ngIf="expandedId === row.key && splitFor(row) as split" [split]="split">
+      </app-split-history>
+
+      </ng-container>
+
     </div>
 
-    <p class="table-note" *ngIf="expenses.length && canRemoveExpenses">
-      Removing an entry that moved money puts it back — you are told which account
-      it returned to.
+    <p class="table-note" *ngIf="rows.length && canRemoveExpenses">
+      Removing an entry puts the money back the way it was — you are told which
+      account it went to.
     </p>
 
-    <div *ngIf="expenses.length === 0" class="no-record">
+    <div *ngIf="rows.length === 0" class="no-record">
       <h3>No record found</h3>
       <p>Nothing matches these filters.</p>
     </div>

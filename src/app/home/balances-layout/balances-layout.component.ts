@@ -2,7 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { DashboardData } from '../../shared/dashboard';
+import { Expense } from '../../shared/models';
 import { SpendChartComponent } from '../../shared/spend-chart/spend-chart.component';
+import { SplitHistoryComponent } from '../../shared/split-history/split-history.component';
 
 /**
  * Layout A — balances first.
@@ -16,12 +18,23 @@ import { SpendChartComponent } from '../../shared/spend-chart/spend-chart.compon
 @Component({
   selector: 'app-balances-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, SpendChartComponent],
+  imports: [CommonModule, RouterModule, SpendChartComponent, SplitHistoryComponent],
   templateUrl: './balances-layout.component.html',
   styleUrl: './balances-layout.component.css'
 })
 export class BalancesLayoutComponent {
   @Input({ required: true }) data!: DashboardData;
+
+  /** The split row in Recent whose repayment history is open; one at a time. */
+  expandedId: string | null = null;
+
+  onToggleSplit(item: Expense): void {
+    if (!item.splitMembers) {
+      return;
+    }
+
+    this.expandedId = this.expandedId === item.id ? null : item.id;
+  }
 
   /**
    * Each category's width in the stacked bar, as a percentage of the month.
