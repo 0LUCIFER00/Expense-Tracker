@@ -34,24 +34,69 @@ export function toApi(row) {
 
 /** Reads the account's flags, creating the default row the first time. */
 export async function loadSettings(userId) {
+  /*
+   * Read first. This runs on nearly every request, and the upsert it used to be
+   * made each of those a write: a row lock and a WAL record to answer "may I
+   * see this?". The row exists for every account after its first request, so
+   * the insert below is the rare path.
+   */
   const { rows } = await query(
+    `select ${COLUMNS} from user_settings where user_id = $1`,
+    [userId]
+  );
+
+  if (rows[0]) {
+    return toApi(rows[0]);
+  }
+
+  const { rows: created } = await query(
     `insert into user_settings (user_id) values ($1)
      on conflict (user_id) do update set user_id = excluded.user_id
      returning ${COLUMNS}`,
     [userId]
   );
 
-  return toApi(rows[0]);
+  return toApi(created[0]);
 }
 
 /**
- * What the signed-in identity may actually do.
+ * The account behind a session, in one round trip: the version its sessions
+ * must carry, and its permission flags.
  *
- * An admin gets everything; a normal user gets whatever the flags allow.
+ * requireAuth calls this on every request, so the flags come along rather than
+ * being fetched again by effectivePermissions.
+ *
+ * @returns { sessionVersion, settings } — settings is null when the account has
+ *   no row yet — or null when the account no longer exists.
  */
-export async function effectivePermissions(session) {
-  const settings = await loadSettings(session.userId);
-  const admin = session.loginType === 'admin';
+export async function loadAccount(userId) {
+  const columns = Object.values(FLAGS).map(column => `s.${column}`).join(', ');
+
+  const { rows } = await query(
+    `select u.session_version, s.user_id as has_settings, ${columns}
+       from users u
+       left join user_settings s on s.user_id = u.id
+      where u.id = $1`,
+    [userId]
+  );
+
+  if (!rows[0]) {
+    return null;
+  }
+
+  return {
+    sessionVersion: rows[0].session_version,
+    settings: rows[0].has_settings ? toApi(rows[0]) : null
+  };
+}
+
+/**
+ * What an identity may do, given its account's flags.
+ *
+ * Pure, so the rule itself is what the tests exercise.
+ */
+export function permissionsFor(settings, loginType) {
+  const admin = loginType === 'admin';
 
   return {
     settings,
@@ -85,6 +130,26 @@ export async function effectivePermissions(session) {
     canUpdateBalance: admin || settings.expenseUserAccess,
     canBackdate: admin || settings.updatePermissionUser,
     canViewSource: admin || settings.viewPermissionUser,
-    canRemove: admin || settings.removePermissionUser
+    canRemove: admin || settings.removePermissionUser,
+
+    /**
+     * Typing a figure into an account on Cash & Accounts, or creating or
+     * deleting one. Seeing the amounts is not enough: a session barred from
+     * moving money by spending must not be able to move it by retyping it.
+     */
+    canManageBalances:
+      admin || (settings.balanceUserAccess && settings.expenseUserAccess)
   };
+}
+
+/**
+ * What the signed-in identity may actually do.
+ *
+ * Uses the flags requireAuth already loaded with the session when they are
+ * there, so a request costs one settings read rather than two.
+ */
+export async function effectivePermissions(session) {
+  const settings = session.settings ?? await loadSettings(session.userId);
+
+  return permissionsFor(settings, session.loginType);
 }

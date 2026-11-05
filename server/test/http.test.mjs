@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normaliseEmail, parseAmount, parseDate } from '../src/http.mjs';
+import {
+  callerToday,
+  normaliseEmail,
+  parseAmount,
+  parseDate,
+  todayInIndia
+} from '../src/http.mjs';
 
 test('normaliseEmail lower-cases and trims', () => {
   assert.equal(normaliseEmail('  Ada@Example.COM '), 'ada@example.com');
@@ -27,6 +33,38 @@ test('parseAmount rejects zero, negatives, oversize and non-numbers', () => {
   for (const value of [0, -5, 100001, 'abc', NaN, Infinity, null, undefined]) {
     assert.equal(parseAmount(value), null, `expected ${value} to be rejected`);
   }
+});
+
+test('parseAmount refuses values Number() would have quietly converted', () => {
+  // true became 1, [5] became 5 and '0x10' became 16 before this was tightened.
+  for (const value of [true, false, [5], { amount: 5 }, '0x10', '1e3', ' ', '12abc', '-5']) {
+    assert.equal(parseAmount(value), null, `expected ${JSON.stringify(value)} to be rejected`);
+  }
+});
+
+test('parseAmount refuses an amount that rounds to nothing', () => {
+  // 0.001 used to reach the database as 0 and fail its check as a 500.
+  assert.equal(parseAmount(0.001), null);
+  assert.equal(parseAmount('0.004'), null);
+  assert.equal(parseAmount(0.005), 0.01);
+});
+
+test('callerToday follows the caller, todayInIndia follows India', () => {
+  const realNow = Date.now;
+
+  try {
+    // 20:00 UTC on 4 Nov is 01:30 on 5 Nov in India.
+    Date.now = () => Date.parse('2026-11-04T20:00:00Z');
+
+    assert.equal(callerToday(-330), '2026-11-05');
+    assert.equal(callerToday(0), '2026-11-04');
+    assert.equal(callerToday('nonsense'), '2026-11-04');
+  } finally {
+    Date.now = realNow;
+  }
+
+  assert.equal(todayInIndia(new Date('2026-11-04T20:00:00Z')), '2026-11-05');
+  assert.equal(todayInIndia(new Date('2026-11-04T18:00:00Z')), '2026-11-04');
 });
 
 test('parseDate accepts YYYY-MM-DD', () => {

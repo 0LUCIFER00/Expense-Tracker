@@ -1,11 +1,14 @@
 import { Router } from 'express';
 import { query, transaction } from '../db.mjs';
 import {
+  PASSWORD_MIN,
+  authenticate,
   clearSession,
   hashPassword,
   issueSession,
   readSession,
   requireAuth,
+  revokeOtherSessions,
   verifyPassword
 } from '../auth.mjs';
 import { asyncRoute, badRequest, normaliseEmail, parseText } from '../http.mjs';
@@ -26,6 +29,14 @@ const loginLimit = rateLimit({
   windowMs: 10 * 60_000,
   key: req => `${req.ip}|${normaliseEmail(req.body?.email) ?? ''}`
 });
+
+/**
+ * The per-account limit above can be sidestepped by trying a different email
+ * each time: one address working through a list of leaked passwords. This
+ * caps an address across all of them, high enough that a household or an
+ * office behind one address does not notice it.
+ */
+const loginAddressLimit = rateLimit({ limit: 30, windowMs: 10 * 60_000 });
 
 /** Account creation is slower still: nobody opens six accounts in an hour. */
 const registerLimit = rateLimit({ limit: 5, windowMs: 60 * 60_000 });
@@ -70,8 +81,15 @@ authRouter.post('/register', registerLimit, asyncRoute(async (req, res) => {
     return badRequest(res, 'A valid email is required');
   }
 
-  if (password.length < 6) {
-    return badRequest(res, 'Password must be at least 6 characters');
+  if (password.length < PASSWORD_MIN) {
+    return badRequest(res, `Password must be at least ${PASSWORD_MIN} characters`);
+  }
+
+  if (adminPassword && adminPassword.length < PASSWORD_MIN) {
+    return badRequest(
+      res,
+      `Full-access password must be at least ${PASSWORD_MIN} characters`
+    );
   }
 
   if (adminPassword && adminPassword === password) {
@@ -109,12 +127,13 @@ authRouter.post('/register', registerLimit, asyncRoute(async (req, res) => {
   res.status(201).json({ user: publicUser(user), loginType: 'user' });
 }));
 
-authRouter.post('/login', loginLimit, asyncRoute(async (req, res) => {
+authRouter.post('/login', loginAddressLimit, loginLimit, asyncRoute(async (req, res) => {
   const email = normaliseEmail(req.body?.email);
   const password = String(req.body?.password ?? '');
 
   const { rows } = await query(
-    `select id, name, email, password_hash, admin_password_hash, created_at
+    `select id, name, email, password_hash, admin_password_hash, created_at,
+            session_version
        from users where email = $1`,
     [email || '']
   );
@@ -125,7 +144,14 @@ authRouter.post('/login', loginLimit, asyncRoute(async (req, res) => {
   // response does not reveal which emails are registered.
   const invalid = () => res.status(401).json({ error: 'Invalid email or password' });
 
+  /*
+   * A wrong password for a real account costs two comparisons (the account
+   * password, then the full-access one), so an unknown email costs two as
+   * well. With one, the quicker answer told a caller the address was not
+   * registered.
+   */
   if (!user) {
+    await verifyPassword(password, null);
     await verifyPassword(password, null);
     return invalid();
   }
@@ -142,7 +168,7 @@ authRouter.post('/login', loginLimit, asyncRoute(async (req, res) => {
     return invalid();
   }
 
-  issueSession(res, { userId: user.id, loginType });
+  issueSession(res, { userId: user.id, loginType, version: user.session_version });
 
   res.json({ user: publicUser(user), loginType });
 }));
@@ -153,9 +179,11 @@ authRouter.post('/logout', (req, res) => {
 });
 
 authRouter.get('/me', asyncRoute(async (req, res) => {
-  const session = readSession(req);
+  // authenticate, not readSession: a revoked cookie must not read as signed in.
+  const session = await authenticate(req);
 
   if (!session) {
+    clearSession(res);
     return res.status(401).json({ error: 'Not signed in' });
   }
 
@@ -194,6 +222,35 @@ authRouter.patch('/profile', requireAuth, asyncRoute(async (req, res) => {
     return badRequest(res, 'A valid email is required');
   }
 
+  const { rows: current } = await query(
+    'select email, password_hash, admin_password_hash from users where id = $1',
+    [req.session.userId]
+  );
+
+  if (!current[0]) {
+    return res.status(401).json({ error: 'Not signed in' });
+  }
+
+  /*
+   * The email is what the account signs in with, so changing it needs one of
+   * the account's passwords, as changing a password does. A borrowed, unlocked
+   * browser should not be enough to move the account to an address its owner
+   * does not know.
+   */
+  if (email && email !== current[0].email) {
+    const password = String(req.body?.currentPassword ?? '');
+
+    const proven =
+      await verifyPassword(password, current[0].password_hash) ||
+      await verifyPassword(password, current[0].admin_password_hash);
+
+    if (!proven) {
+      return res.status(403).json({
+        error: 'Enter your current password to change the email you sign in with.'
+      });
+    }
+  }
+
   if (email) {
     const taken = await query('select 1 from users where email = $1 and id <> $2', [
       email,
@@ -228,12 +285,26 @@ authRouter.patch('/profile', requireAuth, asyncRoute(async (req, res) => {
 authRouter.delete('/account', requireAuth, passwordLimit, asyncRoute(async (req, res) => {
   const password = String(req.body?.password ?? '');
 
-  const { rows } = await query('select password_hash from users where id = $1', [
-    req.session.userId
-  ]);
+  const { rows } = await query(
+    'select password_hash, admin_password_hash from users where id = $1',
+    [req.session.userId]
+  );
 
-  if (!rows[0] || !await verifyPassword(password, rows[0].password_hash)) {
-    return res.status(403).json({ error: 'Your password is not correct' });
+  /*
+   * With a full-access password set, only it can close the account. The
+   * normal password is the one a restricted session signs in with, and
+   * "Remove an expense" being off would mean little if that password could
+   * delete everything at once.
+   */
+  const fullAccess = Boolean(rows[0]?.admin_password_hash);
+  const hash = fullAccess ? rows[0].admin_password_hash : rows[0]?.password_hash;
+
+  if (!rows[0] || !await verifyPassword(password, hash)) {
+    return res.status(403).json({
+      error: fullAccess
+        ? 'Enter your full-access password to delete this account'
+        : 'Your password is not correct'
+    });
   }
 
   await query('delete from users where id = $1', [req.session.userId]);
@@ -253,8 +324,8 @@ authRouter.put('/password', requireAuth, passwordLimit, asyncRoute(async (req, r
   const currentPassword = String(req.body?.currentPassword ?? '');
   const newPassword = String(req.body?.newPassword ?? '');
 
-  if (newPassword.length < 6) {
-    return badRequest(res, 'New password must be at least 6 characters');
+  if (newPassword.length < PASSWORD_MIN) {
+    return badRequest(res, `New password must be at least ${PASSWORD_MIN} characters`);
   }
 
   const { rows } = await query(
@@ -276,10 +347,18 @@ authRouter.put('/password', requireAuth, passwordLimit, asyncRoute(async (req, r
     return badRequest(res, 'That is your full-access password — pick a different one');
   }
 
-  await query('update users set password_hash = $1 where id = $2', [
-    await hashPassword(newPassword),
-    req.session.userId
-  ]);
+  const hash = await hashPassword(newPassword);
+
+  // Every other device signs out: a password changed because it leaked must
+  // not leave the leaker signed in.
+  await transaction(async client => {
+    await client.query('update users set password_hash = $1 where id = $2', [
+      hash,
+      req.session.userId
+    ]);
+
+    await revokeOtherSessions(res, req.session, client);
+  });
 
   res.json({ changed: true });
 }));
@@ -302,8 +381,11 @@ authRouter.put('/admin-password', requireAuth, passwordLimit, asyncRoute(async (
   const adminPassword = String(req.body?.adminPassword ?? '');
   const currentAdminPassword = String(req.body?.currentAdminPassword ?? '');
 
-  if (adminPassword.length < 6) {
-    return badRequest(res, 'Full-access password must be at least 6 characters');
+  if (adminPassword.length < PASSWORD_MIN) {
+    return badRequest(
+      res,
+      `Full-access password must be at least ${PASSWORD_MIN} characters`
+    );
   }
 
   const { rows } = await query(
@@ -329,10 +411,16 @@ authRouter.put('/admin-password', requireAuth, passwordLimit, asyncRoute(async (
 
   const hash = await hashPassword(adminPassword);
 
-  await query('update users set admin_password_hash = $1 where id = $2', [
-    hash,
-    req.session.userId
-  ]);
+  // Sessions signed in with the old full-access password end here, which is
+  // the point of changing one that may have leaked.
+  await transaction(async client => {
+    await client.query('update users set admin_password_hash = $1 where id = $2', [
+      hash,
+      req.session.userId
+    ]);
+
+    await revokeOtherSessions(res, req.session, client);
+  });
 
   res.json({ hasAdminPassword: true });
 }));
@@ -365,6 +453,8 @@ authRouter.post('/admin-password/remove', requireAuth, passwordLimit, asyncRoute
     await client.query('insert into user_settings (user_id) values ($1)', [
       req.session.userId
     ]);
+
+    await revokeOtherSessions(res, req.session, client);
   });
 
   res.json({ hasAdminPassword: false, settingsReset: true });

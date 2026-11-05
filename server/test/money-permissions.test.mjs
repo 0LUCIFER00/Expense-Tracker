@@ -1,27 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { FLAGS } from '../src/settings-store.mjs';
+import { FLAGS, permissionsFor } from '../src/settings-store.mjs';
 
 /*
- * effectivePermissions needs a database, so this covers the rule it applies
- * rather than the function: both switches have to allow a balance over
- * WhatsApp, and an admin is never narrowed by either.
+ * The real rule, not a copy of it. This file used to restate the logic in a
+ * local function, so the tests would have kept passing whatever the server
+ * actually did; permissionsFor is now the one both use.
  */
-function derive(settings, loginType) {
-  const admin = loginType === 'admin';
-
-  return {
-    canSeeBalances: admin || settings.balanceUserAccess,
-    canAddMoney: admin || settings.addMoneyUserAccess,
-    canSeeBalancesOnWhatsapp:
-      admin || (settings.balanceUserAccess && settings.whatsappBalanceUserAccess)
-  };
-}
+const derive = permissionsFor;
 
 const ALL_ON = {
   balanceUserAccess: true,
   addMoneyUserAccess: true,
-  whatsappBalanceUserAccess: true
+  whatsappBalanceUserAccess: true,
+  expenseUserAccess: true,
+  updatePermissionUser: true,
+  viewPermissionUser: true,
+  removePermissionUser: true
 };
 
 test('both new flags are stored', () => {
@@ -61,6 +56,17 @@ test('WhatsApp balances can be switched off on their own', () => {
 
   assert.equal(p.canSeeBalances, true, 'still visible on the website');
   assert.equal(p.canSeeBalancesOnWhatsapp, false);
+});
+
+test('retyping a balance needs both seeing it and debiting from it', () => {
+  assert.equal(derive(ALL_ON, 'user').canManageBalances, true);
+  assert.equal(derive({ ...ALL_ON, expenseUserAccess: false }, 'user').canManageBalances, false);
+  assert.equal(derive({ ...ALL_ON, balanceUserAccess: false }, 'user').canManageBalances, false);
+  assert.equal(
+    derive({ ...ALL_ON, balanceUserAccess: false, expenseUserAccess: false }, 'admin')
+      .canManageBalances,
+    true
+  );
 });
 
 test('an admin is narrowed by neither', () => {

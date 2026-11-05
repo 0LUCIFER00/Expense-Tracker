@@ -110,6 +110,25 @@ function prunePostgres() {
 const USE_POSTGRES = Boolean(process.env['VERCEL']);
 
 /**
+ * Counts one attempt against `id` outside of a request, in whichever store the
+ * middleware below would use.
+ *
+ * For callers that are not an HTTP request of their own, such as messages
+ * inside a WhatsApp webhook, where every sender arrives from Meta's address.
+ *
+ * @returns { count, resetAt }
+ */
+export async function countAttempt(id, windowMs) {
+  if (!USE_POSTGRES) {
+    return hitMemory(id, windowMs);
+  }
+
+  prunePostgres();
+
+  return hitPostgres(id, windowMs);
+}
+
+/**
  * @param limit    attempts allowed per window
  * @param windowMs length of the window
  * @param key      what to count against; defaults to the caller's IP

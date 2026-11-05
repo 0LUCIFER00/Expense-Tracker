@@ -23,6 +23,18 @@ types.setTypeParser(types.builtins.DATE, value => value);
  * verified. Without it we still encrypt, but cannot authenticate the server.
  */
 function resolveCa() {
+  /*
+   * The certificate itself, pasted into an environment variable. This is the
+   * way that works on Vercel, which has no persistent files to put one in.
+   * Dashboards sometimes keep the line breaks as literal "\n", so those are
+   * turned back into real ones.
+   */
+  const inline = process.env['DATABASE_CA_CERT'];
+
+  if (inline && inline.includes('BEGIN CERTIFICATE')) {
+    return { ca: inline.replace(/\\n/g, '\n'), path: 'DATABASE_CA_CERT' };
+  }
+
   const configured = process.env['PGSSLROOTCERT'];
   const candidates = [configured, join(projectRoot, 'server', 'certs', 'ca.pem')];
 
@@ -64,7 +76,8 @@ const { ssl, caPath } = buildSslConfig(new URL(DATABASE_URL));
 if (ssl && !caPath) {
   console.warn(
     '[db] TLS is on but the server certificate is not verified. Download your ' +
-    "Aiven CA to server/certs/ca.pem (or set PGSSLROOTCERT) to verify it."
+    'Aiven CA and set DATABASE_CA_CERT to its contents (or save it as ' +
+    'server/certs/ca.pem, or point PGSSLROOTCERT at it) to verify it.'
   );
 }
 

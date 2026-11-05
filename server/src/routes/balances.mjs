@@ -41,13 +41,15 @@ balancesRouter.get('/', asyncRoute(async (req, res) => {
 }));
 
 /**
- * Managing accounts means typing amounts, so it needs the same permission as
- * seeing them — otherwise the figures could be read back by editing.
+ * Managing accounts means typing amounts. That needs seeing them, or the
+ * figures could be read back by editing; and it needs "Debit from an account",
+ * or a session barred from moving money by spending could move it by retyping
+ * the balance.
  */
 async function requireBalanceAccess(req, res) {
-  const { canSeeBalances } = await effectivePermissions(req.session);
+  const { canManageBalances } = await effectivePermissions(req.session);
 
-  if (!canSeeBalances) {
+  if (!canManageBalances) {
     res.status(403).json({
       error: 'Sign in with your full-access password to manage balances.'
     });

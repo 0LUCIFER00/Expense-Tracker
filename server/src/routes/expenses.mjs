@@ -4,6 +4,7 @@ import { requireAuth } from '../auth.mjs';
 import {
   asyncRoute,
   badRequest,
+  callerToday,
   notFound,
   parseAmount,
   parseDate,
@@ -74,21 +75,6 @@ const SELECT_COLUMNS = `
   expense_access, update_permission, balance_updated, status, remarks, created_at,
   split_members, split_share, personal_share
 `;
-
-/**
- * "Today" according to the caller's clock. The browser sends its UTC offset so
- * that someone just after midnight locally does not have their entry treated
- * as a future date by a server running in UTC.
- */
-function callerToday(offsetMinutes) {
-  const offset = Number(offsetMinutes);
-  const safeOffset = Number.isFinite(offset) && Math.abs(offset) <= 14 * 60 ? offset : 0;
-
-  // getTimezoneOffset() is minutes *behind* UTC, hence the subtraction.
-  const local = new Date(Date.now() - safeOffset * 60_000);
-
-  return local.toISOString().slice(0, 10);
-}
 
 expensesRouter.get('/', asyncRoute(async (req, res) => {
   const permissions = await effectivePermissions(req.session);

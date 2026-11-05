@@ -21,7 +21,7 @@ import { IS_PRODUCTION, projectRoot } from './env.mjs';
  * meant for that page lands on "Remove" or "Delete account" in this one. The
  * connect/img/script rules keep a successful injection from phoning anywhere.
  */
-const CSP = [
+export const CSP = [
   "default-src 'self'",
   // Angular's styles are injected inline, and Google Fonts serves the typeface.
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -36,16 +36,22 @@ const CSP = [
   "object-src 'none'"
 ].join('; ');
 
+/**
+ * Sent on every response. vercel.json repeats them for the pages the CDN serves
+ * without passing through here; a test keeps the two lists identical.
+ */
+export const SECURITY_HEADERS = {
+  'Content-Security-Policy': CSP,
+  // Belt and braces for browsers that predate frame-ancestors.
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'same-origin',
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()'
+};
+
 function securityHeaders(_req, res, next) {
-  res.set({
-    'Content-Security-Policy': CSP,
-    // Belt and braces for browsers that predate frame-ancestors.
-    'X-Frame-Options': 'DENY',
-    'X-Content-Type-Options': 'nosniff',
-    'Referrer-Policy': 'same-origin',
-    'Cross-Origin-Opener-Policy': 'same-origin',
-    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()'
-  });
+  res.set(SECURITY_HEADERS);
 
   // Only meaningful over HTTPS, and only safe once the site is HTTPS-only.
   if (IS_PRODUCTION) {
@@ -106,6 +112,17 @@ export function createApp() {
 
       res.status(503).json({ status: 'degraded', database: 'unreachable' });
     }
+  });
+
+  /*
+   * Every API answer is someone's money, so none of it is kept: not by the
+   * browser's disk cache, not by anything in between. Without this the
+   * platform default was "public, max-age=0, must-revalidate", which permits
+   * storing it.
+   */
+  app.use('/api', (_req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
   });
 
   app.use('/api/auth', authRouter);
@@ -181,7 +198,18 @@ export function createApp() {
       return res.status(400).json({ error: 'Malformed identifier.' });
     }
 
-    console.error('[api]', error);
+    /*
+     * Not the whole error: a database error's `detail` quotes the row it
+     * tripped over ("Key (email)=(someone@example.com) already exists"), which
+     * puts personal data in the platform's logs. The message, the code and
+     * where it was thrown are enough to find it.
+     */
+    console.error('[api]', {
+      message: error.message,
+      code: error.code,
+      constraint: error.constraint,
+      stack: error.stack?.split('\n').slice(0, 4).join('\n')
+    });
     res.status(500).json({ error: 'Something went wrong.' });
   });
 

@@ -4,6 +4,7 @@ import { requireAuth } from '../auth.mjs';
 import {
   asyncRoute,
   badRequest,
+  callerToday,
   notFound,
   parseAmount,
   parseDate,
@@ -108,6 +109,20 @@ incomesRouter.post('/', asyncRoute(async (req, res) => {
 
   if (!targetId) {
     return badRequest(res, 'Please choose the account the money went into.');
+  }
+
+  /*
+   * Another day needs "Change transaction dates", as it does for an expense.
+   * An expense waits for approval instead; income has no approval step, and a
+   * credit that has not happened yet should not sit in the balance, so it is
+   * refused outright.
+   */
+  if (date !== callerToday(req.body?.tzOffset) && !permissions.canBackdate) {
+    return res.status(403).json({
+      error:
+        'Income can only be recorded for today on this sign-in. Other dates need ' +
+        '"Change transaction dates", or your full-access password.'
+    });
   }
 
   try {

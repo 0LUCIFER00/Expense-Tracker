@@ -62,7 +62,7 @@ provisioning, powered off, or the hostname in `.env` is wrong.
 
 ```bash
 npm run test:ci    # Angular suite, headless Chrome
-npm run test:api   # API unit tests (no database needed)
+npm run test:api   # API tests (no database needed; routes run against a stand-in)
 ```
 
 `npm test` starts the Angular suite in watch mode with a browser attached.
@@ -308,17 +308,31 @@ generates once and then keeps.
 
 `.env` holds the database credentials and is gitignored. Do not commit it.
 
+**Sessions can be revoked.** Each cookie carries the account's `session_version`
+(migration 010), and every request compares the two in the same query that loads the
+permission flags, so revocation costs no extra round trip. Changing the password, or
+setting, changing or removing the full-access password, raises the version: every other
+device is signed out and the one making the change gets a fresh cookie.
+
+**On Vercel the pages need their own headers.** The CDN serves the HTML and bundles
+without passing through Express, so `vercel.json` repeats the security headers for every
+path outside `/api`. `server/test/deployment.test.mjs` fails if the two lists drift apart.
+
+New passwords need **8 characters**; signing in still accepts the shorter ones set
+before that rule.
+
 ### Still outstanding
 
 - **The Aiven certificate is not verified.** The connection is encrypted, but without
-  the project CA the server at the other end is not authenticated. Download it from the
-  Aiven console to `server/certs/ca.pem`, or point `PGSSLROOTCERT` at it, and the
-  connection verifies itself — the code already looks for both.
+  the project CA the server at the other end is not authenticated. Download the CA from
+  the Aiven console and set `DATABASE_CA_CERT` to its contents (the way that works on
+  Vercel), or save it to `server/certs/ca.pem`, or point `PGSSLROOTCERT` at it. The
+  connection then verifies itself.
 - **Angular 19 has published advisories** that are only fixed in 21. The upgrade is a
   major version step, so it is a deliberate piece of work rather than a patch. See
   `npm audit --omit=dev`.
-- **A session outlives a password change.** Changing the password does not invalidate
-  cookies issued before it, for up to the seven-day session life. Closing this means
-  recording the moment of the change on the user row and comparing it against the
-  token's `iat` on every authenticated request — one extra database round trip per
-  request, which is why it has not simply been switched on.
+- **Development uses the production database.** Local runs, tests against a live
+  server and migrations all touch real data. A separate Aiven database for development
+  would also let concurrency be tested for real rather than by reading the code.
+- **The app connects as Aiven's admin user.** A role with only the table privileges it
+  needs would limit what a leaked connection string could do.

@@ -31,16 +31,38 @@ export function normaliseEmail(value) {
   return EMAIL_PATTERN.test(email) ? email : null;
 }
 
-/** Parses a positive money amount, or null when it is not one. */
-export function parseAmount(value) {
-  const amount = Number(value);
+/** The largest single amount either channel accepts. */
+export const AMOUNT_MAX = 100_000;
 
-  if (!Number.isFinite(amount) || amount <= 0 || amount > 100_000) {
+/** A plain decimal: digits, optionally a point and more digits. */
+const DECIMAL_TEXT = /^\d+(\.\d+)?$/;
+
+/**
+ * Parses a positive money amount, or null when it is not one.
+ *
+ * Only a number or a plain decimal string. Number() alone turned `true` into 1,
+ * `[5]` into 5 and "0x10" into 16, and accepted 0.001, which rounds to nothing
+ * and then failed the database's amount > 0 check as a 500.
+ */
+export function parseAmount(value) {
+  let amount;
+
+  if (typeof value === 'number') {
+    amount = value;
+  } else if (typeof value === 'string' && DECIMAL_TEXT.test(value.trim())) {
+    amount = Number(value.trim());
+  } else {
+    return null;
+  }
+
+  if (!Number.isFinite(amount) || amount > AMOUNT_MAX) {
     return null;
   }
 
   // Money is numeric(14,2) in the database.
-  return Math.round(amount * 100) / 100;
+  const rounded = Math.round(amount * 100) / 100;
+
+  return rounded > 0 ? rounded : null;
 }
 
 /**
@@ -65,6 +87,39 @@ export function parseText(raw, { field, max, required = true }) {
   }
 
   return { value };
+}
+
+/**
+ * "Today" according to the caller's clock. The browser sends its UTC offset so
+ * that someone just after midnight locally does not have their entry treated
+ * as a future date by a server running in UTC.
+ */
+export function callerToday(offsetMinutes) {
+  const offset = Number(offsetMinutes);
+  const safeOffset = Number.isFinite(offset) && Math.abs(offset) <= 14 * 60 ? offset : 0;
+
+  // getTimezoneOffset() is minutes *behind* UTC, hence the subtraction.
+  const local = new Date(Date.now() - safeOffset * 60_000);
+
+  return local.toISOString().slice(0, 10);
+}
+
+/**
+ * Today's date in India, as YYYY-MM-DD.
+ *
+ * For WhatsApp, where no browser says what time it is. The database and the
+ * server run in UTC, so "today" by their clock is yesterday for the first five
+ * and a half hours of every Indian day: a chai at 1am was filed under the day
+ * before, and "today" listed the wrong day.
+ */
+export function todayInIndia(now = new Date()) {
+  // en-CA formats as YYYY-MM-DD.
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(now);
 }
 
 /** Accepts YYYY-MM-DD and rejects anything else. */

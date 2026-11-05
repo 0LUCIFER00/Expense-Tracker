@@ -402,6 +402,7 @@ Migrations (`server/migrations/`, applied in order, each in a transaction with
 7. `007_housekeeping.sql`: clean-ups
 8. `008_shared_rate_limits.sql`: rate limits stored in Postgres
 9. `009_splits.sql`: split columns on expenses, `split_expense_id` on incomes
+10. `010_session_version.sql`: `users.session_version`, which lets sessions be revoked
 
 ---
 
@@ -453,9 +454,14 @@ All routes are under `/api` and need the session cookie unless noted.
 - Secrets (database URL, JWT secret, WhatsApp tokens) live in `.env` locally and in
   Vercel environment variables in production; `.env` is never committed.
 
-Known outstanding items: the Aiven CA certificate is not yet verified (connection is
-encrypted but the server is not authenticated); Angular 19 has advisories fixed only
-in v21; a session survives a password change until it expires (7 days).
+- **Sessions are revocable:** changing the password or the full-access password signs
+  out every other device. New passwords need 8 characters.
+- The pages served by Vercel's CDN carry the same security headers as the API
+  (content security policy, no framing), and API responses are never cached.
+
+Known outstanding items (see AUDIT_REPORT.md): the Aiven CA certificate is not yet
+verified until `DATABASE_CA_CERT` is set; Angular 19 has advisories fixed only in v21;
+development shares the production database; the app connects as Aiven's admin user.
 
 ---
 
