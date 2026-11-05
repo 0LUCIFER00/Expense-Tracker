@@ -62,22 +62,41 @@ export function verifySignature(rawBody, header) {
  * which have no message at all.
  */
 export function extractTextMessage(body) {
-  const value = body?.entry?.[0]?.changes?.[0]?.value;
-  const message = value?.messages?.[0];
+  return extractTextMessages(body)[0] ?? null;
+}
 
-  if (!message || message.type !== 'text') {
-    return null;
+/**
+ * Every text message in a webhook payload, in the order Meta lists them.
+ *
+ * One delivery can carry several entries, changes and messages. Non-text ones
+ * (images, reactions, status callbacks) are skipped.
+ */
+export function extractTextMessages(body) {
+  const found = [];
+
+  for (const entry of Array.isArray(body?.entry) ? body.entry : []) {
+    for (const change of Array.isArray(entry?.changes) ? entry.changes : []) {
+      const value = change?.value;
+
+      for (const message of Array.isArray(value?.messages) ? value.messages : []) {
+        if (message?.type !== 'text' || !message.id) {
+          continue;
+        }
+
+        found.push({
+          messageId: message.id,
+          from: message.from,
+          text: message.text?.body ?? '',
+          contactName: value?.contacts?.[0]?.profile?.name ?? null,
+          // Seconds since the epoch, as Meta sends it. When the message was
+          // sent, which is not the same as when it arrived: see isStale.
+          sentAt: Number(message.timestamp) || null
+        });
+      }
+    }
   }
 
-  return {
-    messageId: message.id,
-    from: message.from,
-    text: message.text?.body ?? '',
-    contactName: value?.contacts?.[0]?.profile?.name ?? null,
-    // Seconds since the epoch, as Meta sends it. When the message was sent,
-    // which is not the same as when it arrived: see isStale.
-    sentAt: Number(message.timestamp) || null
-  };
+  return found;
 }
 
 /**

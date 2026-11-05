@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query, transaction } from '../db.mjs';
-import { asyncRoute } from '../http.mjs';
+import { AMOUNT_MAX, asyncRoute, todayInIndia } from '../http.mjs';
+import { countAttempt } from '../rate-limit.mjs';
 import { effectivePermissions } from '../settings-store.mjs';
 import { removeExpense } from '../expense-store.mjs';
 import { addIncome, removeIncome } from '../income-store.mjs';
@@ -11,7 +12,7 @@ import { matchSplit, splitAmount } from '../split.mjs';
 import { listOpenSplits, listSplits } from '../split-store.mjs';
 import {
   WHATSAPP_VERIFY_TOKEN,
-  extractTextMessage,
+  extractTextMessages,
   isStale,
   messageAgeMs,
   normaliseNumber,
@@ -48,40 +49,70 @@ whatsappRouter.post('/webhook', asyncRoute(async (req, res) => {
   // can outlast its timeout; duplicates are kept out by message id instead.
   res.sendStatus(200);
 
-  const message = extractTextMessage(req.body);
-
-  if (!message) {
-    return;
-  }
-
   /*
-   * Meta retries a webhook it could not deliver for days afterwards, and a
-   * replayed message carries a new id, so the processed-message table cannot
-   * tell it apart from something just sent. Acting on it books a spend the
-   * owner made long ago and has usually already recorded by hand.
+   * Meta can batch several messages into one delivery. Taking only the first
+   * dropped the rest without a word. They are handled one after another, in
+   * the order sent, so "250 coffee" then "undo" still means what it says.
    */
-  if (isStale(message)) {
-    console.warn(
-      `[whatsapp] ignored a message sent ${Math.round(messageAgeMs(message) / 60_000)} ` +
-      `minutes ago (${message.messageId})`
+  const fresh = extractTextMessages(req.body).filter(message => {
+    /*
+     * Meta retries a webhook it could not deliver for days afterwards, and a
+     * replayed message carries a new id, so the processed-message table cannot
+     * tell it apart from something just sent. Acting on it books a spend the
+     * owner made long ago and has usually already recorded by hand.
+     */
+    if (isStale(message)) {
+      console.warn(
+        `[whatsapp] ignored a message sent ${Math.round(messageAgeMs(message) / 60_000)} ` +
+        `minutes ago (${message.messageId})`
+      );
+      return false;
+    }
+
+    // Logged on every message, so that if one is ever acted on late there is
+    // a number in the record rather than a guess.
+    console.info(
+      `[whatsapp] handling ${message.messageId}, sent ` +
+      `${Math.round((messageAgeMs(message) ?? 0) / 1000)}s ago`
     );
+
+    return true;
+  });
+
+  if (fresh.length === 0) {
     return;
   }
-
-  // Logged on every message, so that if one is ever acted on late there is a
-  // number in the record rather than a guess.
-  console.info(
-    `[whatsapp] handling ${message.messageId}, sent ` +
-    `${Math.round((messageAgeMs(message) ?? 0) / 1000)}s ago`
-  );
 
   /*
    * Not a bare await: once the response is flushed, a serverless instance may
    * be frozen or discarded, and the work would be cut off half-finished. This
    * hands the promise to the platform so the instance is kept until it ends.
    */
-  afterResponse(handleMessage(message));
+  afterResponse(
+    fresh.reduce((previous, message) => previous.then(() => handleMessage(message)), Promise.resolve())
+  );
 }));
+
+/**
+ * How many messages an unconnected number gets an answer to, per hour.
+ *
+ * Every reply is a message Meta bills for past the free thousand a month, and a
+ * number that is not connected can be anybody. A few answers are enough to tell
+ * a real person how to connect; past that, silence. Link attempts are counted
+ * the same way, so the six-character code cannot be guessed at speed.
+ */
+const UNKNOWN_REPLIES_PER_HOUR = 5;
+
+async function overUnknownLimit(from) {
+  try {
+    const { count } = await countAttempt(`whatsapp-unknown|${from}`, 60 * 60_000);
+    return count > UNKNOWN_REPLIES_PER_HOUR;
+  } catch (error) {
+    // The counter is housekeeping; a database blip should not silence a reply.
+    console.warn('[whatsapp] could not count an unknown sender:', error.message);
+    return false;
+  }
+}
 
 /**
  * The processed-message table only exists to recognise a retry, and Meta
@@ -106,7 +137,7 @@ async function pruneProcessedMessages() {
   }
 }
 
-async function handleMessage(message) {
+export async function handleMessage(message) {
   // A retry carries the same id, so claim it once and ignore repeats.
   const claim = await query(
     `insert into whatsapp_processed_messages (message_id) values ($1)
@@ -132,10 +163,18 @@ async function handleMessage(message) {
 
   // Linking is the only thing an unknown number may do.
   if (intent.kind === 'link') {
+    if (await overUnknownLimit(from)) {
+      return;
+    }
+
     return linkNumber(from, intent.code);
   }
 
   if (!user) {
+    if (await overUnknownLimit(from)) {
+      return;
+    }
+
     return sendText(
       from,
       'This number is not connected to an Expense Tracker account yet.\n\n' +
@@ -186,14 +225,42 @@ function loadAccounts(userId) {
 }
 
 async function linkNumber(from, code) {
-  const { rows } = await query(
-    `delete from whatsapp_link_codes
-      where code = $1 and expires_at > now()
-      returning user_id`,
-    [code]
-  );
+  /*
+   * One transaction: claiming the code, moving the number off any account it
+   * was on before, and attaching it here all happen or none do. Separately, a
+   * failure part-way left a code spent and the number attached to nobody.
+   */
+  const linked = await transaction(async client => {
+    const { rows } = await client.query(
+      `delete from whatsapp_link_codes
+        where code = $1 and expires_at > now()
+        returning user_id`,
+      [code]
+    );
 
-  if (!rows[0]) {
+    if (!rows[0]) {
+      return null;
+    }
+
+    const userId = rows[0].user_id;
+
+    // The number may have been attached to a different account before.
+    await client.query(
+      'update users set whatsapp_number = null where whatsapp_number = $1',
+      [from]
+    );
+
+    const { rows: userRows } = await client.query(
+      'update users set whatsapp_number = $1 where id = $2 returning name',
+      [from, userId]
+    );
+
+    await client.query('delete from whatsapp_link_codes where user_id = $1', [userId]);
+
+    return { name: userRows[0]?.name ?? null };
+  });
+
+  if (!linked) {
     return sendText(
       from,
       'That code is not valid or has expired. Open Settings → Connect WhatsApp ' +
@@ -201,18 +268,9 @@ async function linkNumber(from, code) {
     );
   }
 
-  const userId = rows[0].user_id;
-
-  // The number may have been attached to a different account before.
-  await query('update users set whatsapp_number = null where whatsapp_number = $1', [from]);
-  await query('update users set whatsapp_number = $1 where id = $2', [from, userId]);
-  await query('delete from whatsapp_link_codes where user_id = $1', [userId]);
-
-  const { rows: userRows } = await query('select name from users where id = $1', [userId]);
-
   return sendText(
     from,
-    `Connected to ${userRows[0]?.name ?? 'your account'} ✅\n\n${HELP_TEXT}`
+    `Connected to ${linked.name ?? 'your account'} ✅\n\n${HELP_TEXT}`
   );
 }
 
@@ -250,11 +308,13 @@ async function sendBalances(from, user, accounts) {
 }
 
 async function sendToday(from, userId) {
+  // Today in India, not by the database's UTC clock, which runs five and a
+  // half hours behind and showed yesterday's entries until 5:30am.
   const { rows } = await query(
     `select amount, description, status, split_members, personal_share from expenses
-      where user_id = $1 and spent_on = current_date
+      where user_id = $1 and spent_on = $2
       order by created_at`,
-    [userId]
+    [userId, todayInIndia()]
   );
 
   if (rows.length === 0) {
@@ -287,6 +347,21 @@ async function sendToday(from, userId) {
  * interleaved.
  */
 async function undoLast(from, userId) {
+  /*
+   * The same switch as the website's Remove button. Without it, a phone could
+   * delete what the website refuses to, one "undo" at a time, back through
+   * every entry ever sent from it.
+   */
+  const { canRemove } = await effectivePermissions({ userId, loginType: 'user' });
+
+  if (!canRemove) {
+    return sendText(
+      from,
+      'Removing entries is switched off for this account, so nothing was undone. ' +
+      'Sign in on the website with your full-access password to remove it.'
+    );
+  }
+
   try {
     const [lastExpense, lastIncome] = await Promise.all([
       query(
@@ -344,7 +419,23 @@ Put back into ${removed.source_category}.`;
   }
 }
 
+/**
+ * The same ceiling the website applies. Past it, the numeric column would
+ * overflow and the person would only hear "could not save that".
+ */
+function amountTooLarge(from, parsed) {
+  return sendText(
+    from,
+    `${money(parsed.amount)} is more than one entry can hold — the most is ` +
+    `${money(AMOUNT_MAX)}.\n\nNothing was recorded.`
+  );
+}
+
 async function addExpense(from, user, parsed, accounts) {
+  if (parsed.amount > AMOUNT_MAX) {
+    return amountTooLarge(from, parsed);
+  }
+
   if (parsed.splitInvalid) {
     return sendText(
       from,
@@ -420,7 +511,7 @@ async function addExpense(from, user, parsed, accounts) {
            status, remarks, source_channel,
            split_members, split_share, personal_share
          )
-         values ($1,$2,$3,current_date,$4,$5,$6,$7,$8,$9,$10,'done',$11,'whatsapp',$12,$13,$14)
+         values ($1,$2,$3,$15,$4,$5,$6,$7,$8,$9,$10,'done',$11,'whatsapp',$12,$13,$14)
          returning id, category`,
         [
           user.id, parsed.amount, parsed.description,
@@ -430,7 +521,9 @@ async function addExpense(from, user, parsed, accounts) {
           source?.id ?? null, source?.type ?? null, source?.category ?? null,
           wantsDebit, permissions.canBackdate, debit,
           debit ? 'Added via WhatsApp and balance updated' : 'Added via WhatsApp',
-          parsed.splitMembers, split?.share ?? null, split?.personal ?? null
+          parsed.splitMembers, split?.share ?? null, split?.personal ?? null,
+          // The day it is where the sender is, not in the database's UTC.
+          todayInIndia()
         ]
       );
 
@@ -485,6 +578,10 @@ ${result.source.category} now ${money(result.remaining)}`
  * problem this feature exists to fix.
  */
 async function addMoneyIn(from, user, parsed) {
+  if (parsed.amount > AMOUNT_MAX) {
+    return amountTooLarge(from, parsed);
+  }
+
   if (parsed.ambiguousAccounts?.length) {
     const options = parsed.ambiguousAccounts
       .map(account => `• ${account.category}`)
@@ -569,7 +666,8 @@ async function addMoneyIn(from, user, parsed) {
     const created = await addIncome(user.id, {
       amount: parsed.amount,
       description: parsed.description,
-      receivedOn: new Date().toISOString().slice(0, 10),
+      // The day it is where the sender is; toISOString() gave the UTC date.
+      receivedOn: todayInIndia(),
       // Nobody types a category from a phone, so it is read out of the words.
       category: guessIncomeCategory(parsed.description),
       targetId: parsed.account.id,
