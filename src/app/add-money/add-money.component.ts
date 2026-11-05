@@ -57,6 +57,8 @@ export class AddMoneyComponent implements OnInit {
 
   canUpdateBalance = false;
   canSeeBalances = false;
+  /** Off: the date stays on today, as the API requires. */
+  canBackdate = false;
 
   submitting = false;
 
@@ -91,6 +93,17 @@ export class AddMoneyComponent implements OnInit {
 
         this.canUpdateBalance = this.settingsService.canUpdateBalance;
         this.canSeeBalances = this.settingsService.canSeeBalances;
+        this.canBackdate = this.settingsService.canBackdate;
+
+        // Another day needs "Change transaction dates"; the API refuses it too.
+        const date = this.moneyForm.get('date');
+
+        if (this.canBackdate) {
+          date?.enable();
+        } else {
+          date?.setValue(today());
+          date?.disable();
+        }
 
         const target = this.moneyForm.get('target');
 
@@ -213,7 +226,8 @@ export class AddMoneyComponent implements OnInit {
         date: form.date,
         category: form.splitFor ? null : form.category || null,
         targetId: String(form.target),
-        splitExpenseId: form.splitFor || null
+        splitExpenseId: form.splitFor || null,
+        tzOffset: new Date().getTimezoneOffset()
       })
       .subscribe({
         next: added => {

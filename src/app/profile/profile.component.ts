@@ -10,7 +10,7 @@ import { BalanceService } from '../shared/balance.service';
 import { ExpenseService, UNCATEGORISED } from '../shared/expense.service';
 import { SettingsService } from '../shared/settings.service';
 import { WhatsappService, WhatsappLinkStatus } from '../shared/whatsapp.service';
-import { Expense, SessionUser } from '../shared/models';
+import { Expense, PASSWORD_MIN, SessionUser } from '../shared/models';
 import { downloadCsv } from '../shared/csv';
 import { ToastService } from '../shared/toast.service';
 
@@ -46,6 +46,8 @@ export class ProfileComponent implements OnInit {
 
   nameDraft = '';
   emailDraft = '';
+  /** Asked for only when the email changes; the API requires it then. */
+  emailPassword = '';
   detailsBusy = false;
   detailsError = '';
 
@@ -84,6 +86,11 @@ export class ProfileComponent implements OnInit {
     );
   }
 
+  /** The sign-in email is being changed, which needs the current password. */
+  get emailChanged(): boolean {
+    return this.emailDraft.trim().toLowerCase() !== (this.user?.email ?? '');
+  }
+
   get passwordsMatch(): boolean {
     return this.newPassword === this.confirmPassword;
   }
@@ -92,7 +99,7 @@ export class ProfileComponent implements OnInit {
     return (
       !this.passwordBusy &&
       this.currentPassword.length > 0 &&
-      this.newPassword.length >= 6 &&
+      this.newPassword.length >= PASSWORD_MIN &&
       this.passwordsMatch
     );
   }
@@ -141,8 +148,13 @@ export class ProfileComponent implements OnInit {
     this.detailsBusy = true;
     this.detailsError = '';
 
-    this.api.patch<{ user: SessionUser }>('/auth/profile', { name, email }).subscribe({
+    const body = this.emailChanged
+      ? { name, email, currentPassword: this.emailPassword }
+      : { name, email };
+
+    this.api.patch<{ user: SessionUser }>('/auth/profile', body).subscribe({
       next: () => {
+        this.emailPassword = '';
         // Re-read rather than patching the cached copy, so the header and
         // anything else reading the session see the new details too.
         this.auth.refreshSession().subscribe(session => {

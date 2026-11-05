@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { catchError, map, shareReplay, switchMap, tap } from 'rxjs/operators';
 import { ApiService } from './shared/api.service';
@@ -25,6 +26,27 @@ export class AuthService {
 
   /** In-flight /auth/me, shared so concurrent guards make one request. */
   private pendingLookup: Observable<Session | null> | null = null;
+
+  private readonly router = inject(Router, { optional: true });
+
+  constructor() {
+    /*
+     * The cookie can stop working while the page is open: it expires, a
+     * password change elsewhere revokes it, or the account is deleted. The
+     * cached session would otherwise keep every guard saying yes while each
+     * request failed, so it is dropped and the person sent to sign in.
+     */
+    this.api.sessionExpired$.subscribe(() => {
+      if (!this.sessionSubject.value) {
+        return;
+      }
+
+      this.sessionSubject.next(null);
+      this.pendingLookup = null;
+
+      this.router?.navigate(['/login'], { queryParams: { message: 'expired' } });
+    });
+  }
 
   /** Cached answer; null until the first ensureSession() resolves. */
   get session(): Session | null {

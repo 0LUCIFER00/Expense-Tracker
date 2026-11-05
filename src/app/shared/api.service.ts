@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, throwError } from 'rxjs';
+import { Observable, Subject, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 /** Everything the API can hand back when a call fails. */
@@ -19,28 +19,47 @@ export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly base = '/api';
 
+  /**
+   * Fires when a request is refused because the session is gone: expired,
+   * revoked from another device, or the account deleted. AuthService listens
+   * and sends the person to sign in, rather than every page showing its own
+   * "Not signed in" error with nothing to do about it.
+   */
+  readonly sessionExpired$ = new Subject<void>();
+
+  /** A 401 from these is the answer itself, not a lost session. */
+  private static readonly OWN_401 = ['/auth/login', '/auth/register', '/auth/me'];
+
+  private handle = (path: string) => (response: HttpErrorResponse) => {
+    if (response.status === 401 && !ApiService.OWN_401.includes(path)) {
+      this.sessionExpired$.next();
+    }
+
+    return toApiError(response);
+  };
+
   get<T>(path: string): Observable<T> {
     return this.http
       .get<T>(this.base + path, { withCredentials: true })
-      .pipe(catchError(toApiError));
+      .pipe(catchError(this.handle(path)));
   }
 
   post<T>(path: string, body?: unknown): Observable<T> {
     return this.http
       .post<T>(this.base + path, body ?? {}, { withCredentials: true })
-      .pipe(catchError(toApiError));
+      .pipe(catchError(this.handle(path)));
   }
 
   put<T>(path: string, body?: unknown): Observable<T> {
     return this.http
       .put<T>(this.base + path, body ?? {}, { withCredentials: true })
-      .pipe(catchError(toApiError));
+      .pipe(catchError(this.handle(path)));
   }
 
   patch<T>(path: string, body?: unknown): Observable<T> {
     return this.http
       .patch<T>(this.base + path, body ?? {}, { withCredentials: true })
-      .pipe(catchError(toApiError));
+      .pipe(catchError(this.handle(path)));
   }
 
   /**
@@ -50,7 +69,7 @@ export class ApiService {
   delete<T>(path: string, body?: unknown): Observable<T> {
     return this.http
       .delete<T>(this.base + path, { withCredentials: true, body })
-      .pipe(catchError(toApiError));
+      .pipe(catchError(this.handle(path)));
   }
 }
 

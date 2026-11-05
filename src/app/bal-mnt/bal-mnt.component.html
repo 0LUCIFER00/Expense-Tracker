@@ -11,6 +11,13 @@
         came from.
     </p>
 
+    <p class="page-hint read-only-note" *ngIf="readOnly">
+        These figures are view-only on this sign-in. Changing them needs
+        <strong>Debit from an account</strong>, or your full-access password.
+    </p>
+
+    <!-- One switch for every field and button in the rows. -->
+    <fieldset class="balance-fieldset" [disabled]="readOnly">
     <div class="balance-container">
 
         <div class="balance-row" *ngFor="let item of balances; let i = index">
@@ -82,6 +89,7 @@
         </div>
 
     </div>
+    </fieldset>
 
 </div>
 

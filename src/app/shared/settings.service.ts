@@ -83,6 +83,15 @@ export class SettingsService {
     return this.allows('expenseUserAccess');
   }
 
+  /**
+   * May create, retype or delete an account on Cash & Accounts. Needs both
+   * seeing the amounts and "Debit from an account", as the API does: retyping a
+   * balance moves money as surely as spending from it.
+   */
+  get canManageBalances(): boolean {
+    return this.canSeeBalances && this.canUpdateBalance;
+  }
+
   /** May add an entry dated in the past or future without admin approval. */
   get canBackdate(): boolean {
     return this.allows('updatePermissionUser');

@@ -29,9 +29,18 @@
           [disabled]="detailsBusy" placeholder="you@example.com">
         <p class="field-note">Used to sign in. Changing it changes your sign-in.</p>
 
+        <!-- Only when the email changes: it is the sign-in, so it needs proof. -->
+        <ng-container *ngIf="emailChanged">
+          <label class="et-field-label" for="emailPassword">Current password</label>
+          <input id="emailPassword" class="et-field" type="password" [(ngModel)]="emailPassword"
+            [disabled]="detailsBusy" autocomplete="current-password"
+            placeholder="Needed to change your sign-in email">
+        </ng-container>
+
         <p class="et-field-error" *ngIf="detailsError">{{ detailsError }}</p>
 
-        <button type="button" class="et-btn-primary" [disabled]="!detailsChanged || detailsBusy"
+        <button type="button" class="et-btn-primary"
+          [disabled]="!detailsChanged || detailsBusy || (emailChanged && !emailPassword)"
           (click)="onSaveDetails()">
           {{ detailsBusy ? 'Saving…' : 'Save changes' }}
         </button>
@@ -51,7 +60,7 @@
 
         <label class="et-field-label" for="newPassword">New password</label>
         <input id="newPassword" class="et-field" type="password" [(ngModel)]="newPassword"
-          [disabled]="passwordBusy" placeholder="At least 6 characters">
+          [disabled]="passwordBusy" placeholder="At least 8 characters">
 
         <label class="et-field-label" for="confirmNewPassword">Confirm new password</label>
         <input id="confirmNewPassword" class="et-field" type="password"
@@ -150,10 +159,15 @@
       balances, and any linked phone. This cannot be undone.
     </p>
 
-    <label class="et-field-label" for="deletePassword">Your password</label>
+    <!-- With a full-access password set, only it can close the account. -->
+    <label class="et-field-label" for="deletePassword">
+      {{ user?.hasAdminPassword ? 'Your full-access password' : 'Your password' }}
+    </label>
     <input id="deletePassword" class="et-field" type="password"
       [(ngModel)]="deletePassword" [disabled]="deleteBusy"
-      placeholder="Enter your password to confirm">
+      [placeholder]="user?.hasAdminPassword
+        ? 'Enter your full-access password to confirm'
+        : 'Enter your password to confirm'">
 
     <p class="et-field-error" *ngIf="deleteError">{{ deleteError }}</p>
 

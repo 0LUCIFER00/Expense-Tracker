@@ -14,6 +14,7 @@ import { AuthService } from '../auth.service';
 import { SettingsService } from '../shared/settings.service';
 import { ToastService } from '../shared/toast.service';
 import { ApiError } from '../shared/api.service';
+import { PASSWORD_MIN } from '../shared/models';
 
 @Component({
   selector: 'app-register-page',
@@ -33,9 +34,10 @@ export class RegisterPageComponent implements OnDestroy {
     {
       name: ['', [Validators.required, Validators.minLength(3)]],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required, Validators.minLength(PASSWORD_MIN)]],
       confirmPassword: ['', [Validators.required]],
-      adminPassword: ['']
+      // Optional, but held to the same length when it is given.
+      adminPassword: ['', [Validators.minLength(PASSWORD_MIN)]]
     },
     { validators: this.passwordMatchValidator() }
   );

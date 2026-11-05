@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { BalanceService } from '../shared/balance.service';
 import { BalanceAccount } from '../shared/models';
+import { SettingsService } from '../shared/settings.service';
 import { ToastService } from '../shared/toast.service';
 
 /**
@@ -29,6 +30,15 @@ interface BalanceRow {
 export class BalMntComponent implements OnInit {
   private readonly balanceService = inject(BalanceService);
   private readonly toast = inject(ToastService);
+  private readonly settingsService = inject(SettingsService);
+
+  /**
+   * Seeing balances without "Debit from an account": the figures are shown but
+   * cannot be changed, which the API enforces too.
+   */
+  get readOnly(): boolean {
+    return !this.settingsService.canManageBalances;
+  }
 
   popupVisible = false;
   popupValue = '';

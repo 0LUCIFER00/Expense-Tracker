@@ -133,6 +133,31 @@ describe('SettingsService', () => {
     });
   });
 
+  // Matches the API: retyping a balance moves money as surely as spending it.
+  describe('managing balances on Cash & Accounts', () => {
+    it('needs both seeing balances and debiting from an account', () => {
+      signIn('user');
+      loadWith(allGranted({ expenseUserAccess: false }));
+
+      expect(settings.canSeeBalances).toBeTrue();
+      expect(settings.canManageBalances).toBeFalse();
+    });
+
+    it('is allowed when both are on', () => {
+      signIn('user');
+      loadWith(allGranted());
+
+      expect(settings.canManageBalances).toBeTrue();
+    });
+
+    it('is always allowed with full access', () => {
+      signIn('admin');
+      loadWith(allGranted({ balanceUserAccess: false, expenseUserAccess: false }));
+
+      expect(settings.canManageBalances).toBeTrue();
+    });
+  });
+
   describe('addMoneyAccess$', () => {
     it('follows the toggle for a user session', () => {
       signIn('user');

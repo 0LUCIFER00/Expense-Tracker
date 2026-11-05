@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { SettingsService } from '../shared/settings.service';
-import { Settings } from '../shared/models';
+import { PASSWORD_MIN, Settings } from '../shared/models';
 import { WhatsappService, WhatsappLinkStatus } from '../shared/whatsapp.service';
 import { ToastService } from '../shared/toast.service';
 
@@ -50,6 +50,9 @@ export class SettingsComponent implements OnInit {
   }
 
   adminPassword = '';
+
+  /** For the template: the Create button waits for a long enough password. */
+  readonly passwordMin = PASSWORD_MIN;
   confirmPassword = '';
   adminCancelPassword = '';
   cancelPasswordError = '';

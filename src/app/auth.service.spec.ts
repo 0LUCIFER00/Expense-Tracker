@@ -4,7 +4,9 @@ import {
   HttpTestingController,
   provideHttpClientTesting
 } from '@angular/common/http/testing';
+import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
+import { ApiService } from './shared/api.service';
 import { Session } from './shared/models';
 
 const SESSION: Session = {
@@ -204,5 +206,76 @@ describe('AuthService', () => {
         { status: 403, statusText: 'Forbidden' }
       );
     });
+  });
+});
+
+/*
+ * A cookie can stop working while the page is open: it expires, a password
+ * change on another device revokes it, or the account is deleted. The cached
+ * session must not keep every guard saying yes while each request fails.
+ */
+describe('AuthService when the session is lost', () => {
+  let auth: AuthService;
+  let api: ApiService;
+  let http: HttpTestingController;
+  let router: jasmine.SpyObj<Router>;
+
+  beforeEach(() => {
+    router = jasmine.createSpyObj<Router>('Router', ['navigate']);
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: Router, useValue: router }
+      ]
+    });
+
+    auth = TestBed.inject(AuthService);
+    api = TestBed.inject(ApiService);
+    http = TestBed.inject(HttpTestingController);
+
+    auth.ensureSession().subscribe();
+    http.expectOne('/api/auth/me').flush(SESSION);
+  });
+
+  afterEach(() => http.verify());
+
+  it('drops the cached session and sends the person to sign in on a 401', () => {
+    api.get('/expenses').subscribe({ error: () => {} });
+    http.expectOne('/api/expenses').flush(
+      { error: 'Not signed in' },
+      { status: 401, statusText: 'Unauthorized' }
+    );
+
+    expect(auth.isAuthenticated()).toBeFalse();
+    expect(router.navigate).toHaveBeenCalledOnceWith(['/login'], {
+      queryParams: { message: 'expired' }
+    });
+  });
+
+  it('treats a wrong password at sign-in as an answer, not a lost session', () => {
+    api.post('/auth/login', { email: 'ada@example.com', password: 'nope' }).subscribe({
+      error: () => {}
+    });
+    http.expectOne('/api/auth/login').flush(
+      { error: 'Invalid email or password' },
+      { status: 401, statusText: 'Unauthorized' }
+    );
+
+    expect(auth.isAuthenticated()).toBeTrue();
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('leaves other refusals alone', () => {
+    api.delete('/expenses/x').subscribe({ error: () => {} });
+    http.expectOne('/api/expenses/x').flush(
+      { error: 'You do not have permission to remove entries' },
+      { status: 403, statusText: 'Forbidden' }
+    );
+
+    expect(auth.isAuthenticated()).toBeTrue();
+    expect(router.navigate).not.toHaveBeenCalled();
   });
 });

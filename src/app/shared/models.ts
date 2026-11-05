@@ -126,6 +126,12 @@ export interface Settings {
   removePermissionUser: boolean;
 }
 
+/**
+ * The shortest password accepted when one is set or changed, matching the API.
+ * Signing in still accepts the shorter ones set before this was raised.
+ */
+export const PASSWORD_MIN = 8;
+
 export const DEFAULT_SETTINGS: Settings = {
   balanceUserAccess: true,
   addMoneyUserAccess: true,
@@ -168,4 +174,6 @@ export interface NewIncome {
   targetId: string;
   /** The split expense this pays back part of, when it does. */
   splitExpenseId?: string | null;
+  /** The browser's UTC offset, so the server knows what "today" is here. */
+  tzOffset: number;
 }

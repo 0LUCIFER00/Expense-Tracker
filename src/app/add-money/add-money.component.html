@@ -93,6 +93,10 @@
       <div class="field field-date">
         <label class="field-label" for="date">Date</label>
         <input id="date" class="text-field" formControlName="date" type="date">
+        <p class="field-hint" *ngIf="!canBackdate">
+          Today only on this sign-in. Other dates need
+          <strong>Change transaction dates</strong>.
+        </p>
       </div>
 
     </div>

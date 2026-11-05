@@ -34,6 +34,22 @@
   max-width: 70ch;
 }
 
+/* Only there to disable the rows at once; it should not look like anything. */
+.balance-fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.balance-fieldset:disabled {
+  opacity: 0.75;
+}
+
+.read-only-note {
+  color: var(--warn-ink);
+}
+
 /* ---- the rows ---- */
 
 .balance-container {
