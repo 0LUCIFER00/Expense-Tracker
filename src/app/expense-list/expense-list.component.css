@@ -84,7 +84,9 @@
 }
 
 .filter select {
-  padding: 0.5625rem 0.75rem;
+  height: 40px;
+  box-sizing: border-box;
+  padding: 0 0.75rem;
   border: 1px solid var(--field-border);
   border-radius: 8px;
   background-color: var(--field-bg);
@@ -111,7 +113,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4375rem;
-  min-height: 40px;
+  height: 40px;
+  box-sizing: border-box;
   padding: 0 0.875rem;
   border: 1px solid var(--field-border);
   border-radius: 8px;
@@ -141,9 +144,15 @@
   cursor: not-allowed;
 }
 
+/* The same 40px as the filters and Export, so the whole row lines up. */
 .total-pill {
-  padding: 0.5625rem 1rem;
-  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  box-sizing: border-box;
+  padding: 0 1rem;
+  border-radius: 8px;
   background-color: var(--accent);
   color: #fff;
   font-size: 0.875rem;

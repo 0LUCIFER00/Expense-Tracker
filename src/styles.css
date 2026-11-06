@@ -656,3 +656,62 @@ html[data-theme='dark'] {
 .et-over {
   color: var(--bad-ink);
 }
+
+/* ================= Transactions, fitted ================= */
+/*
+ * Paired with the shell rules above, like Add Expense's: it lives here because
+ * it only makes sense with them, and it keeps the page's own stylesheet under
+ * its size budget.
+ *
+ * The tabs, filters and column headings stay where they are; only the rows
+ * scroll, inside the table, under a heading row that sticks to its top.
+ */
+@media (min-width: 900px) and (min-height: 560px) {
+  body.fits-screen app-expense-list {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  body.fits-screen app-expense-list .expenses-page {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 1rem;
+  }
+
+  body.fits-screen app-expense-list .card {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body.fits-screen app-expense-list .tab-bar {
+    align-self: flex-start;
+  }
+
+  body.fits-screen app-expense-list .tab-bar,
+  body.fits-screen app-expense-list .filter-bar,
+  body.fits-screen app-expense-list .table-note,
+  body.fits-screen app-expense-list .no-record {
+    flex-shrink: 0;
+  }
+
+  body.fits-screen app-expense-list .table-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  /* The ring, in the card's colour, hides rows passing behind its rounded corners. */
+  body.fits-screen app-expense-list .table-head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    box-shadow: 0 0 0 4px var(--surface);
+  }
+}

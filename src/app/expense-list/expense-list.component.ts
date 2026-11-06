@@ -11,6 +11,7 @@ import { ToastService } from '../shared/toast.service';
 import { SettingsService } from '../shared/settings.service';
 import { parseLocalDate } from '../shared/date-utils';
 import { SplitHistoryComponent } from '../shared/split-history/split-history.component';
+import { FitsScreenDirective } from '../shared/fits-screen.directive';
 
 /** Which half of the ledger is on screen. */
 export type TransactionTab = 'all' | 'out' | 'in';
@@ -55,7 +56,7 @@ const TABS: TransactionTab[] = ['all', 'out', 'in'];
 @Component({
   selector: 'app-expense-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, SplitHistoryComponent],
+  imports: [CommonModule, FormsModule, SplitHistoryComponent, FitsScreenDirective],
   templateUrl: './expense-list.component.html',
   styleUrl: './expense-list.component.css'
 })
