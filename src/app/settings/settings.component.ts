@@ -38,6 +38,10 @@ export class SettingsComponent implements OnInit {
   budgetUserAccess = true;
   /** A line about budgets on WhatsApp replies. Off unless turned on. */
   whatsappBudgetAlerts = false;
+  /** May a normal sign-in change recurring schedules. */
+  recurringUserAccess = true;
+  /** Recurring reminder lines on WhatsApp replies. Off unless turned on. */
+  whatsappRecurringReminders = false;
 
   isEnabled = false;
   showPopup = false;
@@ -160,6 +164,8 @@ export class SettingsComponent implements OnInit {
     this.removePermissionUser = settings.removePermissionUser;
     this.budgetUserAccess = settings.budgetUserAccess;
     this.whatsappBudgetAlerts = settings.whatsappBudgetAlerts;
+    this.recurringUserAccess = settings.recurringUserAccess;
+    this.whatsappRecurringReminders = settings.whatsappRecurringReminders;
   }
 
   onAccessChange(): void {
@@ -173,7 +179,9 @@ export class SettingsComponent implements OnInit {
         viewPermissionUser: this.viewPermissionUser,
         removePermissionUser: this.removePermissionUser,
         budgetUserAccess: this.budgetUserAccess,
-        whatsappBudgetAlerts: this.whatsappBudgetAlerts
+        whatsappBudgetAlerts: this.whatsappBudgetAlerts,
+        recurringUserAccess: this.recurringUserAccess,
+        whatsappRecurringReminders: this.whatsappRecurringReminders
       })
       .subscribe({
         next: settings => {

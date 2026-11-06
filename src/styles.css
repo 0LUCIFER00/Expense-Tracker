@@ -726,3 +726,57 @@ html[data-theme='dark'] {
     box-shadow: 0 0 0 4px var(--surface);
   }
 }
+
+/*
+ * The Recurring page's form opens below the sticky header (which sits above
+ * every page's overlays), and under the toasts, so a refusal is still read.
+ */
+app-recurring .et-overlay {
+  padding-top: calc(54px + 0.75rem);
+}
+
+app-recurring .et-overlay > .rec-panel {
+  max-height: calc(100dvh - 54px - 1.5rem);
+}
+
+/* The form inside takes the panel's height, so its body scrolls between a fixed head and foot. */
+app-recurring .rec-panel > app-recurring-editor {
+  max-height: inherit;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+app-recurring .et-overlay.rec-confirm {
+  z-index: 60;
+}
+
+/* ================= Recurring, on a phone ================= */
+/*
+ * Each schedule's table row becomes a two-column card. Here rather than in the
+ * page's stylesheet, which is at its size budget; `app-recurring .rows > .row`
+ * outranks the page's own `.row`.
+ */
+@media (max-width: 760px) {
+  app-recurring .rows > .row.head {
+    display: none;
+  }
+
+  app-recurring .rows > .row {
+    min-width: 0;
+    height: auto;
+    padding: 0.5rem 0.875rem;
+    row-gap: 0.2rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'desc amt' 'rep next' 'acc st' 'type acts';
+  }
+
+  app-recurring .rows > .row > :nth-child(1) { grid-area: desc; }
+  app-recurring .rows > .row > :nth-child(2) { grid-area: type; }
+  app-recurring .rows > .row > :nth-child(3) { grid-area: amt; }
+  app-recurring .rows > .row > :nth-child(4) { grid-area: rep; }
+  app-recurring .rows > .row > :nth-child(5) { grid-area: next; text-align: right; }
+  app-recurring .rows > .row > :nth-child(6) { grid-area: acc; }
+  app-recurring .rows > .row > :nth-child(7) { grid-area: st; text-align: right; }
+  app-recurring .rows > .row > :nth-child(8) { grid-area: acts; }
+}

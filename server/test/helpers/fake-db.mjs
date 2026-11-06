@@ -77,6 +77,8 @@ export function settingsRow(overrides = {}) {
     remove_permission_user: true,
     budget_user_access: true,
     whatsapp_budget_alerts: false,
+    recurring_user_access: true,
+    whatsapp_recurring_reminders: false,
     ...overrides
   };
 }

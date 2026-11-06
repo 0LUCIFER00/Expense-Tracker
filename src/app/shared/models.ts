@@ -130,6 +130,10 @@ export interface Settings {
   budgetUserAccess: boolean;
   /** Add a budget alert line to WhatsApp replies. A preference, off by default. */
   whatsappBudgetAlerts: boolean;
+  /** May create, change, pause and delete recurring schedules; seeing them needs nothing. */
+  recurringUserAccess: boolean;
+  /** Add recurring reminder lines to WhatsApp replies. A preference, off by default. */
+  whatsappRecurringReminders: boolean;
 }
 
 /**
@@ -147,7 +151,9 @@ export const DEFAULT_SETTINGS: Settings = {
   viewPermissionUser: true,
   removePermissionUser: true,
   budgetUserAccess: true,
-  whatsappBudgetAlerts: false
+  whatsappBudgetAlerts: false,
+  recurringUserAccess: true,
+  whatsappRecurringReminders: false
 };
 
 /** Money coming in: the mirror of an Expense. */
@@ -270,4 +276,107 @@ export interface BudgetAlert {
   scope: string;
   threshold: number;
   message: string;
+}
+
+/* ---------------- Recurring transactions ---------------- */
+
+export type RecurringKind = 'expense' | 'income';
+export type RecurringFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
+export type RecurringStatus = 'active' | 'paused' | 'completed';
+
+/** A schedule as the API returns it. Dates are YYYY-MM-DD, in India time. */
+export interface RecurringSchedule {
+  id: string;
+  kind: RecurringKind;
+  description: string;
+  amount: number;
+  category: string | null;
+  accountId: string | null;
+  accountName: string | null;
+  /** An account was chosen and has since been deleted; runs will fail. */
+  accountMissing: boolean;
+  frequency: RecurringFrequency;
+  interval: number;
+  startOn: string;
+  /** The date it counts from, which gives its day of the month. */
+  anchorOn: string;
+  nextDueOn: string | null;
+  endOn: string | null;
+  /** Days before the due date to remind: 0, 1, 3 or 7; null is off. */
+  remindDays: number | null;
+  status: RecurringStatus;
+  postedCount: number;
+  reminderDue: boolean;
+  nextDates: string[];
+}
+
+/** One due date of a schedule, and what happened to it. */
+export interface RecurringRun {
+  id: string;
+  scheduleId: string;
+  dueOn: string;
+  kind: RecurringKind;
+  description: string;
+  amount: number;
+  status: 'posted' | 'failed' | 'skipped';
+  attempts: number;
+  error: string | null;
+  lastAttemptOn: string;
+}
+
+export type RecurringOverdue =
+  | { type: 'failed'; run: RecurringRun }
+  | { type: 'not-run'; schedule: RecurringSchedule };
+
+export interface RecurringOverview {
+  today: string;
+  canManage: boolean;
+  schedules: RecurringSchedule[];
+  upcoming: RecurringSchedule[];
+  overdue: RecurringOverdue[];
+  recent: RecurringRun[];
+  summary: {
+    active: number;
+    dueThisWeek: number;
+    attention: number;
+    monthlyOut: number;
+    monthlyIn: number;
+  };
+}
+
+/** What a create or edit sends. `startOn` when creating, `nextDueOn` when editing. */
+export interface RecurringDraft {
+  kind: RecurringKind;
+  description: string;
+  amount: number | null;
+  category: string | null;
+  accountId: string | null;
+  frequency: RecurringFrequency;
+  interval: number;
+  startOn?: string;
+  nextDueOn?: string;
+  endOn: string | null;
+  remindDays: number | null;
+}
+
+/** An occurrence the runner just dealt with. */
+export interface RecurringOutcome {
+  scheduleId: string;
+  runId: string | null;
+  kind: RecurringKind;
+  description: string;
+  amount: number;
+  dueOn: string;
+  status: 'posted' | 'failed' | 'exists';
+  error: string | null;
+  budgetAlerts?: BudgetAlert[];
+}
+
+export interface RecurringSync {
+  today: string;
+  added: RecurringOutcome[];
+  failed: RecurringOutcome[];
+  attention: number;
+  reminders: RecurringSchedule[];
+  budgetAlerts: BudgetAlert[];
 }

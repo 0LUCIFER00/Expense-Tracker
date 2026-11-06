@@ -11,7 +11,7 @@ import {
   parseText
 } from '../http.mjs';
 import { effectivePermissions } from '../settings-store.mjs';
-import { removeExpense } from '../expense-store.mjs';
+import { insertExpense, removeExpense } from '../expense-store.mjs';
 import { checkBudgetAlertsSafely } from '../budget-store.mjs';
 
 /** Thresholds just crossed, as the page shows them: the sentence and its weight. */
@@ -158,66 +158,20 @@ expensesRouter.post('/', asyncRoute(async (req, res) => {
   const status = isToday || permissions.canBackdate ? 'done' : 'pending';
 
   try {
-    const created = await transaction(async client => {
-      let source = null;
-
-      if (sourceId) {
-        // Lock the row so two concurrent expenses cannot both pass the
-        // sufficient-funds check against the same balance.
-        const { rows } = await client.query(
-          `select id, type, category, balance
-             from balances
-            where id = $1 and user_id = $2 and saved = true
-            for update`,
-          [sourceId, req.session.userId]
-        );
-
-        source = rows[0] ?? null;
-
-        if (!source) {
-          throw Object.assign(new Error('Please select a valid balance account.'), {
-            status: 400
-          });
-        }
-      }
-
-      // Only a settled entry moves money; a pending one waits for approval.
-      const debit = updateBalance && status === 'done';
-
-      if (debit) {
-        if (Number(source.balance) < amount) {
-          throw Object.assign(new Error('Insufficient balance.'), { status: 409 });
-        }
-
-        await client.query(
-          'update balances set balance = balance - $1 where id = $2',
-          [amount, source.id]
-        );
-      }
-
-      const remarks = status === 'pending'
-        ? (updateBalance ? 'Wait for admin to add and update balance' : 'Wait for admin to add')
-        : (debit ? 'Added and balance updated' : 'Added in list');
-
-      const { rows } = await client.query(
-        `insert into expenses (
-           user_id, amount, description, spent_on, category,
-           source_id, source_type, source_category,
-           expense_access, update_permission, balance_updated, status, remarks,
-           split_members, split_share, personal_share
-         )
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
-         returning ${SELECT_COLUMNS}`,
-        [
-          req.session.userId, amount, description.value, date, category,
-          source?.id ?? null, source?.type ?? null, source?.category ?? null,
-          updateBalance, permissions.canBackdate, debit, status, remarks,
-          members, split?.share ?? null, split?.personal ?? null
-        ]
-      );
-
-      return rows[0];
-    });
+    const created = await transaction(client =>
+      insertExpense(client, req.session.userId, {
+        amount,
+        description: description.value,
+        date,
+        category,
+        sourceId,
+        updateBalance,
+        canBackdate: permissions.canBackdate,
+        status,
+        members,
+        split
+      }, SELECT_COLUMNS)
+    );
 
     // After the commit, so the check never holds the account lock. Only a
     // settled expense counts towards a budget; a pending one waits.

@@ -10,6 +10,7 @@ import { HELP_TEXT, parseMessage } from '../whatsapp/parser.mjs';
 import { guessCategory, guessIncomeCategory } from '../categories.mjs';
 import { matchSplit, splitAmount } from '../split.mjs';
 import { checkBudgetAlertsSafely } from '../budget-store.mjs';
+import { whatsappReminderLinesSafely } from '../recurring-store.mjs';
 import { listOpenSplits, listSplits } from '../split-store.mjs';
 import {
   WHATSAPP_VERIFY_TOKEN,
@@ -571,14 +572,30 @@ ${result.source.category} now ${money(result.remaining)}`
       ? '\n' + alerts.map(alert => `\n⚠️ ${alert.message}`).join('')
       : '';
 
+    const reminders = await recurringLines(user.id, permissions);
+
     return sendText(
       from,
-      `✅ ${money(parsed.amount)} · ${parsed.description}${where}${filedAs}${splitLine}${after}${alertLines}\n\nSend *undo* to remove it.`
+      `✅ ${money(parsed.amount)} · ${parsed.description}${where}${filedAs}${splitLine}${after}${alertLines}${reminders}\n\nSend *undo* to remove it.`
     );
   } catch (error) {
     console.error('[whatsapp] add expense failed', error);
     return sendText(from, 'Could not save that, sorry. Please try again.');
   }
+}
+
+/**
+ * Recurring reminder lines for a reply that is being sent anyway, only when the
+ * account switched "Recurring reminders on WhatsApp" on. Never a message of
+ * its own.
+ */
+async function recurringLines(userId, permissions) {
+  if (!permissions.whatsappRecurringReminders) {
+    return '';
+  }
+
+  const lines = await whatsappReminderLinesSafely(userId, todayInIndia());
+  return lines.length ? '\n' + lines.map(line => `\n${line}`).join('') : '';
 }
 
 /**
@@ -701,10 +718,12 @@ async function addMoneyIn(from, user, parsed) {
       ? `\n${parsed.account.category} now ${money(created.balanceAfter)}`
       : '';
 
+    const reminders = await recurringLines(user.id, permissions);
+
     return sendText(
       from,
       `➕ ${money(parsed.amount)} into ${parsed.account.category} · ` +
-      `${parsed.description}${filedAs}${towards}${after}\n\nSend *undo* to remove it.`
+      `${parsed.description}${filedAs}${towards}${after}${reminders}\n\nSend *undo* to remove it.`
     );
   } catch (error) {
     // The store's own refusals — already fully paid back, more than is owed —

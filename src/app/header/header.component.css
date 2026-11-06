@@ -76,6 +76,23 @@
   background-color: #fff;
 }
 
+/* How many recurring entries need attention; a count, so never red alone. */
+.nav-badge {
+  margin-left: 6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background-color: #fff;
+  color: #b3261e;
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* A clear ring for the keyboard; none for a mouse click. */
 .nav-links a:focus {
   outline: none;
@@ -119,6 +136,19 @@
 .profile-icon {
   font-size: 22px;
   line-height: 1;
+}
+
+/* The signed-in person's initials: "T" for Test, "PM" for Prajwal M. */
+.profile-initials {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: #1c2978;
+}
+
+:host-context([data-theme='dark']) .profile-initials {
+  color: inherit;
 }
 
 .profile-dropdown {
@@ -181,16 +211,19 @@
   border-radius: 2px;
 }
 
-/* Tablet: tighten the gaps before collapsing to a menu. */
-@media (max-width: 1024px) {
+/* Narrow laptops: tighten the gaps before collapsing to a menu. */
+@media (max-width: 1240px) {
   .nav-links {
     gap: 4px 2px;
     font-size: 0.95rem;
   }
 }
 
-/* Phone / small tablet: links collapse into a dropdown panel. */
-@media (max-width: 860px) {
+/*
+ * Phone / tablet: links collapse into a dropdown panel. Nine menu items need
+ * about 1080px on one line, so below 1100px they fold away instead of wrapping.
+ */
+@media (max-width: 1100px) {
   .menu-toggle {
     display: flex;
   }

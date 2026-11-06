@@ -245,10 +245,11 @@ describe('SettingsComponent — who may edit permissions', () => {
   it('shows the full matrix to an admin session', () => {
     build('admin', true);
 
-    // Seven permissions, plus Manage budgets.
-    expect(host().querySelectorAll('.settings-row').length).toBe(8);
-    expect(host().querySelectorAll('.setting-toggle input').length).toBe(8);
+    // Seven permissions, plus Manage budgets and Manage recurring.
+    expect(host().querySelectorAll('.settings-row').length).toBe(9);
+    expect(host().querySelectorAll('.setting-toggle input').length).toBe(9);
     expect(host().textContent).toContain('Manage budgets');
+    expect(host().textContent).toContain('Manage recurring');
     expect(host().querySelector('.matrix-head')).not.toBeNull();
     expect(host().querySelector('.permissions-note')).toBeNull();
   });

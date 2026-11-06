@@ -9,6 +9,12 @@
     }
     <a routerLink="/transactions" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Transactions</a>
     <a routerLink="/budgets" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Budgets</a>
+    <a routerLink="/recurring" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">
+      Recurring
+      @if (attention > 0) {
+        <span class="nav-badge" [attr.aria-label]="attention + ' need attention'">{{ attention }}</span>
+      }
+    </a>
     @if (showBalanceManagement) {
       <a routerLink="/money" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Cash &amp; Accounts</a>
     }
@@ -39,10 +45,15 @@
 
     <div class="profile-menu">
 
-      <button class="profile-btn" type="button" aria-label="Account menu" [attr.aria-expanded]="showProfileMenu"
+      <button class="profile-btn" type="button" [attr.title]="userName || null"
+        [attr.aria-label]="userName ? 'Account menu, ' + userName : 'Account menu'" [attr.aria-expanded]="showProfileMenu"
         (click)="toggleProfileMenu()">
 
-        <span class="profile-icon">👤</span>
+        @if (initials) {
+          <span class="profile-initials" aria-hidden="true">{{ initials }}</span>
+        } @else {
+          <span class="profile-icon">👤</span>
+        }
 
       </button>
 
