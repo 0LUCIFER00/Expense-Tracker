@@ -334,6 +334,23 @@
           </label>
         </div>
       </div>
+      <div class="settings-row">
+        <div class="setting-label">
+          <span class="setting-name">Manage savings goals</span>
+          <span class="setting-note">
+            Create, change and delete savings goals, and add or withdraw money from them.
+            Without it, goals can still be seen, not changed. Goals never move money
+            between accounts either way.
+          </span>
+        </div>
+        <div class="setting-toggle">
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="goalsUserAccess" (change)="onAccessChange()">
+            <span class="slider"></span>
+            <span class="sr-only">Manage savings goals</span>
+          </label>
+        </div>
+      </div>
       <p class="card-note">
         Each row says what it does in plain words. Signed in with your full-access
         password you always have everything, so there is nothing to set for yourself.

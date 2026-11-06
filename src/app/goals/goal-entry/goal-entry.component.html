@@ -1,0 +1,67 @@
+<form class="editor" (ngSubmit)="onSubmit()" novalidate>
+  <header class="ed-head">
+    <div>
+      <h2 class="ed-title" id="goal-entry-title">{{ goal.name }}</h2>
+      <p class="ed-sub">₹{{ goal.saved | number: '1.0-2' }} saved of ₹{{ goal.target | number: '1.0-2' }}</p>
+    </div>
+    <button type="button" class="ed-close" aria-label="Close" (click)="cancel.emit()">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+    </button>
+  </header>
+
+  <div class="ed-body">
+    <div class="kind" role="radiogroup" aria-label="Add or withdraw">
+      <button type="button" role="radio" class="kind-btn" [class.on]="adding" [attr.aria-checked]="adding"
+        (click)="setKind('contribution')">Add money</button>
+      <button type="button" role="radio" class="kind-btn" [class.on]="!adding" [attr.aria-checked]="!adding"
+        [disabled]="goal.saved <= 0" (click)="setKind('withdrawal')">Withdraw</button>
+    </div>
+
+    <div>
+      <label class="et-field-label" for="e-amount">Amount (₹)</label>
+      <input id="e-amount" class="et-field amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01"
+        [(ngModel)]="amount">
+      @if (quick.length) {
+        <div class="chips">
+          @for (q of quick; track q.label) {
+            <button type="button" class="chip" (click)="amount = q.amount">{{ q.label }}</button>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="grid">
+      <div>
+        <label class="et-field-label" for="e-date">Date</label>
+        <input id="e-date" class="et-field" name="date" type="date" [max]="today" [(ngModel)]="date">
+      </div>
+      <div>
+        <label class="et-field-label" for="e-note">Note <span class="opt">(optional)</span></label>
+        <input id="e-note" class="et-field" name="note" maxlength="200" autocomplete="off" [(ngModel)]="note">
+      </div>
+    </div>
+
+    @if (after !== null && after >= 0) {
+      <div class="after" [class.out]="!adding">
+        <strong>After this: ₹{{ after | number: '1.0-2' }} saved · {{ afterPercent }}%</strong>
+        <span>The goal's history keeps this entry with the total it leaves.</span>
+      </div>
+    }
+
+    <p class="small">
+      @if (!adding) { You can't withdraw more than the goal holds. }
+      Neither changes your account balances, budgets or transactions.
+    </p>
+
+    @if (error) {
+      <p class="err" role="alert">{{ error }}</p>
+    }
+  </div>
+
+  <footer class="ed-foot">
+    <button type="button" class="et-btn-ghost" [disabled]="busy" (click)="cancel.emit()">Cancel</button>
+    <button type="submit" class="et-btn-primary" [disabled]="busy">
+      {{ busy ? 'Saving…' : adding ? 'Add money' : 'Withdraw' }}
+    </button>
+  </footer>
+</form>

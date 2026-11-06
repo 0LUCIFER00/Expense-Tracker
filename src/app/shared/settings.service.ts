@@ -93,6 +93,11 @@ export class SettingsService {
     return this.allows('recurringUserAccess');
   }
 
+  /** May create, change and delete savings goals. Seeing them needs nothing. */
+  get canManageGoals(): boolean {
+    return this.allows('goalsUserAccess');
+  }
+
   /**
    * May create, retype or delete an account on Cash & Accounts. Needs both
    * seeing the amounts and "Debit from an account", as the API does: retyping a

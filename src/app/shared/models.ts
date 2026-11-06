@@ -134,6 +134,8 @@ export interface Settings {
   recurringUserAccess: boolean;
   /** Add recurring reminder lines to WhatsApp replies. A preference, off by default. */
   whatsappRecurringReminders: boolean;
+  /** May create, change and delete savings goals and add or withdraw; seeing them needs nothing. */
+  goalsUserAccess: boolean;
 }
 
 /**
@@ -153,7 +155,8 @@ export const DEFAULT_SETTINGS: Settings = {
   budgetUserAccess: true,
   whatsappBudgetAlerts: false,
   recurringUserAccess: true,
-  whatsappRecurringReminders: false
+  whatsappRecurringReminders: false,
+  goalsUserAccess: true
 };
 
 /** Money coming in: the mirror of an Expense. */
@@ -379,4 +382,68 @@ export interface RecurringSync {
   attention: number;
   reminders: RecurringSchedule[];
   budgetAlerts: BudgetAlert[];
+}
+
+/* ---------------- Savings goals ---------------- */
+
+export type GoalStatus = 'active' | 'paused' | 'completed';
+export type GoalState = 'on-track' | 'behind' | 'date-passed' | 'reached' | 'paused' | 'completed';
+export type GoalIcon =
+  | 'piggy' | 'emergency' | 'travel' | 'home' | 'vehicle'
+  | 'gadget' | 'education' | 'health' | 'gift' | 'celebration';
+
+/** A goal as the API returns it. Every figure is worked out on the server. */
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: GoalIcon | null;
+  target: number;
+  saved: number;
+  remaining: number;
+  /** How far past the target, when it is. */
+  over: number;
+  /** Whole per cent, floored. */
+  percent: number;
+  targetDate: string;
+  monthsLeft: number;
+  /** Needed each month to reach the target on time; null when not applicable. */
+  monthly: number | null;
+  status: GoalStatus;
+  state: GoalState;
+  createdOn: string;
+  completedAt: string | null;
+}
+
+export interface GoalsOverview {
+  today: string;
+  canManage: boolean;
+  goals: SavingsGoal[];
+  summary: {
+    totalTarget: number;
+    totalSaved: number;
+    percent: number;
+    active: number;
+    paused: number;
+    completed: number;
+  };
+}
+
+export interface GoalEntry {
+  id: string;
+  kind: 'contribution' | 'withdrawal';
+  amount: number;
+  date: string;
+  note: string | null;
+  savedAfter: number;
+  createdAt: string;
+}
+
+export interface GoalDraft {
+  name: string;
+  description: string | null;
+  icon: GoalIcon | null;
+  target: number | null;
+  targetDate: string;
+  initialSaved?: number | null;
 }

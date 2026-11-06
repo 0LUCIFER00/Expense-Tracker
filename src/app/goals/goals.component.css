@@ -1,0 +1,102 @@
+:host { display: block; color: var(--ink); }
+
+.goals-page { max-width: 1280px; margin: 0 auto; padding: clamp(1rem, 3vw, 1.5rem) clamp(1rem, 3vw, 1.5rem) 2rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.page-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.page-title { margin: 0; font-size: 1.375rem; font-weight: 800; }
+.page-sub { margin: 0.125rem 0 0; font-size: 0.8125rem; color: var(--ink-2); }
+.new-btn { gap: 0.5rem; min-height: 38px; }
+.new-btn svg, .ico svg, .ib svg { fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+
+.card { background-color: var(--surface); border: 1px solid var(--surface-border); border-radius: 14px; box-shadow: var(--shadow); }
+.pad { padding: 1rem; }
+.skeleton { height: 8rem; }
+.error-text { color: var(--bad-ink); }
+.card-title { margin: 0; font-size: 0.9375rem; font-weight: 800; color: var(--accent-ink); }
+.muted { color: var(--ink-2); }
+.small { margin: 0; font-size: 0.75rem; color: var(--ink-2); }
+.strong { font-weight: 700; font-size: 0.8125rem; }
+.r { text-align: right; }
+.in, .good { color: var(--good-ink); }
+.out { color: var(--bad-ink); }
+
+.goals-grid { display: grid; gap: 0.75rem; }
+.main-col { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
+
+.summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: hidden; }
+.stat { display: flex; flex-direction: column; padding: 0.5rem 1rem; border-right: 1px solid var(--rule); }
+.stat:last-child { border-right: 0; }
+.lbl { font-size: 0.75rem; font-weight: 600; color: var(--ink-2); }
+.val { font-size: 1.1875rem; font-weight: 800; color: var(--accent-ink); }
+.val.good { color: var(--good-ink); }
+.pct { font-size: 0.75rem; color: var(--ink-2); }
+
+.list-card { display: flex; flex-direction: column; overflow: hidden; }
+.list-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.5rem 0.875rem; }
+.tabs { display: flex; flex-wrap: wrap; gap: 3px; padding: 3px; border-radius: 10px; background-color: var(--sunken); }
+.tab { border: 0; background: transparent; font: inherit; font-size: 0.8rem; font-weight: 700; color: var(--ink-2); padding: 0.3rem 0.65rem; border-radius: 8px; cursor: pointer; }
+.tab.on { background-color: var(--accent); color: #fff; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 0.625rem; padding: 0 0.875rem 0.875rem; }
+.goal { display: flex; flex-direction: column; gap: 0.45rem; padding: 0.65rem 0.75rem; text-align: left; font: inherit; color: inherit; cursor: pointer; background-color: var(--surface); border: 1px solid var(--rule-strong); border-radius: 12px; }
+.goal:hover { border-color: var(--focus-border); }
+.goal.sel { border: 2px solid var(--accent); padding: calc(0.65rem - 1px) calc(0.75rem - 1px); }
+.goal-top, .goal-foot { display: flex; align-items: center; gap: 0.625rem; width: 100%; }
+.goal-foot { justify-content: space-between; font-size: 0.78rem; }
+.goal-name { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.name { font-size: 0.875rem; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.by { font-size: 0.72rem; color: var(--ink-2); }
+.goal-note { font-weight: 700; color: var(--ink-2); }
+
+.ico { width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px; display: grid; place-items: center; background-color: var(--accent-soft); color: var(--accent-ink); }
+.ico.big { width: 40px; height: 40px; }
+.chip { flex-shrink: 0; padding: 0.125rem 0.5rem; border-radius: 999px; font-size: 0.6875rem; font-weight: 700; white-space: nowrap; background-color: var(--good-soft); color: var(--good-ink); }
+.bar { display: block; width: 100%; height: 8px; border-radius: 999px; background-color: var(--rule); overflow: hidden; }
+.bar.big { height: 10px; margin: 0.3rem 0; }
+.fill { display: block; height: 100%; border-radius: 999px; background-color: var(--accent); }
+
+/* Status colours (data-tone) are in styles.css, under "Savings goals". */
+
+.empty { padding: 1.5rem 1rem; text-align: center; font-size: 0.875rem; color: var(--ink-2); }
+.none, .pick { padding: 1rem; }
+
+.detail { padding: 0.875rem 1rem; display: flex; flex-direction: column; gap: 0.625rem; min-width: 0; }
+.d-head { display: flex; align-items: center; gap: 0.625rem; }
+.d-title { flex: 1; min-width: 0; }
+.d-title h2 { margin: 0; font-size: 1.0625rem; font-weight: 800; color: var(--accent-ink); }
+.d-title p { margin: 0; font-size: 0.75rem; color: var(--ink-2); }
+.ib { width: 36px; height: 36px; border: 0; border-radius: 8px; background: transparent; color: var(--accent); display: grid; place-items: center; cursor: pointer; }
+.ib:hover { background-color: var(--accent-soft); }
+.d-fig { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.d-fig > .tnum { font-size: 1.375rem; font-weight: 800; }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+.fact { display: flex; flex-direction: column; padding: 0.45rem 0.625rem; border-radius: 10px; background-color: var(--sunken); font-size: 0.8125rem; }
+.fact.warn { background-color: var(--warn-soft); color: var(--warn-ink); }
+.fact.warn .lbl, .fact.warn .small { color: var(--warn-ink); }
+.d-actions { display: flex; gap: 0.5rem; }
+.d-actions > * { flex: 1; }
+.sm { min-height: 36px; font-size: 0.8125rem; }
+.d-links { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
+.link { border: 0; background: none; padding: 0.25rem 0; font: inherit; font-size: 0.8rem; font-weight: 700; color: var(--accent-ink); cursor: pointer; }
+.link.danger { color: var(--bad-ink); }
+.link:disabled { opacity: 0.5; }
+
+.history { border-top: 1px solid var(--rule); padding-top: 0.5rem; display: flex; flex-direction: column; min-height: 0; }
+.history h3 { margin: 0 0 0.25rem; font-size: 0.85rem; font-weight: 800; color: var(--accent-ink); }
+.h-row { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.3rem 0; border-bottom: 1px solid var(--rule); }
+
+.goals-panel { width: 100%; max-width: 560px; display: flex; flex-direction: column; background-color: var(--surface); border-radius: 14px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25); overflow: hidden; }
+.goals-panel.narrow { max-width: 500px; }
+
+@media (min-width: 1000px) {
+  .goals-grid { grid-template-columns: minmax(0, 1fr) 21rem; align-items: start; }
+}
+
+/* Desktop: fit the window; the goal cards and the history scroll inside their cards. */
+@media (min-width: 1000px) and (min-height: 560px) {
+  :host { display: flex; flex-direction: column; min-height: 0; }
+  .goals-page { flex: 1; min-height: 0; width: 100%; box-sizing: border-box; padding-top: 0.75rem; padding-bottom: 0.75rem; }
+  .goals-grid { flex: 1; min-height: 0; align-items: stretch; }
+  .main-col, .list-card, .detail, .history { min-height: 0; }
+  .list-card, .history { flex: 1 1 auto; }
+  .cards, .h-list { min-height: 0; overflow-y: auto; }
+}

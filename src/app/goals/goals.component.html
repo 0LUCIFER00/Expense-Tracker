@@ -1,0 +1,223 @@
+<!--
+  A dashboard like Recurring: on a desktop it fits the window. The title, the
+  totals and the goal cards make the left column (the cards scroll inside
+  their card); the chosen goal, with its history, has the right column.
+-->
+<div class="goals-page" appFitsScreen>
+
+  <ng-template #head>
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Savings goals</h1>
+        <p class="page-sub">Money set aside for things you want. Tracking only: your account balances never change here.</p>
+      </div>
+      @if (canManage) {
+        <button type="button" class="et-btn-primary new-btn" [disabled]="busy" (click)="onNew()">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          New goal
+        </button>
+      }
+    </div>
+  </ng-template>
+
+  @if (loading && !view) {
+    <ng-container [ngTemplateOutlet]="head" />
+    <section class="card skeleton" aria-busy="true"></section>
+  } @else if (loadError && !view) {
+    <ng-container [ngTemplateOutlet]="head" />
+    <section class="card pad">
+      <p class="error-text">{{ loadError }}</p>
+      <button type="button" class="et-btn-primary" (click)="onRetryLoad()">Try again</button>
+    </section>
+  } @else if (view) {
+    <div class="goals-grid">
+      <div class="main-col">
+        <ng-container [ngTemplateOutlet]="head" />
+
+        <section class="card summary" aria-label="Totals">
+          <div class="stat"><span class="lbl">Total target</span><span class="val tnum">₹{{ view.summary.totalTarget | number: '1.0-2' }}</span></div>
+          <div class="stat"><span class="lbl">Total saved</span><span class="val tnum good">₹{{ view.summary.totalSaved | number: '1.0-2' }} <span class="pct">{{ view.summary.percent }}%</span></span></div>
+          <div class="stat"><span class="lbl">Active goals</span><span class="val tnum">{{ view.summary.active }}</span></div>
+          <div class="stat"><span class="lbl">Completed goals</span><span class="val tnum">{{ view.summary.completed }}</span></div>
+        </section>
+
+        <section class="card list-card" aria-labelledby="goals-h">
+          <div class="list-top">
+            <h2 id="goals-h" class="card-title">Goals</h2>
+            <div class="tabs" role="tablist" aria-label="Show">
+              @for (t of tabs; track t.key) {
+                <button type="button" role="tab" class="tab" [class.on]="tab === t.key" [attr.aria-selected]="tab === t.key"
+                  (click)="setTab(t.key)">{{ t.label }} <span class="tnum">{{ count(t.key) }}</span></button>
+              }
+            </div>
+          </div>
+
+          @if (view.goals.length === 0) {
+            <div class="empty">
+              <p><strong>No goals yet.</strong></p>
+              <p>Put money aside for a trip, a gadget or a rainy day, and see how much to save each month.</p>
+              @if (canManage) {
+                <button type="button" class="et-btn-primary" (click)="onNew()">Start a goal</button>
+              }
+            </div>
+          } @else if (shown.length === 0) {
+            <p class="none">No {{ tab }} goals.</p>
+          } @else {
+            <div class="cards">
+              @for (g of shown; track g.id) {
+                <button type="button" class="goal" [class.sel]="g.id === selectedId" [attr.aria-pressed]="g.id === selectedId"
+                  (click)="select(g)">
+                  <span class="goal-top">
+                    <span class="ico" [attr.data-tone]="tone(g)">
+                      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path [attr.d]="iconPath(g.icon)" /></svg>
+                    </span>
+                    <span class="goal-name">
+                      <span class="name">{{ g.name }}</span>
+                      <span class="by">{{ byText(g) }}</span>
+                    </span>
+                    <span class="chip" [attr.data-tone]="tone(g)">{{ stateWord(g.state) }}</span>
+                  </span>
+                  <span class="bar"><span class="fill" [attr.data-tone]="tone(g)" [style.width.%]="width(g)"></span></span>
+                  <span class="goal-foot">
+                    <span><strong class="tnum">₹{{ g.saved | number: '1.0-2' }}</strong><span class="muted"> of ₹{{ g.target | number: '1.0-2' }}</span></span>
+                    <span class="goal-note" [attr.data-tone]="tone(g)">{{ note(g) }}</span>
+                  </span>
+                </button>
+              }
+            </div>
+          }
+        </section>
+      </div>
+
+      <aside class="card detail" #detail aria-labelledby="detail-h">
+        @if (selected; as g) {
+          <div class="d-head">
+            <span class="ico big" [attr.data-tone]="tone(g)">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path [attr.d]="iconPath(g.icon)" /></svg>
+            </span>
+            <div class="d-title">
+              <h2 id="detail-h">{{ g.name }}</h2>
+              @if (g.description) { <p>{{ g.description }}</p> }
+            </div>
+            @if (canManage) {
+              <button type="button" class="ib" [disabled]="busy" [attr.aria-label]="'Edit ' + g.name" (click)="onEdit(g)">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" /></svg>
+              </button>
+            }
+          </div>
+
+          <div>
+            <div class="d-fig">
+              <span class="tnum">₹{{ g.saved | number: '1.0-2' }}</span>
+              <span class="chip" [attr.data-tone]="tone(g)">{{ g.percent }}% · {{ stateWord(g.state) }}</span>
+            </div>
+            <span class="bar big"><span class="fill" [attr.data-tone]="tone(g)" [style.width.%]="width(g)"></span></span>
+            <p class="small">
+              of ₹{{ g.target | number: '1.0-2' }} ·
+              @if (g.over > 0) { ₹{{ g.over | number: '1.0-2' }} over the target }
+              @else if (g.remaining > 0) { ₹{{ g.remaining | number: '1.0-2' }} to go }
+              @else { target reached }
+            </p>
+          </div>
+
+          <div class="facts">
+            <div class="fact">
+              <span class="lbl">Target date</span>
+              <strong>{{ goalDate(g.targetDate) }}</strong>
+              <span class="small">{{ g.state === 'date-passed' ? 'Date passed' : g.status === 'completed' ? 'Completed' : g.monthsLeft + (g.monthsLeft === 1 ? ' month left' : ' months left') }}</span>
+            </div>
+            <div class="fact" [class.warn]="g.monthly !== null">
+              <span class="lbl">To get there</span>
+              @if (g.monthly !== null) {
+                <strong class="tnum">₹{{ g.monthly | number: '1.0-2' }} a month</strong>
+                <span class="small">for {{ g.monthsLeft }} {{ g.monthsLeft === 1 ? 'month' : 'months' }}</span>
+              } @else {
+                <strong>{{ g.remaining > 0 ? '₹' + fmt(g.remaining) + ' still needed' : 'Nothing more needed' }}</strong>
+              }
+            </div>
+          </div>
+
+          @if (canManage) {
+            @if (g.status !== 'completed') {
+              <div class="d-actions">
+                <button type="button" class="et-btn-primary sm" [disabled]="busy" (click)="onOpenEntry('contribution')">Add money</button>
+                <button type="button" class="et-btn-ghost sm" [disabled]="busy || g.saved <= 0" (click)="onOpenEntry('withdrawal')">Withdraw</button>
+              </div>
+            }
+            <div class="d-links">
+              @if (g.status === 'active') {
+                <button type="button" class="link" [disabled]="busy" (click)="onStatus(g, 'pause')">Pause</button>
+              }
+              @if (g.status === 'paused') {
+                <button type="button" class="link" [disabled]="busy" (click)="onStatus(g, 'resume')">Resume</button>
+              }
+              @if (g.status !== 'completed') {
+                <button type="button" class="link" [disabled]="busy" (click)="onStatus(g, 'complete')">Mark complete</button>
+              } @else {
+                <button type="button" class="link" [disabled]="busy" (click)="onStatus(g, 'reopen')">Reopen</button>
+              }
+              <button type="button" class="link danger" [disabled]="busy" (click)="onAskDelete(g)">Delete</button>
+            </div>
+          }
+
+          <div class="history">
+            <h3>History</h3>
+            <div class="h-list">
+              @for (h of history; track h.id) {
+                <div class="h-row">
+                  <div>
+                    <div class="strong">{{ h.kind === 'contribution' ? 'Added' : 'Withdrawn' }}</div>
+                    <div class="small">{{ goalDate(h.date) }}{{ h.note ? ' · ' + h.note : '' }}</div>
+                  </div>
+                  <div class="r">
+                    <div class="strong tnum" [class.in]="h.kind === 'contribution'" [class.out]="h.kind === 'withdrawal'">
+                      {{ h.kind === 'contribution' ? '+' : '−' }}₹{{ h.amount | number: '1.0-2' }}
+                    </div>
+                    <div class="small tnum">saved ₹{{ h.savedAfter | number: '1.0-2' }}</div>
+                  </div>
+                </div>
+              } @empty {
+                <p class="small">{{ historyLoading ? 'Loading…' : 'Nothing added yet.' }}</p>
+              }
+            </div>
+          </div>
+        } @else {
+          <p class="small pick">Choose a goal to see its details and history.</p>
+        }
+      </aside>
+    </div>
+  }
+
+  @if (editorOpen) {
+    <div class="et-overlay goals-overlay">
+      <div class="goals-panel" role="dialog" aria-modal="true" aria-labelledby="goal-editor-title">
+        <app-goal-editor [goal]="editing" [today]="today" [busy]="busy" (save)="onSave($event)" (cancel)="onCloseEditor()" />
+      </div>
+    </div>
+  }
+
+  @if (entryKind && selected) {
+    <div class="et-overlay goals-overlay">
+      <div class="goals-panel narrow" role="dialog" aria-modal="true" aria-labelledby="goal-entry-title">
+        <app-goal-entry [goal]="selected" [kind]="entryKind" [today]="today" [busy]="busy"
+          (save)="onSaveEntry($event)" (cancel)="onCloseEntry()" />
+      </div>
+    </div>
+  }
+
+  @if (confirmDelete) {
+    <div class="et-overlay goals-confirm">
+      <div class="et-popup" role="dialog" aria-modal="true" aria-labelledby="gdel-title">
+        <h3 id="gdel-title">Delete {{ confirmDelete.name }}?</h3>
+        <p class="et-popup-body">
+          The goal and its history of additions and withdrawals are removed. Your accounts,
+          transactions, budgets and recurring schedules don't change.
+        </p>
+        <div class="et-popup-actions">
+          <button type="button" class="et-btn-ghost" (click)="onCancelDelete()">Keep it</button>
+          <button type="button" class="et-btn-danger" (click)="onConfirmDelete()">Delete goal</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

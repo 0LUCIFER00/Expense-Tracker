@@ -145,13 +145,26 @@
   padding: 1rem 1.25rem;
 }
 
-/* Stacked, one under the other, at the width of the column. */
+/*
+ * Side by side at the foot of the column (WhatsApp, Savings goals, waiting
+ * entries), wrapping to a new line only when there is not room for them.
+ * The Savings goals strip is its own component, so it takes the same sizing
+ * from the shared .et-strip rule in styles.css rather than from here.
+ */
 .main-col .et-strips {
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
 }
 
-.main-col .et-strip {
-  flex: 0 0 auto;
+/* Two to a row on a desktop: each keeps its button beside the text. */
+@media (min-width: 900px) {
+  .main-col .et-strip {
+    flex-wrap: nowrap;
+  }
+
+  .main-col .et-strip-text {
+    flex: 1 1 0;
+  }
 }
 
 .side {
@@ -444,7 +457,6 @@
 
   .et-strips {
     flex: 0 0 auto;
-    flex-wrap: nowrap;
   }
 }
 

@@ -6,7 +6,15 @@ import {
 } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { HomeComponent } from './home.component';
-import { BalanceAccount, BudgetMonth, DEFAULT_SETTINGS, Expense, Settings } from '../shared/models';
+import {
+  BalanceAccount,
+  BudgetMonth,
+  DEFAULT_SETTINGS,
+  Expense,
+  GoalsOverview,
+  SavingsGoal,
+  Settings
+} from '../shared/models';
 import { currentMonthKey } from '../shared/budget.service';
 import { DashboardData } from '../shared/dashboard';
 
@@ -99,11 +107,32 @@ describe('HomeComponent', () => {
     };
   }
 
+  /** Savings goals as the API sends them; none unless overridden. */
+  function goalsView(overrides: Partial<GoalsOverview> = {}): GoalsOverview {
+    return {
+      today: '2026-11-06',
+      canManage: true,
+      goals: [],
+      summary: { totalTarget: 0, totalSaved: 0, percent: 0, active: 0, paused: 0, completed: 0 },
+      ...overrides
+    };
+  }
+
+  function goal(overrides: Partial<SavingsGoal> = {}): SavingsGoal {
+    return {
+      id: 'g1', name: 'Goa trip', description: null, icon: 'travel', target: 40000, saved: 26500,
+      remaining: 13500, over: 0, percent: 66, targetDate: '2026-12-20', monthsLeft: 2, monthly: 6750,
+      status: 'active', state: 'behind', createdOn: '2026-09-01', completedAt: null,
+      ...overrides
+    };
+  }
+
   function load(
     expenses: Expense[],
     accounts: BalanceAccount[] = [],
     settings: Partial<Settings> = {},
-    budget: BudgetMonth | 'fails' = budgetView()
+    budget: BudgetMonth | 'fails' = budgetView(),
+    goals: GoalsOverview | 'fails' = goalsView()
   ) {
     fixture = TestBed.createComponent(HomeComponent);
     component = fixture.componentInstance;
@@ -126,6 +155,14 @@ describe('HomeComponent', () => {
       budgetRequest.flush({ error: 'Down' }, { status: 503, statusText: 'Unavailable' });
     } else {
       budgetRequest.flush(budget);
+    }
+
+    const goalsRequest = http.expectOne('/api/goals');
+
+    if (goals === 'fails') {
+      goalsRequest.flush({ error: 'Down' }, { status: 503, statusText: 'Unavailable' });
+    } else {
+      goalsRequest.flush(goals);
     }
 
     fixture.detectChanges();
@@ -410,6 +447,44 @@ describe('HomeComponent', () => {
       });
       http.expectOne('/api/expenses/splits').flush([]);
       http.expectOne(`/api/budgets/${currentMonthKey()}`).flush(budgetView());
+      http.expectOne('/api/goals').flush(goalsView());
+    });
+  });
+
+  describe('the Savings goals card', () => {
+    function host(): HTMLElement {
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('shows the total saved and the goal due soonest, on either layout', () => {
+      const goals = goalsView({
+        goals: [
+          goal({ id: 'g2', name: 'New laptop', targetDate: '2027-06-30', remaining: 67000 }),
+          goal()
+        ],
+        summary: { totalTarget: 125000, totalSaved: 44500, percent: 35, active: 2, paused: 0, completed: 0 }
+      });
+
+      for (const balanceUserAccess of [true, false]) {
+        load([expense()], [account()], { balanceUserAccess }, budgetView(), goals);
+
+        const strip = host().querySelector('app-goals-strip')!;
+        expect(strip).not.toBeNull();
+        expect(strip.textContent).toContain('35%');
+        expect(strip.textContent).toContain('Next: Goa trip');
+        expect(strip.querySelector('a')!.getAttribute('href')).toBe('/goals');
+      }
+    });
+
+    it('invites a first goal when there are none', () => {
+      load([expense()], [account()]);
+      expect(host().querySelector('app-goals-strip')!.textContent).toContain('Start a goal');
+    });
+
+    it('stays out of the way when goals cannot be loaded', () => {
+      load([expense()], [account()], {}, budgetView(), 'fails');
+      expect(host().querySelector('app-goals-strip')).toBeNull();
+      expect(host().querySelector('app-balances-layout')).not.toBeNull();
     });
   });
 

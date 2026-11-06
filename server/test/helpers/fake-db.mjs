@@ -79,6 +79,7 @@ export function settingsRow(overrides = {}) {
     whatsapp_budget_alerts: false,
     recurring_user_access: true,
     whatsapp_recurring_reminders: false,
+    goals_user_access: true,
     ...overrides
   };
 }

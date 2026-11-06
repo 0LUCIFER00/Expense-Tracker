@@ -177,6 +177,18 @@
   background: #f5f7fb;
 }
 
+/* The page you are on, when it lives in this menu (Savings Goals). */
+.profile-dropdown a.active {
+  background: #e6eaff;
+  color: #1c2978;
+  font-weight: 700;
+}
+
+:host-context([data-theme='dark']) .profile-dropdown a.active {
+  background: #2e3853;
+  color: #fff;
+}
+
 .profile-dropdown hr {
   margin: 0;
   border: none;

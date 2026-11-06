@@ -31,7 +31,9 @@ export const FLAGS = {
    * A preference: add recurring reminder lines to WhatsApp replies. Off by
    * default; never a message of its own.
    */
-  whatsappRecurringReminders: 'whatsapp_recurring_reminders'
+  whatsappRecurringReminders: 'whatsapp_recurring_reminders',
+  /** May create, change and delete savings goals and add or withdraw. Seeing them needs no switch. */
+  goalsUserAccess: 'goals_user_access'
 };
 
 export const COLUMNS = Object.values(FLAGS).join(', ');
@@ -166,7 +168,10 @@ export function permissionsFor(settings, loginType) {
      */
     canManageRecurring: admin || Boolean(settings.recurringUserAccess),
 
-    whatsappRecurringReminders: Boolean(settings.whatsappRecurringReminders)
+    whatsappRecurringReminders: Boolean(settings.whatsappRecurringReminders),
+
+    /** Goals only track money set aside and show no balances, so only changing them is gated. */
+    canManageGoals: admin || Boolean(settings.goalsUserAccess)
   };
 }
 
