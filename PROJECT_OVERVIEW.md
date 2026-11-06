@@ -513,12 +513,10 @@ first 1,000 per month free.
 
 ## 13. Current status
 
-- **Live on Vercel:** accounts, expenses, income, permissions, the full-access
-  password, and WhatsApp recording of expenses and income.
-- **Built and tested locally, not yet deployed:** split bills (website and
-  WhatsApp), the combined Transactions page with All/Debit/Credit tabs, debit/credit
-  row colours, the Add Income layout with split repayment, the Help & Support split
-  guide, and the renamed menu and labels.
+Everything described here is **live on Vercel** (2026-11-06): accounts, expenses,
+income, split bills and repayments (website and WhatsApp), the Transactions page,
+permissions and the full-access password, the security fixes from the audit, and
+Angular 21.
 
 ---
 

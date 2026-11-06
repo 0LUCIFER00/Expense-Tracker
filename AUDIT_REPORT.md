@@ -1,8 +1,10 @@
 # Expense Tracker — Security, Integrity and Performance Audit
 
 Date: 2026-11-05 · Audited from `0cbd612` · Fixes in `affaf6d`, `a8441dc`, `014c3fc`
-(local branch `feat/postgres-whatsapp-responsive`, **not pushed, not deployed**).
-Production still runs `ecfa49d`.
+
+**Status (2026-11-06):** merged into `main` together with the Angular 21 upgrade and
+**live in production** (deployment `cua1uzero`, commit `e78a874`). The production
+checks in §9 were run and passed, apart from the two steps marked as yours.
 
 How each claim was established: **[code]** read in the source, **[live]** observed
 on the production site, **[db]** read-only query, **[unit]** automated test that
@@ -221,24 +223,26 @@ and dark-mode passes on the changed screens (they reuse existing styles).
 
 ## 9. Deployment checklist
 
-1. **Push** the branch (needs your go-ahead) and open a **preview** deployment.
-2. On the preview:
-   - `curl -I <preview>/` shows `Content-Security-Policy` and `X-Frame-Options: DENY`.
-   - `curl -I <preview>/api/auth/me` shows `Cache-Control: no-store`.
-   - `curl -I` a `/chunk-*.js` file shows `immutable`.
-3. Open the preview in a browser, sign in, open each page, and confirm the console
-   has no CSP errors.
-4. Add `DATABASE_CA_CERT` in Vercel (Production and Preview), redeploy the preview,
-   and confirm `/api/health` still says `reachable`. Logs will no longer warn about
-   TLS.
-5. Promote to production (needs your go-ahead). Existing sessions carry on.
-6. WhatsApp smoke test from your phone: `help`, `today`, then `10 test cash` and
-   `undo`.
+| Step | Result |
+|---|---|
+| Push the branches | Done: `feat/postgres-whatsapp-responsive` and `chore/angular-21`, then `main` |
+| Preview deployment | Built. Pages carry the CSP and `X-Frame-Options: DENY`; bundles are `immutable`. The preview **API could not start**: the project's environment variables are set for Production only. Not a code fault |
+| Production deployment (`vercel deploy --prod`) | Done. Previous production deployment `9dd3sq841` kept for rollback |
+| Live: page headers | CSP and `X-Frame-Options: DENY` on `/`, `/login` and the API |
+| Live: `/api/auth/me` | `401`, `Cache-Control: no-store` |
+| Live: `/api/health` | `{"status":"ok","database":"reachable"}`, about 0.2 s |
+| Live: validation | 7-character password refused; unknown email gets the standard answer; unsigned webhook `403` |
+| Live: function region | `sin1` (Singapore), beside the database; requests enter at `bom1` |
+| **Yours:** WhatsApp from your phone | `help`, `today`, `10 test cash`, `undo` |
+| **Yours:** `DATABASE_CA_CERT` | Add in Vercel, redeploy, confirm health still says `reachable` |
+
+To let future previews run the API, the environment variables would also need to be
+set for Preview. They would then use the live database (see H5).
 
 ## 10. Production readiness
 
-**Ready for preview; production after the preview checks in §9.** The code-side
-security findings are closed and tested. Financial integrity was verified with no
-rule changes. What remains is either a setting only you can make (CA certificate,
-database role, separate dev database) or a deliberate later project (pagination).
-The Angular 21 upgrade is done on its own branch, `chore/angular-21`.
+**Live in production.** The code-side security findings are closed, tested and
+confirmed on the live site. Financial integrity was verified with no rule changes.
+The Angular 21 upgrade closed the dependency advisories. What remains is either a
+setting only you can make (CA certificate, database role, separate dev database) or
+a deliberate later project (pagination).
