@@ -1,4 +1,10 @@
-<div class="budgets-page">
+<!--
+  A dashboard, like Home: on a desktop it fits the window. The month's figures
+  are one strip across the top; categories scroll inside their own card on the
+  left; history and alerts share the column on the right. Editing opens over
+  the page, so nothing below it moves.
+-->
+<div class="budgets-page" appFitsScreen>
 
   <div class="page-head">
     <h1 class="page-title">Budgets</h1>
@@ -20,7 +26,6 @@
   @if (loading && !view) {
     <section class="card skeleton" aria-busy="true">
       <span class="skeleton-line wide"></span>
-      <span class="skeleton-line"></span>
       <span class="et-meter"></span>
     </section>
   } @else if (loadError) {
@@ -30,25 +35,27 @@
     </section>
   } @else if (view) {
 
-    @if (editing) {
-      <app-budget-editor
-        [draft]="draft"
-        [categoryNames]="categoryNames"
-        [monthName]="monthName"
-        [copiedFrom]="copiedFrom"
-        [busy]="busy"
-        (save)="onSave($event)"
-        (cancel)="onCancelEdit()">
-      </app-budget-editor>
-    } @else {
-
-      <!-- The month at a glance. -->
-      <section class="card overview" [class.dim]="loading">
+    <!-- The month at a glance, in one strip. -->
+    <section class="card overview" [class.dim]="loading">
+      <div class="overview-main">
         @if (view.total !== null) {
           <div class="overview-top">
             <p class="figure tnum">
               ₹{{ view.spent | number }}
-              <span class="of">spent of ₹{{ view.total | number }}{{ view.fromCategories ? ' (from categories)' : '' }}</span>
+              <span class="of">of ₹{{ view.total | number }}{{ view.fromCategories ? ' (from categories)' : '' }}</span>
+            </p>
+            <p class="overview-line tnum">
+              @if (isOver) {
+                <span class="et-over">₹{{ -view.remaining! | number }} over budget</span>
+              } @else {
+                ₹{{ view.remaining | number }} left
+              }
+              @if (view.overCount) {
+                · <span class="et-over">{{ view.overCount }} {{ view.overCount === 1 ? 'category' : 'categories' }} over</span>
+              }
+              @if (daysToGo) {
+                · {{ daysToGo }} {{ daysToGo === 1 ? 'day' : 'days' }} to go
+              }
             </p>
             <span class="et-status" [attr.data-status]="view.status">
               {{ view.percent | number: '1.0-2' }}% used
@@ -61,19 +68,6 @@
               [style.width.%]="width(view.percent)"></span>
           </span>
 
-          <p class="overview-line tnum">
-            @if (isOver) {
-              <span class="et-over">₹{{ -view.remaining! | number }} over budget</span>
-            } @else {
-              ₹{{ view.remaining | number }} left
-            }
-            @if (view.overCount) {
-              · <span class="et-over">{{ view.overCount }} {{ view.overCount === 1 ? 'category' : 'categories' }} over</span>
-            }
-            @if (daysToGo) {
-              · {{ daysToGo }} {{ daysToGo === 1 ? 'day' : 'days' }} to go
-            }
-          </p>
         } @else {
           <h2 class="empty-title">No budget for {{ monthName }} yet</h2>
           <p class="empty-body tnum">
@@ -83,106 +77,140 @@
             }
           </p>
         }
+      </div>
 
-        @if (view.canManage) {
-          <div class="actions">
-            <button type="button" class="et-btn-primary" (click)="onEdit()">
-              {{ view.exists ? 'Edit budget' : 'Create budget' }}
+      @if (view.canManage) {
+        <div class="actions">
+          <button type="button" class="et-btn-primary" (click)="onEdit()">
+            {{ view.exists ? 'Edit budget' : 'Create budget' }}
+          </button>
+          @if (previous) {
+            <button type="button" class="et-btn-ghost" (click)="onCopy()">
+              Copy from {{ previousName }}
             </button>
-            @if (previous) {
-              <button type="button" class="et-btn-ghost" (click)="onCopy()">
-                Copy from {{ previousName }}
-              </button>
-            }
-            @if (view.exists) {
-              <button type="button" class="text-btn danger" (click)="onAskDelete()" [disabled]="busy">
-                Remove budget
-              </button>
+          }
+          @if (view.exists) {
+            <button type="button" class="text-btn danger" (click)="onAskDelete()" [disabled]="busy">
+              Remove
+            </button>
+          }
+        </div>
+      } @else {
+        <p class="view-only">
+          View only on this sign-in. Changing budgets needs <strong>Manage budgets</strong>,
+          or your full-access password.
+        </p>
+      }
+    </section>
+
+    <div class="budget-grid">
+
+      <!-- Each budgeted category, most used first. Scrolls inside the card. -->
+      <section class="card cat-card">
+        <div class="card-head">
+          <h2 class="card-title">By category</h2>
+          @if (view.allocated) {
+            <span class="card-meta tnum">
+              Allocated ₹{{ view.allocated | number }}{{ view.overall !== null ? ' of ₹' + (view.overall | number) : '' }}
+            </span>
+          }
+        </div>
+
+        @if (view.categories.length) {
+          <div class="lines" role="table" aria-label="Category budgets">
+            <div class="line line-head" role="row">
+              <span role="columnheader">Category</span>
+              <span role="columnheader">Budget</span>
+              <span role="columnheader">Spent</span>
+              <span role="columnheader">Left</span>
+              <span role="columnheader">Used</span>
+            </div>
+
+            @for (line of view.categories; track line.category) {
+              <div class="line" role="row">
+                <span class="line-name" role="cell">{{ line.category }}</span>
+                <span class="tnum" role="cell" data-label="Budget">₹{{ line.budget | number }}</span>
+                <span class="tnum" role="cell" data-label="Spent">₹{{ line.spent | number }}</span>
+                <span class="tnum" role="cell" data-label="Left" [class.et-over]="line.remaining < 0">
+                  {{ line.remaining < 0 ? '−' : '' }}₹{{ (line.remaining < 0 ? -line.remaining : line.remaining) | number }}
+                </span>
+                <span class="line-used" role="cell">
+                  <span class="et-meter">
+                    <span class="et-meter-fill" [attr.data-status]="line.status"
+                      [style.width.%]="width(line.percent)"></span>
+                  </span>
+                  <span class="et-status" [attr.data-status]="line.status">
+                    {{ line.percent | number: '1.0-0' }}% · {{ lineWord(line) }}
+                  </span>
+                </span>
+              </div>
             }
           </div>
         } @else {
-          <p class="view-only">
-            View only on this sign-in. Changing budgets needs <strong>Manage budgets</strong>,
-            or your full-access password.
+          <p class="card-empty">
+            No category limits this month.
+            @if (view.canManage) {
+              Add them with {{ view.exists ? 'Edit budget' : 'Create budget' }}.
+            }
+          </p>
+        }
+
+        @if (view.unbudgeted.length) {
+          <p class="unbudgeted tnum">
+            Not budgeted:
+            @for (entry of view.unbudgeted; track entry.category; let last = $last) {
+              {{ entry.category }} ₹{{ entry.spent | number }}{{ last ? '' : ' · ' }}
+            }
           </p>
         }
       </section>
 
-      <!-- Each budgeted category, most used first. -->
-      @if (view.categories.length || view.unbudgeted.length) {
-        <section class="card">
-          <div class="card-head">
-            <h2 class="card-title">By category</h2>
-            @if (view.allocated) {
-              <span class="card-meta tnum">
-                Allocated ₹{{ view.allocated | number }}{{ view.overall !== null ? ' of ₹' + (view.overall | number) : '' }}
-              </span>
+      <div class="side-col">
+        <app-budget-history [monthKey]="monthKey"></app-budget-history>
+
+        <section class="card alerts-card">
+          <h2 class="card-title">
+            Alerts this month
+            @if (view.alerts.length) {
+              <span class="count">{{ view.alerts.length }}</span>
             }
-          </div>
-
-          @if (view.categories.length) {
-            <div class="lines" role="table" aria-label="Category budgets">
-              <div class="line line-head" role="row">
-                <span role="columnheader">Category</span>
-                <span role="columnheader">Budget</span>
-                <span role="columnheader">Spent</span>
-                <span role="columnheader">Left</span>
-                <span role="columnheader">Used</span>
-              </div>
-
-              @for (line of view.categories; track line.category) {
-                <div class="line" role="row">
-                  <span class="line-name" role="cell">{{ line.category }}</span>
-                  <span class="tnum" role="cell" data-label="Budget">₹{{ line.budget | number }}</span>
-                  <span class="tnum" role="cell" data-label="Spent">₹{{ line.spent | number }}</span>
-                  <span class="tnum" role="cell" data-label="Left" [class.et-over]="line.remaining < 0">
-                    {{ line.remaining < 0 ? '−' : '' }}₹{{ (line.remaining < 0 ? -line.remaining : line.remaining) | number }}
-                  </span>
-                  <span class="line-used" role="cell">
-                    <span class="et-meter">
-                      <span class="et-meter-fill" [attr.data-status]="line.status"
-                        [style.width.%]="width(line.percent)"></span>
-                    </span>
-                    <span class="et-status" [attr.data-status]="line.status">
-                      {{ line.percent | number: '1.0-0' }}% · {{ lineWord(line) }}
-                    </span>
-                  </span>
-                </div>
+          </h2>
+          @if (view.alerts.length) {
+            <ul class="alerts">
+              @for (alert of view.alerts; track alert.scope + alert.threshold) {
+                <li [attr.data-threshold]="alert.threshold">
+                  <span class="alert-what">{{ scopeName(alert.scope) }} {{ alertLabel(alert.threshold) }}</span>
+                  <span class="alert-when">{{ alert.at | date: 'd MMM' }}</span>
+                </li>
               }
-            </div>
-          }
-
-          @if (view.unbudgeted.length) {
-            <p class="unbudgeted tnum">
-              Not budgeted:
-              @for (entry of view.unbudgeted; track entry.category; let last = $last) {
-                {{ entry.category }} ₹{{ entry.spent | number }}{{ last ? '' : ' · ' }}
-              }
-            </p>
+            </ul>
+          } @else {
+            <p class="card-empty">None yet. You'll see one here at 50%, 80%, 100% and over.</p>
           }
         </section>
-      }
+      </div>
+    </div>
+  }
 
-      @if (view.alerts.length) {
-        <section class="card">
-          <h2 class="card-title">Alerts this month</h2>
-          <ul class="alerts">
-            @for (alert of view.alerts; track alert.scope + alert.threshold) {
-              <li [attr.data-threshold]="alert.threshold">
-                <span class="alert-what">{{ scopeName(alert.scope) }} {{ alertLabel(alert.threshold) }}</span>
-                <span class="alert-when">{{ alert.at | date: 'd MMM' }}</span>
-              </li>
-            }
-          </ul>
-        </section>
-      }
-    }
-
-    <app-budget-history [monthKey]="monthKey"></app-budget-history>
+  <!-- Editing opens over the page, so the dashboard behind it never moves. -->
+  @if (editing) {
+    <div class="et-overlay editor-overlay">
+      <div class="editor-panel" role="dialog" aria-modal="true" aria-label="Edit budget">
+        <app-budget-editor
+          [draft]="draft"
+          [categoryNames]="categoryNames"
+          [monthName]="monthName"
+          [copiedFrom]="copiedFrom"
+          [busy]="busy"
+          (save)="onSave($event)"
+          (cancel)="onCancelEdit()">
+        </app-budget-editor>
+      </div>
+    </div>
   }
 
   @if (pending) {
-    <div class="et-overlay">
+    <div class="et-overlay confirm-overlay">
       <div class="et-popup" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
         @if (pending.kind === 'save-copy') {
           <h3 id="confirm-title">Save {{ monthName }}'s budget?</h3>

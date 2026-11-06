@@ -109,7 +109,7 @@ describe('BudgetsComponent', () => {
     const overview = host().querySelector('.overview') as HTMLElement;
 
     expect(overview.textContent).toContain('₹18,500');
-    expect(overview.textContent).toContain('spent of ₹30,000');
+    expect(overview.textContent).toContain('of ₹30,000');
     expect(overview.textContent).toContain('61.67% used');
     expect(overview.textContent).toContain('₹11,500 left');
     expect(overview.textContent).toContain('1 category over');

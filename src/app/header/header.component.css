@@ -17,7 +17,9 @@
   flex-wrap: wrap;
   background-color: #2196f3;
   color: white;
-  padding: 10px clamp(12px, 3vw, 24px);
+  min-height: 54px;
+  box-sizing: border-box;
+  padding: 0 clamp(12px, 3vw, 24px);
 }
 
 .logo {
@@ -34,29 +36,44 @@
   margin-left: auto;
 }
 
+/*
+ * The page you are on is marked like a tab: a white bar sitting on the bottom
+ * edge of the header, under a link at full strength while the others are
+ * slightly dimmed. No box and no weight change, so nothing shifts. The links
+ * fill the header's height so the bar can sit on its edge.
+ */
+.nav-links {
+  align-self: stretch;
+  align-items: stretch;
+}
+
 .nav-links a {
+  position: relative;
+  display: flex;
+  align-items: center;
   color: white;
   text-decoration: none;
   font-weight: 500;
-  padding: 6px 10px;
-  border-radius: 8px;
+  padding: 0 10px;
   white-space: nowrap;
-  transition: background-color .15s ease;
+  opacity: .82;
+  transition: opacity .15s ease;
 }
 
-/* A wash, not bold: bold changed the width and nudged the links beside it. */
-.nav-links a:hover {
-  background-color: rgba(255, 255, 255, .12);
-}
-
-/*
- * The page you are on: a soft pill with a white underline, so it reads at a
- * glance in both themes without a second colour.
- */
+.nav-links a:hover,
 .nav-links a.active {
-  background-color: rgba(255, 255, 255, .2);
-  box-shadow: inset 0 -2px 0 #fff;
-  font-weight: 700;
+  opacity: 1;
+}
+
+.nav-links a.active::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background-color: #fff;
 }
 
 /* A clear ring for the keyboard; none for a mouse click. */
@@ -66,7 +83,8 @@
 
 .nav-links a:focus-visible {
   outline: 2px solid #fff;
-  outline-offset: 2px;
+  outline-offset: -4px;
+  border-radius: 8px;
 }
 
 .header-actions {
@@ -81,8 +99,8 @@
 }
 
 .profile-btn {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border: none;
   border-radius: 50%;
   background: #eef4ff;
@@ -105,7 +123,7 @@
 
 .profile-dropdown {
   position: absolute;
-  top: 50px;
+  top: 46px;
   right: 0;
   width: 220px;
   max-width: calc(100vw - 32px);
@@ -138,8 +156,8 @@
 /* Hamburger — only shown once the links no longer fit on one line. */
 .menu-toggle {
   display: none;
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border: none;
   border-radius: 10px;
   background: rgba(255, 255, 255, .18);
@@ -177,9 +195,15 @@
     display: flex;
   }
 
+  .header {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
   .nav-links {
     display: none;
     order: 3;
+    align-self: auto;
     flex-basis: 100%;
     flex-direction: column;
     align-items: stretch;
@@ -196,7 +220,7 @@
 
   .nav-links a {
     padding: 13px 16px;
-    border-radius: 0;
+    opacity: 1;
   }
 
   .nav-links a:not(:last-child) {
@@ -207,17 +231,25 @@
     background: rgba(255, 255, 255, .15);
   }
 
-  /* In the menu the underline becomes a bar down the left edge. */
   .nav-links a.active {
-    box-shadow: inset 3px 0 0 #fff;
+    background: rgba(255, 255, 255, .15);
+  }
+
+  .nav-links a.active::after {
+    left: 0;
+    right: auto;
+    top: 0;
+    width: 3px;
+    height: auto;
+    border-radius: 0;
   }
 }
 
 @media (max-width: 400px) {
   .profile-btn,
   .menu-toggle {
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
   }
 
   .profile-icon {

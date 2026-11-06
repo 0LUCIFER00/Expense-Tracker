@@ -6,7 +6,7 @@
   background-color: var(--surface);
   border: 1px solid var(--surface-border);
   border-radius: 14px;
-  padding: 1.25rem 1.375rem;
+  padding: 1rem 1.25rem;
   box-shadow: var(--shadow);
   color: var(--ink);
 }
@@ -17,7 +17,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 0.875rem;
+  margin-bottom: 0.625rem;
 }
 
 .title {
@@ -59,7 +59,7 @@
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 0.5rem;
+  gap: 0.3125rem;
 }
 
 .months.dim {
@@ -68,10 +68,10 @@
 
 .month {
   display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr) minmax(0, 13rem);
-  gap: 0.75rem;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  gap: 0.625rem;
   align-items: center;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
 }
 
 .month-name {
@@ -94,12 +94,12 @@
 }
 
 .facts {
-  margin-top: 1rem;
-  padding-top: 0.75rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
   border-top: 1px solid var(--rule);
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: var(--ink-2);
-  line-height: 1.55;
+  line-height: 1.45;
 }
 
 .facts p {

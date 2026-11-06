@@ -17,6 +17,7 @@ import { BudgetDraft, BudgetLine, BudgetMonth, PreviousBudget } from '../shared/
 import { ToastService } from '../shared/toast.service';
 import { BudgetEditorComponent } from './budget-editor/budget-editor.component';
 import { BudgetHistoryComponent } from './budget-history/budget-history.component';
+import { FitsScreenDirective } from '../shared/fits-screen.directive';
 
 /** What the confirmation dialog is asking about. */
 type Pending =
@@ -33,7 +34,7 @@ type Pending =
 @Component({
   selector: 'app-budgets',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, BudgetEditorComponent, BudgetHistoryComponent],
+  imports: [DatePipe, DecimalPipe, BudgetEditorComponent, BudgetHistoryComponent, FitsScreenDirective],
   templateUrl: './budgets.component.html',
   styleUrl: './budgets.component.css'
 })
