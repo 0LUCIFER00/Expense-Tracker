@@ -1,4 +1,4 @@
-import { Expense, SplitSummary } from './models';
+import { BudgetMonth, Expense, SplitSummary } from './models';
 
 /**
  * What the dashboard shows, worked out once by HomeComponent and handed to
@@ -77,4 +77,10 @@ export interface DashboardData {
 
   /** True while there is a phone to connect and nothing connected yet. */
   offerWhatsapp: boolean;
+
+  /**
+   * This month's budget, worked out by the API, for the Budget card. Null when
+   * it could not be loaded, in which case the card stays out of the way.
+   */
+  budget?: BudgetMonth | null;
 }

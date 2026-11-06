@@ -229,8 +229,14 @@ export class ExpenseListComponent implements OnInit {
 
   onApprovePending(expense: Expense): void {
     this.expenseService.approve(expense.id).subscribe({
-      next: () => {
+      next: approved => {
         this.toast.success('Approved.');
+
+        // Approval is when it starts counting, so it can carry a budget over.
+        for (const alert of approved.budgetAlerts ?? []) {
+          this.toast.warning(alert.message);
+        }
+
         this.reload();
       },
       error: error => {

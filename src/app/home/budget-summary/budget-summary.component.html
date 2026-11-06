@@ -1,0 +1,59 @@
+<section class="budget-card" aria-labelledby="budget-card-title">
+  <div class="head">
+    <h2 class="title" id="budget-card-title">Budget · {{ monthName }}</h2>
+    <a class="link" routerLink="/budgets">See budgets</a>
+  </div>
+
+  @if (budget.total !== null) {
+    <div class="figures">
+      <p class="spent tnum">
+        ₹{{ budget.spent | number }}
+        <span class="of">of ₹{{ budget.total | number }}{{ budget.fromCategories ? ' from categories' : '' }}</span>
+      </p>
+      <p class="percent tnum" [attr.data-status]="budget.status">{{ budget.percent | number: '1.0-0' }}%</p>
+    </div>
+
+    <span class="et-meter" role="img"
+      [attr.aria-label]="(budget.percent | number: '1.0-0') + '% of the budget used'">
+      <span class="et-meter-fill" [attr.data-status]="budget.status"
+        [style.width.%]="width(budget.percent)"></span>
+    </span>
+
+    <p class="left tnum" [class.et-over]="isOver">
+      @if (isOver) {
+        ₹{{ -budget.remaining! | number }} over
+        @if (budget.overCount) {
+          · {{ budget.overCount }} {{ budget.overCount === 1 ? 'category' : 'categories' }} over
+        }
+      } @else {
+        ₹{{ budget.remaining | number }} left
+        @if (daysToGo) {
+          · {{ daysToGo }} {{ daysToGo === 1 ? 'day' : 'days' }} to go
+        }
+      }
+    </p>
+
+    @if (top.length) {
+      <ul class="top">
+        @for (line of top; track line.category) {
+          <li class="top-row">
+            <span class="top-name">{{ line.category }}</span>
+            <span class="et-meter">
+              <span class="et-meter-fill" [attr.data-status]="line.status"
+                [style.width.%]="width(line.percent)"></span>
+            </span>
+            <span class="top-percent tnum" [attr.data-status]="line.status">
+              {{ line.percent | number: '1.0-0' }}%
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  } @else {
+    <p class="empty">Set a monthly limit to see how your spending is tracking.</p>
+
+    @if (budget.canManage) {
+      <a class="create" routerLink="/budgets">Create budget</a>
+    }
+  }
+</section>

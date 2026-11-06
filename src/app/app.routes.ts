@@ -40,6 +40,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./expense-list/expense-list.component').then(m => m.ExpenseListComponent)
   },
+  {
+    path: 'budgets',
+    canActivate: [authGuard],
+    loadComponent: () => import('./budgets/budgets.component').then(m => m.BudgetsComponent)
+  },
   // The page was View Expenses, which is now its Money out tab; keep old links
   // and bookmarks landing there.
   { path: 'view-expenses', redirectTo: '/transactions?tab=out' },

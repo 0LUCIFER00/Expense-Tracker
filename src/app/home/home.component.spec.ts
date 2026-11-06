@@ -6,7 +6,8 @@ import {
 } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { HomeComponent } from './home.component';
-import { BalanceAccount, DEFAULT_SETTINGS, Expense, Settings } from '../shared/models';
+import { BalanceAccount, BudgetMonth, DEFAULT_SETTINGS, Expense, Settings } from '../shared/models';
+import { currentMonthKey } from '../shared/budget.service';
 import { DashboardData } from '../shared/dashboard';
 
 function expense(overrides: Partial<Expense> = {}): Expense {
@@ -76,10 +77,33 @@ describe('HomeComponent', () => {
     return component.data as DashboardData;
   }
 
+  /** This month's budget as the API sends it; no budget unless overridden. */
+  function budgetView(overrides: Partial<BudgetMonth> = {}): BudgetMonth {
+    return {
+      month: currentMonthKey(),
+      exists: false,
+      overall: null,
+      fromCategories: false,
+      total: null,
+      spent: 0,
+      remaining: null,
+      percent: null,
+      status: null,
+      allocated: 0,
+      overCount: 0,
+      categories: [],
+      unbudgeted: [],
+      alerts: [],
+      canManage: true,
+      ...overrides
+    };
+  }
+
   function load(
     expenses: Expense[],
     accounts: BalanceAccount[] = [],
-    settings: Partial<Settings> = {}
+    settings: Partial<Settings> = {},
+    budget: BudgetMonth | 'fails' = budgetView()
   ) {
     fixture = TestBed.createComponent(HomeComponent);
     component = fixture.componentInstance;
@@ -95,6 +119,14 @@ describe('HomeComponent', () => {
       businessNumber: '919000000000'
     });
     http.expectOne('/api/expenses/splits').flush([]);
+
+    const budgetRequest = http.expectOne(`/api/budgets/${currentMonthKey()}`);
+
+    if (budget === 'fails') {
+      budgetRequest.flush({ error: 'Down' }, { status: 503, statusText: 'Unavailable' });
+    } else {
+      budgetRequest.flush(budget);
+    }
 
     fixture.detectChanges();
   }
@@ -377,6 +409,62 @@ describe('HomeComponent', () => {
         businessNumber: null
       });
       http.expectOne('/api/expenses/splits').flush([]);
+      http.expectOne(`/api/budgets/${currentMonthKey()}`).flush(budgetView());
+    });
+  });
+
+  describe('the Budget card', () => {
+    function host(): HTMLElement {
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('shows this month against its budget, with the top categories', () => {
+      load([expense()], [account()], {}, budgetView({
+        exists: true,
+        overall: 30000,
+        total: 30000,
+        spent: 18500,
+        remaining: 11500,
+        percent: 61.67,
+        status: 'on-track',
+        categories: [
+          { category: 'Travel', budget: 3000, spent: 3500, remaining: -500, percent: 116.67, status: 'over' },
+          { category: 'Shopping', budget: 4000, spent: 3000, remaining: 1000, percent: 75, status: 'near' },
+          { category: 'Food & Drink', budget: 5000, spent: 3200, remaining: 1800, percent: 64, status: 'on-track' },
+          { category: 'Health', budget: 2000, spent: 100, remaining: 1900, percent: 5, status: 'on-track' }
+        ]
+      }));
+
+      const card = host().querySelector('app-budget-summary') as HTMLElement;
+
+      expect(card).not.toBeNull();
+      expect(card.textContent).toContain('₹18,500');
+      expect(card.textContent).toContain('of ₹30,000');
+      expect(card.textContent).toContain('₹11,500 left');
+      expect(card.querySelectorAll('.top-row').length).toBe(3);
+      expect(card.textContent).not.toContain('Health');
+    });
+
+    it('invites a budget when there is none', () => {
+      load([expense()], [account()]);
+
+      const card = host().querySelector('app-budget-summary') as HTMLElement;
+
+      expect(card.textContent).toContain('Set a monthly limit');
+      expect(card.querySelector('a.create')?.textContent).toContain('Create budget');
+    });
+
+    it('offers no Create button to a sign-in that cannot manage budgets', () => {
+      load([expense()], [account()], {}, budgetView({ canManage: false }));
+
+      expect(host().querySelector('app-budget-summary a.create')).toBeNull();
+    });
+
+    it('stays out of the way when the budget cannot be loaded', () => {
+      load([expense()], [account()], {}, 'fails');
+
+      expect(host().querySelector('app-budget-summary')).toBeNull();
+      expect(host().querySelector('app-balances-layout')).not.toBeNull();
     });
   });
 });

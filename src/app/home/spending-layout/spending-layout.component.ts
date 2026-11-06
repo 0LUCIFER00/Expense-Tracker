@@ -18,10 +18,18 @@ import { SplitHistoryComponent } from '../../shared/split-history/split-history.
  * It also says plainly that balances are hidden and how to see them. Without
  * that the page just looks like a feature that is missing.
  */
+import { BudgetSummaryComponent } from '../budget-summary/budget-summary.component';
+
 @Component({
   selector: 'app-spending-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, SpendChartComponent, SplitHistoryComponent],
+  imports: [
+    CommonModule,
+    RouterModule,
+    SpendChartComponent,
+    SplitHistoryComponent,
+    BudgetSummaryComponent
+  ],
   templateUrl: './spending-layout.component.html',
   styleUrl: './spending-layout.component.css'
 })

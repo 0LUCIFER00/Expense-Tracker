@@ -156,6 +156,16 @@ export class HelpSupportComponent implements OnInit {
         'paid, when, and what is still to come. Or send "splits" on WhatsApp.'
     },
     {
+      question: 'How do budgets count split bills and repayments?',
+      answer:
+        'A budget counts what you spent, the same way Home and Transactions do: ' +
+        'approved expenses only, and of a split bill only your share. Money a friend ' +
+        'pays back is a repayment, so it neither counts as spending nor lowers it. ' +
+        'Each expense counts in the month of its date. You get an alert at 50%, 80%, ' +
+        '100% and when you go over, once each per month; on WhatsApp only if you turn ' +
+        'on "Budget alerts on WhatsApp" in Settings.'
+    },
+    {
       question: 'What is the full-access password for?',
       answer:
         'It is a second password for the same account. Signing in with it gives you ' +

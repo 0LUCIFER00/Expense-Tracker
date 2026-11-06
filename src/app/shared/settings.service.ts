@@ -83,6 +83,11 @@ export class SettingsService {
     return this.allows('expenseUserAccess');
   }
 
+  /** May create, change and remove budgets. Seeing them needs nothing. */
+  get canManageBudgets(): boolean {
+    return this.allows('budgetUserAccess');
+  }
+
   /**
    * May create, retype or delete an account on Cash & Accounts. Needs both
    * seeing the amounts and "Debit from an account", as the API does: retyping a

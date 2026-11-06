@@ -44,7 +44,12 @@ describe('SettingsService', () => {
   }
 
   it('starts from the fully-granted defaults', () => {
-    expect(Object.values(settings.settings).every(Boolean)).toBeTrue();
+    // Every permission is granted. Budget alerts on WhatsApp is a preference,
+    // not a permission, and starts off: nothing extra is sent unless chosen.
+    const { whatsappBudgetAlerts, ...permissions } = settings.settings;
+
+    expect(Object.values(permissions).every(Boolean)).toBeTrue();
+    expect(whatsappBudgetAlerts).toBeFalse();
   });
 
   it('caches after the first load', () => {

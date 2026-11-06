@@ -1,0 +1,77 @@
+<section class="card" aria-labelledby="history-title">
+  <div class="head">
+    <h2 class="title" id="history-title">History</h2>
+
+    <div class="spans" role="group" aria-label="How many months">
+      @for (span of spans; track span) {
+        <button type="button" class="span" [class.on]="span === months"
+          [attr.aria-pressed]="span === months" (click)="onSpan(span)">
+          {{ span }} months
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (error) {
+    <p class="error">{{ error }}</p>
+    <button type="button" class="et-btn-ghost" (click)="load()">Try again</button>
+  } @else if (history) {
+    <ul class="months" [class.dim]="loading">
+      @for (month of history.months; track month.month) {
+        <li class="month">
+          <span class="month-name">{{ label(month.month) }}</span>
+
+          <span class="et-meter">
+            @if (month.total !== null) {
+              <span class="et-meter-fill" [attr.data-status]="month.status"
+                [style.width.%]="width(month.percent)"></span>
+            } @else {
+              <span class="et-meter-fill plain" [style.width.%]="plainWidth(month.spent)"></span>
+            }
+          </span>
+
+          <span class="month-figures tnum" [class.et-over]="month.over > 0">
+            ₹{{ month.spent | number }}
+            @if (month.total !== null) {
+              <span class="muted">of ₹{{ month.total | number }}</span>
+              · {{ month.percent | number: '1.0-0' }}%
+            } @else {
+              <span class="muted">· no budget</span>
+            }
+          </span>
+        </li>
+      }
+    </ul>
+
+    <div class="facts">
+      @if (history.comparison; as comparison) {
+        <p class="tnum">
+          @if (comparison.difference === 0) {
+            The same spent as in {{ fullLabel(comparison.previousMonth) }}.
+          } @else {
+            ₹{{ (comparison.difference < 0 ? -comparison.difference : comparison.difference) | number }}
+            {{ comparison.difference < 0 ? 'less' : 'more' }} spent than in {{ fullLabel(comparison.previousMonth) }}.
+          }
+        </p>
+      }
+
+      @if (history.totalOverspend > 0) {
+        <p class="tnum">
+          Over budget by <span class="et-over">₹{{ history.totalOverspend | number }}</span>
+          in all across these months.
+        </p>
+      }
+
+      @if (history.oftenOver.length) {
+        <p>
+          Often over budget:
+          @for (entry of history.oftenOver; track entry.category; let last = $last) {
+            <strong>{{ entry.category }}</strong> ({{ entry.overMonths }} of {{ entry.budgetedMonths }} months){{ last ? '' : ', ' }}
+          }
+        </p>
+      }
+    </div>
+  } @else {
+    <p class="muted">Loading…</p>
+  }
+</section>

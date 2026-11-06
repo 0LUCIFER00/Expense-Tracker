@@ -29,6 +29,8 @@ export interface BalanceAccount {
 export type ExpenseStatus = 'Done' | 'Pending / Waiting Admin';
 
 export interface Expense {
+  /** Only on the answer to adding or approving one: budget thresholds it crossed. */
+  budgetAlerts?: BudgetAlert[];
   id: string;
   amount: number;
   description: string;
@@ -124,6 +126,10 @@ export interface Settings {
   updatePermissionUser: boolean;
   viewPermissionUser: boolean;
   removePermissionUser: boolean;
+  /** May create, change and remove budgets; seeing them needs nothing. */
+  budgetUserAccess: boolean;
+  /** Add a budget alert line to WhatsApp replies. A preference, off by default. */
+  whatsappBudgetAlerts: boolean;
 }
 
 /**
@@ -139,7 +145,9 @@ export const DEFAULT_SETTINGS: Settings = {
   expenseUserAccess: true,
   updatePermissionUser: true,
   viewPermissionUser: true,
-  removePermissionUser: true
+  removePermissionUser: true,
+  budgetUserAccess: true,
+  whatsappBudgetAlerts: false
 };
 
 /** Money coming in: the mirror of an Expense. */
@@ -176,4 +184,90 @@ export interface NewIncome {
   splitExpenseId?: string | null;
   /** The browser's UTC offset, so the server knows what "today" is here. */
   tzOffset: number;
+}
+
+// ----------------------------------------------------------------- budgets
+
+/** Green under 70%, orange from 70%, red at 100% and over. */
+export type BudgetStatus = 'on-track' | 'near' | 'over';
+
+/** One category's budget for a month, worked out by the API. */
+export interface BudgetLine {
+  category: string;
+  budget: number;
+  spent: number;
+  /** Negative when over. */
+  remaining: number;
+  percent: number;
+  status: BudgetStatus;
+}
+
+/** A threshold already announced this month. 101 stands for "over". */
+export interface BudgetAlertRecord {
+  scope: string;
+  threshold: number;
+  spent: number;
+  at: string;
+}
+
+/** A month as the Budgets page and Home show it. All figures from the API. */
+export interface BudgetMonth {
+  month: string;
+  exists: boolean;
+  /** The overall limit, when one is set. */
+  overall: number | null;
+  /** No overall limit: the category limits together stand for the month. */
+  fromCategories: boolean;
+  total: number | null;
+  spent: number;
+  remaining: number | null;
+  percent: number | null;
+  status: BudgetStatus | null;
+  allocated: number;
+  overCount: number;
+  categories: BudgetLine[];
+  unbudgeted: { category: string; spent: number }[];
+  alerts: BudgetAlertRecord[];
+  canManage: boolean;
+}
+
+/** What the edit form saves. */
+export interface BudgetDraft {
+  total: number | null;
+  categories: { category: string; amount: number }[];
+}
+
+/** The latest earlier budget, offered for copying. */
+export interface PreviousBudget extends BudgetDraft {
+  month: string;
+}
+
+export interface BudgetHistoryMonth {
+  month: string;
+  total: number | null;
+  spent: number;
+  percent: number | null;
+  status: BudgetStatus | null;
+  over: number;
+  categories: BudgetLine[];
+}
+
+export interface BudgetHistory {
+  months: BudgetHistoryMonth[];
+  comparison: {
+    month: string;
+    previousMonth: string;
+    spent: number;
+    previousSpent: number;
+    difference: number;
+  } | null;
+  totalOverspend: number;
+  oftenOver: { category: string; overMonths: number; budgetedMonths: number }[];
+}
+
+/** A threshold an expense has just carried a budget past, ready to show. */
+export interface BudgetAlert {
+  scope: string;
+  threshold: number;
+  message: string;
 }

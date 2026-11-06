@@ -1,0 +1,77 @@
+<section class="card editor" aria-labelledby="editor-title">
+  <h2 class="title" id="editor-title">Budget for {{ monthName }}</h2>
+
+  @if (copiedFrom) {
+    <p class="copied">
+      Copied from {{ copiedName }}. Check the amounts — nothing is saved until you
+      press Save.
+    </p>
+  }
+
+  <div class="field">
+    <label class="et-field-label" for="budget-total">Overall budget <span class="optional">(optional)</span></label>
+    <div class="money">
+      <span class="rupee" aria-hidden="true">₹</span>
+      <input id="budget-total" class="et-field tnum" type="text" inputmode="decimal"
+        [(ngModel)]="total" [disabled]="busy" placeholder="30000" autocomplete="off">
+    </div>
+    @if (tried && totalError) {
+      <p class="et-field-error">{{ totalError }}</p>
+    }
+  </div>
+
+  <div class="categories">
+    <div class="categories-head">
+      <span class="et-field-label">Categories</span>
+      <span class="allocated tnum">
+        Allocated ₹{{ allocated | number: '1.0-2' }}{{ totalValue !== null ? ' of ₹' + (totalValue | number: '1.0-2') : '' }}
+      </span>
+    </div>
+
+    @for (row of rows; track row.category) {
+      <div class="row">
+        <label class="row-name" [for]="'budget-' + row.category">{{ row.category }}</label>
+        <div class="money">
+          <span class="rupee" aria-hidden="true">₹</span>
+          <input class="et-field tnum" type="text" inputmode="decimal" [id]="'budget-' + row.category"
+            [(ngModel)]="row.amount" [disabled]="busy" placeholder="5000" autocomplete="off">
+        </div>
+        <button type="button" class="remove" (click)="onRemove(row)" [disabled]="busy"
+          [attr.aria-label]="'Remove ' + row.category">Remove</button>
+        @if (tried && rowError(row)) {
+          <p class="et-field-error row-error">{{ rowError(row) }}</p>
+        }
+      </div>
+    } @empty {
+      <p class="hint">No category limits yet. Add one below, or set only the overall budget.</p>
+    }
+
+    @if (available.length) {
+      <div class="add">
+        <label class="sr-only" for="budget-add">Category to add</label>
+        <select id="budget-add" class="et-field" [(ngModel)]="adding" [disabled]="busy">
+          <option value="">Add a category…</option>
+          @for (name of available; track name) {
+            <option [value]="name">{{ name }}</option>
+          }
+        </select>
+        <button type="button" class="et-btn-ghost" (click)="onAdd()" [disabled]="!adding || busy">Add</button>
+      </div>
+    }
+
+    @if (overAllocated) {
+      <p class="warning">The categories add up to more than the overall budget.</p>
+    }
+  </div>
+
+  @if (tried && isEmpty) {
+    <p class="et-field-error">Set an overall budget or at least one category.</p>
+  }
+
+  <div class="actions">
+    <button type="button" class="et-btn-ghost" (click)="cancel.emit()" [disabled]="busy">Cancel</button>
+    <button type="button" class="et-btn-primary" (click)="onSave()" [disabled]="busy">
+      {{ busy ? 'Saving…' : 'Save budget' }}
+    </button>
+  </div>
+</section>

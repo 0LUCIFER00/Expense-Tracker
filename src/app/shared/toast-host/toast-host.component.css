@@ -34,6 +34,11 @@
   border-color: var(--bad);
 }
 
+/* Amber, like a budget's "near" state: worth noticing, nothing failed. */
+.toast.warning {
+  border-color: var(--warn-ink);
+}
+
 @keyframes toast-in {
   from {
     opacity: 0;
@@ -62,6 +67,10 @@
   background-color: var(--bad-soft);
 }
 
+.toast.warning .toast-icon {
+  background-color: var(--warn-soft);
+}
+
 .toast-icon svg {
   fill: none;
   stroke: var(--good-ink);
@@ -72,6 +81,10 @@
 
 .toast.error .toast-icon svg {
   stroke: var(--bad-ink);
+}
+
+.toast.warning .toast-icon svg {
+  stroke: var(--warn-ink);
 }
 
 .toast-text {

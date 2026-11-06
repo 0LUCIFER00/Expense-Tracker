@@ -2,7 +2,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { BalanceAccount, Expense, SplitSummary } from '../shared/models';
+import { BalanceAccount, BudgetMonth, Expense, SplitSummary } from '../shared/models';
+import { BudgetService, currentMonthKey } from '../shared/budget.service';
 import { CategoryTotal, ExpenseService, personalAmount } from '../shared/expense.service';
 import { BalanceService } from '../shared/balance.service';
 import { SettingsService } from '../shared/settings.service';
@@ -47,6 +48,7 @@ export class HomeComponent implements OnInit {
   private readonly balanceService = inject(BalanceService);
   private readonly settingsService = inject(SettingsService);
   private readonly whatsappService = inject(WhatsappService);
+  private readonly budgetService = inject(BudgetService);
   private readonly toast = inject(ToastService);
 
   /** Null until the first load finishes, so neither layout renders half-made. */
@@ -61,15 +63,18 @@ export class HomeComponent implements OnInit {
       // to null rather than taking the whole page down.
       whatsapp: this.whatsappService.status().pipe(catchError(() => of(null))),
       // Likewise: without it the split rows just do not open.
-      splits: this.expenseService.listSplits().pipe(catchError(() => of([])))
+      splits: this.expenseService.listSplits().pipe(catchError(() => of([]))),
+      // And again: a budget that fails to load hides its card, nothing more.
+      budget: this.budgetService.month(currentMonthKey()).pipe(catchError(() => of(null)))
     }).subscribe({
-      next: ({ expenses, balances, whatsapp, splits }) => {
+      next: ({ expenses, balances, whatsapp, splits, budget }) => {
         this.data = this.summarise(
           expenses,
           // Unsaved rows are drafts on the Money Management page, not accounts.
           balances.filter(account => account.saved),
           Boolean(whatsapp?.available && !whatsapp?.connected),
-          splits
+          splits,
+          budget
         );
       },
       error: error => {
@@ -82,7 +87,8 @@ export class HomeComponent implements OnInit {
     expenses: Expense[],
     accounts: BalanceAccount[],
     offerWhatsapp: boolean,
-    splits: SplitSummary[] = []
+    splits: SplitSummary[] = [],
+    budget: BudgetMonth | null = null
   ): DashboardData {
     const now = new Date();
 
@@ -127,7 +133,8 @@ export class HomeComponent implements OnInit {
       projected: this.project(spent, now),
       pending: expenses.filter(expense => expense.isPendingApproval).length,
 
-      offerWhatsapp
+      offerWhatsapp,
+      budget
     };
   }
 

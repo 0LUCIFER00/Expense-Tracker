@@ -15,10 +15,18 @@ import { SplitHistoryComponent } from '../../shared/split-history/split-history.
  * Categories are one stacked bar rather than a list: one category fills it, six
  * divide it, and neither looks like a mistake.
  */
+import { BudgetSummaryComponent } from '../budget-summary/budget-summary.component';
+
 @Component({
   selector: 'app-balances-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, SpendChartComponent, SplitHistoryComponent],
+  imports: [
+    CommonModule,
+    RouterModule,
+    SpendChartComponent,
+    SplitHistoryComponent,
+    BudgetSummaryComponent
+  ],
   templateUrl: './balances-layout.component.html',
   styleUrl: './balances-layout.component.css'
 })

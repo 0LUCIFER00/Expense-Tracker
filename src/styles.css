@@ -601,3 +601,58 @@ html[data-theme='dark'] {
   color: var(--ink-2);
   line-height: 1.45;
 }
+
+/* ===================== Budgets: meters and status ===================== */
+/*
+ * Shared by the Budgets page, its history and the Home card, so a status reads
+ * the same everywhere: green under 70%, amber from 70%, red at 100% and over.
+ * The colour is always paired with a word or a figure, never on its own.
+ */
+.et-meter {
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background-color: var(--sunken);
+  overflow: hidden;
+}
+
+.et-meter-fill {
+  display: block;
+  height: 100%;
+  max-width: 100%;
+  border-radius: 999px;
+  background-color: var(--good);
+}
+
+.et-meter-fill[data-status='near'] {
+  background-color: var(--warn-ink);
+}
+
+.et-meter-fill[data-status='over'] {
+  background-color: var(--bad);
+}
+
+.et-status {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  white-space: nowrap;
+  background-color: var(--good-soft);
+  color: var(--good-ink);
+}
+
+.et-status[data-status='near'] {
+  background-color: var(--warn-soft);
+  color: var(--warn-ink);
+}
+
+.et-status[data-status='over'] {
+  background-color: var(--bad-soft);
+  color: var(--bad-ink);
+}
+
+.et-over {
+  color: var(--bad-ink);
+}

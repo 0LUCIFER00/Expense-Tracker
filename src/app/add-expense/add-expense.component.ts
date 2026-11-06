@@ -258,6 +258,11 @@ export class AddExpenseComponent implements OnInit {
               : outcome
           );
 
+          // A budget this expense just carried past 50/80/100% or over.
+          for (const alert of expense.budgetAlerts ?? []) {
+            this.toast.warning(alert.message);
+          }
+
           this.resetForm();
         },
         error: error => {

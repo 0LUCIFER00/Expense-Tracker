@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
-export type ToastKind = 'success' | 'error';
+export type ToastKind = 'success' | 'error' | 'warning';
 
 export interface Toast {
   id: number;
@@ -10,7 +10,7 @@ export interface Toast {
 }
 
 /** How long each kind stays up. An error gets longer: there is more to read. */
-const LIFETIME = { success: 4000, error: 7000 } as const;
+const LIFETIME = { success: 4000, error: 7000, warning: 7000 } as const;
 
 /**
  * The app's notifications.
@@ -35,6 +35,11 @@ export class ToastService {
 
   error(text: string): void {
     this.show('error', text);
+  }
+
+  /** Something worth noticing that is not a failure, such as a budget alert. */
+  warning(text: string): void {
+    this.show('warning', text);
   }
 
   dismiss(id: number): void {

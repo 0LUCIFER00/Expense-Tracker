@@ -69,6 +69,10 @@
     </section>
 
     <div class="side">
+      <!-- This month against its budget. Hidden if the budget could not load. -->
+      @if (data.budget) {
+        <app-budget-summary [budget]="data.budget"></app-budget-summary>
+      }
 
       <!-- One bar, not a list: one category fills it, six divide it. -->
       <section class="card spend-card">

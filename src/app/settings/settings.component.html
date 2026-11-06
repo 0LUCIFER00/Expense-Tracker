@@ -13,6 +13,126 @@
     sign in with the full-access password.
   </p>
 
+  <!-- First: it is what people come here for most. -->
+  @if (whatsappStatus) {
+    <section class="card whatsapp-card">
+      <div class="whatsapp-head">
+        <span class="whatsapp-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path d="M21 11.6a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-5A8.5 8.5 0 1 1 21 11.6Z" />
+          </svg>
+        </span>
+        <h2 class="card-title">Add expenses over WhatsApp</h2>
+        <span class="chip" [class.on]="whatsappStatus.connected">
+          {{ whatsappStatus.connected ? 'Connected' : 'Not connected' }}
+        </span>
+      </div>
+      @if (!whatsappStatus.available) {
+        <p class="card-body">
+          The server has no WhatsApp credentials configured yet, so this cannot be
+          switched on.
+        </p>
+      }
+      @if (whatsappStatus.available) {
+        @if (whatsappStatus.connected) {
+          <p class="card-body">
+            Messages from <strong class="tnum">{{ whatsappStatus.number }}</strong> are
+            added to this account.
+          </p>
+        }
+        @if (!whatsappStatus.connected && !whatsappCode) {
+          <p class="card-body">
+            Connect your phone and you can add an expense by sending a message, without
+            signing in.
+          </p>
+        }
+        <div class="command-row">
+          <span class="command tnum">250 coffee hdfc</span>
+          <span class="command tnum">balance</span>
+          <span class="command tnum">today</span>
+          <span class="command tnum">undo</span>
+        </div>
+        @if (whatsappCode && !whatsappStatus.connected) {
+          <div class="link-code">
+            @if (whatsappChatUrl) {
+              <p>
+                Tap below to open WhatsApp with the message ready, then just press send:
+              </p>
+            }
+            @if (!whatsappChatUrl) {
+              <p>
+                Send this message to
+                @if (whatsappBusinessNumber) {
+                  <strong>+{{ whatsappBusinessNumber }}</strong>
+                }
+                @if (!whatsappBusinessNumber) {
+                  <strong>our WhatsApp number</strong>
+                }
+                from the phone you want to link:
+              </p>
+            }
+            <p class="command tnum code">link {{ whatsappCode }}</p>
+            <p class="card-note">Expires in {{ whatsappCodeMinutes }} minutes.</p>
+          </div>
+        }
+        <div class="whatsapp-actions">
+          @if (whatsappChatUrl && !whatsappStatus.connected) {
+            <a class="et-btn-primary"
+              [href]="whatsappChatUrl" target="_blank" rel="noopener">
+              Open WhatsApp
+            </a>
+          }
+          @if (!whatsappStatus.connected) {
+            <button type="button" class="et-btn-primary"
+              [disabled]="whatsappBusy" (click)="onConnectWhatsapp()">
+              {{ whatsappCode ? 'Get a new code' : 'Connect WhatsApp' }}
+            </button>
+          }
+          @if (whatsappCode && !whatsappStatus.connected) {
+            <button type="button" class="et-btn-ghost"
+              (click)="onRefreshWhatsapp()">
+              I've sent it — check now
+            </button>
+          }
+          @if (whatsappStatus.connected) {
+            <button type="button" class="et-btn-danger"
+              [disabled]="whatsappBusy" (click)="onDisconnectWhatsapp()">
+              Disconnect
+            </button>
+          }
+          <a class="card-link" routerLink="/help_support">What else can I send?</a>
+        </div>
+
+        <!--
+        About WhatsApp replies, so it lives with WhatsApp. Saved with the other
+        switches, so changing it needs the full-access password like them.
+        -->
+        <div class="settings-row budget-alerts-row">
+          <div class="setting-label">
+            <span class="setting-name">Budget alerts on WhatsApp</span>
+            <span class="setting-note">
+              Adds one line to the reply after an expense when a budget passes 50%,
+              80%, 100% or goes over, like
+              <span class="command tnum">Travel is at 82% of its ₹3,000 budget — ₹540 left.</span>
+              Never sends a message on its own.
+              @if (!isAdminSession) {
+                <strong>Changing it needs your full-access password.</strong>
+              }
+            </span>
+          </div>
+          <div class="setting-toggle">
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="whatsappBudgetAlerts"
+                [disabled]="!isAdminSession" (change)="onAccessChange()">
+              <span class="slider"></span>
+              <span class="sr-only">Budget alerts on WhatsApp</span>
+            </label>
+          </div>
+        </div>
+      }
+    </section>
+  }
+
   <section class="card">
 
     <div class="admin-row">
@@ -159,6 +279,22 @@
           </label>
         </div>
       </div>
+      <div class="settings-row">
+        <div class="setting-label">
+          <span class="setting-name">Manage budgets</span>
+          <span class="setting-note">
+            Create, change and remove monthly budgets. Without it, budgets and
+            progress can still be seen, not changed.
+          </span>
+        </div>
+        <div class="setting-toggle">
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="budgetUserAccess" (change)="onAccessChange()">
+            <span class="slider"></span>
+            <span class="sr-only">Manage budgets</span>
+          </label>
+        </div>
+      </div>
       <p class="card-note">
         Each row says what it does in plain words. Signed in with your full-access
         password you always have everything, so there is nothing to set for yourself.
@@ -167,97 +303,6 @@
 
   </section>
 
-  @if (whatsappStatus) {
-    <section class="card whatsapp-card">
-      <div class="whatsapp-head">
-        <span class="whatsapp-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="20" height="20">
-            <path d="M21 11.6a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-5A8.5 8.5 0 1 1 21 11.6Z" />
-          </svg>
-        </span>
-        <h2 class="card-title">Add expenses over WhatsApp</h2>
-        <span class="chip" [class.on]="whatsappStatus.connected">
-          {{ whatsappStatus.connected ? 'Connected' : 'Not connected' }}
-        </span>
-      </div>
-      @if (!whatsappStatus.available) {
-        <p class="card-body">
-          The server has no WhatsApp credentials configured yet, so this cannot be
-          switched on.
-        </p>
-      }
-      @if (whatsappStatus.available) {
-        @if (whatsappStatus.connected) {
-          <p class="card-body">
-            Messages from <strong class="tnum">{{ whatsappStatus.number }}</strong> are
-            added to this account.
-          </p>
-        }
-        @if (!whatsappStatus.connected && !whatsappCode) {
-          <p class="card-body">
-            Connect your phone and you can add an expense by sending a message, without
-            signing in.
-          </p>
-        }
-        <div class="command-row">
-          <span class="command tnum">250 coffee hdfc</span>
-          <span class="command tnum">balance</span>
-          <span class="command tnum">today</span>
-          <span class="command tnum">undo</span>
-        </div>
-        @if (whatsappCode && !whatsappStatus.connected) {
-          <div class="link-code">
-            @if (whatsappChatUrl) {
-              <p>
-                Tap below to open WhatsApp with the message ready, then just press send:
-              </p>
-            }
-            @if (!whatsappChatUrl) {
-              <p>
-                Send this message to
-                @if (whatsappBusinessNumber) {
-                  <strong>+{{ whatsappBusinessNumber }}</strong>
-                }
-                @if (!whatsappBusinessNumber) {
-                  <strong>our WhatsApp number</strong>
-                }
-                from the phone you want to link:
-              </p>
-            }
-            <p class="command tnum code">link {{ whatsappCode }}</p>
-            <p class="card-note">Expires in {{ whatsappCodeMinutes }} minutes.</p>
-          </div>
-        }
-        <div class="whatsapp-actions">
-          @if (whatsappChatUrl && !whatsappStatus.connected) {
-            <a class="et-btn-primary"
-              [href]="whatsappChatUrl" target="_blank" rel="noopener">
-              Open WhatsApp
-            </a>
-          }
-          @if (!whatsappStatus.connected) {
-            <button type="button" class="et-btn-primary"
-              [disabled]="whatsappBusy" (click)="onConnectWhatsapp()">
-              {{ whatsappCode ? 'Get a new code' : 'Connect WhatsApp' }}
-            </button>
-          }
-          @if (whatsappCode && !whatsappStatus.connected) {
-            <button type="button" class="et-btn-ghost"
-              (click)="onRefreshWhatsapp()">
-              I've sent it — check now
-            </button>
-          }
-          @if (whatsappStatus.connected) {
-            <button type="button" class="et-btn-danger"
-              [disabled]="whatsappBusy" (click)="onDisconnectWhatsapp()">
-              Disconnect
-            </button>
-          }
-          <a class="card-link" routerLink="/help_support">What else can I send?</a>
-        </div>
-      }
-    </section>
-  }
 
 </div>
 

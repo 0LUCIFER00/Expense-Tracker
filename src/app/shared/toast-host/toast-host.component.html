@@ -5,13 +5,13 @@ screen reader mid-sentence to say "saved" helps nobody.
 <div class="toast-stack" role="status" aria-live="polite">
   @for (toast of toasts$ | async; track toast.id) {
     <div class="toast"
-      [class.error]="toast.kind === 'error'">
+      [class.error]="toast.kind === 'error'" [class.warning]="toast.kind === 'warning'">
       <span class="toast-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="16" height="16">
           @if (toast.kind === 'success') {
             <path d="m5 12.5 4.5 4.5L19 7" />
           }
-          @if (toast.kind === 'error') {
+          @if (toast.kind === 'error' || toast.kind === 'warning') {
             <ng-container>
               <path d="M12 7.5v5.5" />
               <path d="M12 16.4v.2" />

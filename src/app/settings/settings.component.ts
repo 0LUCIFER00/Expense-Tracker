@@ -34,6 +34,10 @@ export class SettingsComponent implements OnInit {
   viewPermissionUser = true;
 
   removePermissionUser = true;
+  /** May a normal sign-in change budgets. */
+  budgetUserAccess = true;
+  /** A line about budgets on WhatsApp replies. Off unless turned on. */
+  whatsappBudgetAlerts = false;
 
   isEnabled = false;
   showPopup = false;
@@ -154,6 +158,8 @@ export class SettingsComponent implements OnInit {
     this.updatePermissionUser = settings.updatePermissionUser;
     this.viewPermissionUser = settings.viewPermissionUser;
     this.removePermissionUser = settings.removePermissionUser;
+    this.budgetUserAccess = settings.budgetUserAccess;
+    this.whatsappBudgetAlerts = settings.whatsappBudgetAlerts;
   }
 
   onAccessChange(): void {
@@ -165,7 +171,9 @@ export class SettingsComponent implements OnInit {
         expenseUserAccess: this.addExpenseUserAccess,
         updatePermissionUser: this.updatePermissionUser,
         viewPermissionUser: this.viewPermissionUser,
-        removePermissionUser: this.removePermissionUser
+        removePermissionUser: this.removePermissionUser,
+        budgetUserAccess: this.budgetUserAccess,
+        whatsappBudgetAlerts: this.whatsappBudgetAlerts
       })
       .subscribe({
         next: settings => {
