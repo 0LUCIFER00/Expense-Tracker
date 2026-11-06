@@ -220,9 +220,9 @@ describe('HomeComponent', () => {
   });
 
   describe('the rest of the summary', () => {
-    // Twelve is what the ledger layout's table can show; the other layout
-    // draws as many as its card has room for.
-    it('caps the list at twelve, most recently spent first', () => {
+    // Five, so the Budget card above keeps its full height on a laptop.
+    // Transactions has the rest.
+    it('caps the list at five, most recently spent first', () => {
       load(
         Array.from({ length: 15 }, (_, i) =>
           expense({ id: `e${i}`, date: `2026-10-${String(i + 10).padStart(2, '0')}` })
@@ -231,8 +231,8 @@ describe('HomeComponent', () => {
 
       const ids = data().recent.map(e => e.id);
 
-      expect(ids.length).toBe(12);
-      expect(ids.slice(0, 3)).toEqual(['e14', 'e13', 'e12']);
+      expect(ids.length).toBe(5);
+      expect(ids).toEqual(['e14', 'e13', 'e12', 'e11', 'e10']);
     });
 
     // Two entries on the same day fall back to the order they were added.

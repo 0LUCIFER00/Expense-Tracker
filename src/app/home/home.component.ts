@@ -247,8 +247,9 @@ export class HomeComponent implements OnInit {
    * lists 12 Oct above 2 Nov reads as a bug. Two on the same day fall back to
    * the order they were added.
    *
-   * Twelve rather than five: each layout draws as many as its card has room
-   * for, and a tall window has room for more than a short one.
+   * Five: enough to see what just happened, and short enough that the Budget
+   * card above keeps its full height on a laptop screen. Everything else is a
+   * click away on Transactions.
    */
   private toRecent(expenses: Expense[]): Expense[] {
     return [...expenses]
@@ -260,6 +261,6 @@ export class HomeComponent implements OnInit {
           ? byDate
           : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       })
-      .slice(0, 12);
+      .slice(0, 5);
   }
 }
