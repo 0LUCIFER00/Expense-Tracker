@@ -17,7 +17,14 @@ export const FLAGS = {
   expenseUserAccess: 'expense_user_access',
   updatePermissionUser: 'update_permission_user',
   viewPermissionUser: 'view_permission_user',
-  removePermissionUser: 'remove_permission_user'
+  removePermissionUser: 'remove_permission_user',
+  /** May create, change and remove budgets. Seeing them needs no switch. */
+  budgetUserAccess: 'budget_user_access',
+  /**
+   * A preference rather than a permission: add a budget alert line to the
+   * WhatsApp reply after an expense. Off by default; never a message of its own.
+   */
+  whatsappBudgetAlerts: 'whatsapp_budget_alerts'
 };
 
 export const COLUMNS = Object.values(FLAGS).join(', ');
@@ -138,7 +145,13 @@ export function permissionsFor(settings, loginType) {
      * moving money by spending must not be able to move it by retyping it.
      */
     canManageBalances:
-      admin || (settings.balanceUserAccess && settings.expenseUserAccess)
+      admin || (settings.balanceUserAccess && settings.expenseUserAccess),
+
+    /** Budgets show spending, not balances, so only changing them is gated. */
+    canManageBudgets: admin || Boolean(settings.budgetUserAccess),
+
+    /** The account's own choice, the same whichever way it signed in. */
+    whatsappBudgetAlerts: Boolean(settings.whatsappBudgetAlerts)
   };
 }
 

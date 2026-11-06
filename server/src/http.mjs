@@ -44,7 +44,7 @@ const DECIMAL_TEXT = /^\d+(\.\d+)?$/;
  * `[5]` into 5 and "0x10" into 16, and accepted 0.001, which rounds to nothing
  * and then failed the database's amount > 0 check as a 500.
  */
-export function parseAmount(value) {
+export function parseAmount(value, { max = AMOUNT_MAX } = {}) {
   let amount;
 
   if (typeof value === 'number') {
@@ -55,7 +55,7 @@ export function parseAmount(value) {
     return null;
   }
 
-  if (!Number.isFinite(amount) || amount > AMOUNT_MAX) {
+  if (!Number.isFinite(amount) || amount > max) {
     return null;
   }
 

@@ -63,6 +63,8 @@ function linkedUser(flags = {}) {
     { id: 'acc-1', type: 'Bank Account', category: 'HDFC Bank', balance: 5000 }
   ]);
   db.on(/from user_settings where user_id/, () => [settingsRow(flags)]);
+  // No budget unless a test sets one up.
+  db.on(/from monthly_budgets\s+where user_id = \$1 and month = \$2/, () => []);
 }
 
 test.beforeEach(() => {
@@ -213,4 +215,45 @@ test('every text message in a batched delivery is picked up (L6)', () => {
   assert.deepEqual(extractTextMessages(body).map(m => m.messageId), ['a', 'c', 'd']);
   assert.deepEqual(extractTextMessages({}), []);
   assert.deepEqual(extractTextMessages({ entry: 'nonsense' }), []);
+});
+
+// ------------------------------------------------------------ budget alerts
+
+/** A Travel budget of ₹3,000 with ₹2,460 spent, whose 80% threshold is new. */
+function travelBudgetAt82() {
+  db.on(/insert into expenses/, () => [{ id: 'exp-9', category: 'Travel' }]);
+  db.on(/from monthly_budgets\s+where user_id = \$1 and month = \$2/, () => [
+    { id: 'budget-1', total_budget: null }
+  ]);
+  db.on(/from category_budgets\s+where monthly_budget_id/, () => [
+    { category: 'Travel', amount: 3000 }
+  ]);
+  db.on(/from expenses\s+where user_id = \$1 and spent_on >= \$2/, () => [
+    { category: 'Travel', status: 'done', spent: 2460 }
+  ]);
+  db.on(/insert into budget_alerts/, () => [
+    { scope: 'Travel', threshold: 50 },
+    { scope: 'Travel', threshold: 80 }
+  ]);
+}
+
+test('with budget alerts on, the reply gains one alert line', async () => {
+  linkedUser({ whatsapp_budget_alerts: true });
+  travelBudgetAt82();
+
+  await handleMessage(message('460 cab'));
+
+  assert.equal(replies.length, 1, 'still one message, not two');
+  assert.match(replies[0], /⚠️ Travel is at 82% of its ₹3,000 budget — ₹540 left\./);
+});
+
+test('with budget alerts off, the reply is unchanged but the alert is still recorded', async () => {
+  linkedUser({ whatsapp_budget_alerts: false });
+  travelBudgetAt82();
+
+  await handleMessage(message('460 cab'));
+
+  assert.equal(replies.length, 1);
+  assert.doesNotMatch(replies[0], /budget/);
+  assert.equal(db.ran(/insert into budget_alerts/).length, 1, 'the Budgets page still lists it');
 });

@@ -75,6 +75,8 @@ export function settingsRow(overrides = {}) {
     update_permission_user: true,
     view_permission_user: true,
     remove_permission_user: true,
+    budget_user_access: true,
+    whatsapp_budget_alerts: false,
     ...overrides
   };
 }

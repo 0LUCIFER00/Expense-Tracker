@@ -9,6 +9,7 @@ import { afterResponse } from '../after-response.mjs';
 import { HELP_TEXT, parseMessage } from '../whatsapp/parser.mjs';
 import { guessCategory, guessIncomeCategory } from '../categories.mjs';
 import { matchSplit, splitAmount } from '../split.mjs';
+import { checkBudgetAlertsSafely } from '../budget-store.mjs';
 import { listOpenSplits, listSplits } from '../split-store.mjs';
 import {
   WHATSAPP_VERIFY_TOKEN,
@@ -560,9 +561,19 @@ Nothing was recorded.`
 ${result.source.category} now ${money(result.remaining)}`
         : '';
 
+    /*
+     * Always recorded, so the Budgets page lists it; only mentioned here when
+     * the account turned "Budget alerts on WhatsApp" on. Even then it is a line
+     * on this reply, which is being sent anyway — never a message of its own.
+     */
+    const alerts = await checkBudgetAlertsSafely(user.id, todayInIndia());
+    const alertLines = permissions.whatsappBudgetAlerts && alerts.length
+      ? '\n' + alerts.map(alert => `\n⚠️ ${alert.message}`).join('')
+      : '';
+
     return sendText(
       from,
-      `✅ ${money(parsed.amount)} · ${parsed.description}${where}${filedAs}${splitLine}${after}\n\nSend *undo* to remove it.`
+      `✅ ${money(parsed.amount)} · ${parsed.description}${where}${filedAs}${splitLine}${after}${alertLines}\n\nSend *undo* to remove it.`
     );
   } catch (error) {
     console.error('[whatsapp] add expense failed', error);

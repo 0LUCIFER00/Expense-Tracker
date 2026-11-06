@@ -12,6 +12,16 @@ import {
 } from '../http.mjs';
 import { effectivePermissions } from '../settings-store.mjs';
 import { removeExpense } from '../expense-store.mjs';
+import { checkBudgetAlertsSafely } from '../budget-store.mjs';
+
+/** Thresholds just crossed, as the page shows them: the sentence and its weight. */
+function alertsForApi(alerts) {
+  return alerts.map(alert => ({
+    scope: alert.scope,
+    threshold: alert.threshold,
+    message: alert.message
+  }));
+}
 import { CATEGORIES, normaliseCategory } from '../categories.mjs';
 import { MAX_MEMBERS, MIN_MEMBERS, parseMembers, splitAmount } from '../split.mjs';
 import { listSplits } from '../split-store.mjs';
@@ -209,7 +219,13 @@ expensesRouter.post('/', asyncRoute(async (req, res) => {
       return rows[0];
     });
 
-    res.status(201).json(toApi(created, permissions));
+    // After the commit, so the check never holds the account lock. Only a
+    // settled expense counts towards a budget; a pending one waits.
+    const budgetAlerts = created.status === 'done'
+      ? await checkBudgetAlertsSafely(req.session.userId, created.spent_on)
+      : [];
+
+    res.status(201).json({ ...toApi(created, permissions), budgetAlerts: alertsForApi(budgetAlerts) });
   } catch (error) {
     if (error.status) {
       return res.status(error.status).json({ error: error.message });
@@ -286,7 +302,10 @@ expensesRouter.post('/:id/approve', asyncRoute(async (req, res) => {
       return updated.rows[0];
     });
 
-    res.json(toApi(approved, permissions));
+    // Approval is when a pending expense starts counting towards its month.
+    const budgetAlerts = await checkBudgetAlertsSafely(req.session.userId, approved.spent_on);
+
+    res.json({ ...toApi(approved, permissions), budgetAlerts: alertsForApi(budgetAlerts) });
   } catch (error) {
     if (error.status) {
       return res.status(error.status).json({ error: error.message });
