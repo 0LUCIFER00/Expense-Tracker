@@ -1,5 +1,5 @@
-import { DOCUMENT } from '@angular/common';
-import { Directive, OnDestroy, OnInit, inject } from '@angular/core';
+
+import { Directive, OnDestroy, OnInit, inject, DOCUMENT } from '@angular/core';
 
 /**
  * Marks a page that is meant to fit the window without the page scrolling.
