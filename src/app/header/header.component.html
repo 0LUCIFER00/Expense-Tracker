@@ -2,15 +2,15 @@
   <div class="logo">Expense Tracker</div>
 
   <nav class="nav-links" [class.open]="menuOpen" id="primary-nav">
-    <a routerLink="/home" (click)="closeMenu()">Home</a>
-    <a routerLink="/add-expense" (click)="closeMenu()">Add Expense</a>
+    <a routerLink="/home" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Home</a>
+    <a routerLink="/add-expense" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Add Expense</a>
     @if (showAddMoney) {
-      <a routerLink="/add-money" (click)="closeMenu()">Add Income</a>
+      <a routerLink="/add-money" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Add Income</a>
     }
-    <a routerLink="/transactions" (click)="closeMenu()">Transactions</a>
-    <a routerLink="/budgets" (click)="closeMenu()">Budgets</a>
+    <a routerLink="/transactions" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Transactions</a>
+    <a routerLink="/budgets" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Budgets</a>
     @if (showBalanceManagement) {
-      <a routerLink="/money" (click)="closeMenu()">Cash &amp; Accounts</a>
+      <a routerLink="/money" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Cash &amp; Accounts</a>
     }
   </nav>
 

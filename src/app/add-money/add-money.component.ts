@@ -77,7 +77,8 @@ export class AddMoneyComponent implements OnInit {
       next: ({ balances, categories, incomes, splits }) => {
         this.accounts = balances.filter(account => account.saved);
         this.categories = categories;
-        this.recent = incomes.slice(0, 6);
+        // The latest three, as on Home; Transactions has the rest.
+        this.recent = incomes.slice(0, 3);
         this.openSplits = splits.filter(split => split.remaining > 0);
 
         // Shown either way so it can be found, but only choosable when there

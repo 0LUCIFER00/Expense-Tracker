@@ -30,7 +30,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px 15px;
+  gap: 4px 6px;
   margin-left: auto;
 }
 
@@ -38,13 +38,35 @@
   color: white;
   text-decoration: none;
   font-weight: 500;
-  padding: 6px 2px;
-  border-radius: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
   white-space: nowrap;
+  transition: background-color .15s ease;
 }
 
+/* A wash, not bold: bold changed the width and nudged the links beside it. */
 .nav-links a:hover {
-  font-weight: bold;
+  background-color: rgba(255, 255, 255, .12);
+}
+
+/*
+ * The page you are on: a soft pill with a white underline, so it reads at a
+ * glance in both themes without a second colour.
+ */
+.nav-links a.active {
+  background-color: rgba(255, 255, 255, .2);
+  box-shadow: inset 0 -2px 0 #fff;
+  font-weight: 700;
+}
+
+/* A clear ring for the keyboard; none for a mouse click. */
+.nav-links a:focus {
+  outline: none;
+}
+
+.nav-links a:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 
 .header-actions {
@@ -144,7 +166,7 @@
 /* Tablet: tighten the gaps before collapsing to a menu. */
 @media (max-width: 1024px) {
   .nav-links {
-    gap: 4px 12px;
+    gap: 4px 2px;
     font-size: 0.95rem;
   }
 }
@@ -183,7 +205,11 @@
 
   .nav-links a:hover {
     background: rgba(255, 255, 255, .15);
-    font-weight: 500;
+  }
+
+  /* In the menu the underline becomes a bar down the left edge. */
+  .nav-links a.active {
+    box-shadow: inset 3px 0 0 #fff;
   }
 }
 

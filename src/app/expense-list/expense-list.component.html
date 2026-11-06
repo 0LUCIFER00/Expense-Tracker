@@ -3,41 +3,46 @@
 
   <div class="card">
 
-    <!-- Which half of the ledger. Debit is the old View Expenses page. -->
-    <div class="tab-bar" role="tablist" aria-label="Transactions">
-      @for (t of tabs; track t.value) {
-        <button type="button" role="tab" class="tab"
-          [class.on]="tab === t.value" [attr.aria-selected]="tab === t.value"
-          (click)="onTab(t.value)">
-          {{ t.label }}
-        </button>
-      }
-    </div>
-
+    <!--
+      One line: which half of the ledger, the filters, Export and the totals, so
+      the table below gets the height. The filter labels are for screen
+      readers; on screen the first option says what each one is.
+    -->
     <div class="filter-bar">
+      <!-- Which half of the ledger. Debit is the old View Expenses page. -->
+      <div class="tab-bar" role="tablist" aria-label="Transactions">
+        @for (t of tabs; track t.value) {
+          <button type="button" role="tab" class="tab"
+            [class.on]="tab === t.value" [attr.aria-selected]="tab === t.value"
+            (click)="onTab(t.value)">
+            {{ t.label }}
+          </button>
+        }
+      </div>
+
       <div class="filter">
-        <label for="yearFilter">Year</label>
+        <label class="sr-only" for="yearFilter">Year</label>
         <select id="yearFilter" (change)="onFilterYear($event)">
           @for (y of years; track y.value) {
-            <option [value]="y.value">{{ y.label }}</option>
+            <option [value]="y.value">{{ y.value === 0 ? 'All years' : y.label }}</option>
           }
         </select>
       </div>
 
       <div class="filter">
-        <label for="monthFilter">Month</label>
+        <label class="sr-only" for="monthFilter">Month</label>
         <select id="monthFilter" (change)="onFilterMonth($event)">
           @for (m of months; track m.value) {
-            <option [value]="m.value">{{ m.label }}</option>
+            <option [value]="m.value">{{ m.value === 0 ? 'All months' : m.label }}</option>
           }
         </select>
       </div>
 
       @if (usedCategories.length > 1) {
         <div class="filter">
-          <label for="categoryFilter">Category</label>
+          <label class="sr-only" for="categoryFilter">Category</label>
           <select id="categoryFilter" (change)="onFilterCategory($event)">
-            <option value="">All</option>
+            <option value="">All categories</option>
             @for (name of usedCategories; track name) {
               <option [value]="name"
               [selected]="name === selectedCategory">{{ name }}</option>

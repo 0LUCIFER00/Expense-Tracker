@@ -478,6 +478,21 @@ html[data-theme='dark'] {
   body.fits-screen .add-aside .card {
     padding: 1.125rem 1.25rem;
   }
+
+  /*
+   * Taller than the window, the column used to run on under the footer. Its
+   * other cards keep their size; the recent list gives way and scrolls inside
+   * its own card.
+   */
+  body.fits-screen .add-aside > * {
+    flex-shrink: 0;
+  }
+
+  body.fits-screen .add-aside .recent-card {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
 }
 
 /*
@@ -509,7 +524,8 @@ html[data-theme='dark'] {
     font-size: 1.375rem;
   }
 
-  body.fits-screen .chip {
+  /* Add Expense's chips only; Transactions fits the window too now. */
+  body.fits-screen .add-page .chip {
     min-height: 32px;
     padding: 0 0.75rem;
   }
@@ -690,11 +706,6 @@ html[data-theme='dark'] {
     flex-direction: column;
   }
 
-  body.fits-screen app-expense-list .tab-bar {
-    align-self: flex-start;
-  }
-
-  body.fits-screen app-expense-list .tab-bar,
   body.fits-screen app-expense-list .filter-bar,
   body.fits-screen app-expense-list .table-note,
   body.fits-screen app-expense-list .no-record {
