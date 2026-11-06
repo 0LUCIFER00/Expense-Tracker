@@ -17,11 +17,11 @@
   flex-wrap: wrap;
   background-color: #2196f3;
   color: white;
-  padding: 6px clamp(12px, 3vw, 24px);
+  padding: 10px clamp(12px, 3vw, 24px);
 }
 
 .logo {
-  font-size: clamp(1.1rem, 3vw, 1.3rem);
+  font-size: clamp(1.15rem, 3.5vw, 1.5rem);
   font-weight: bold;
   white-space: nowrap;
 }
@@ -38,8 +38,7 @@
   color: white;
   text-decoration: none;
   font-weight: 500;
-  font-size: 0.9375rem;
-  padding: 4px 2px;
+  padding: 6px 2px;
   border-radius: 6px;
   white-space: nowrap;
 }
@@ -60,8 +59,8 @@
 }
 
 .profile-btn {
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
   border: none;
   border-radius: 50%;
   background: #eef4ff;
@@ -78,13 +77,13 @@
 }
 
 .profile-icon {
-  font-size: 18px;
+  font-size: 22px;
   line-height: 1;
 }
 
 .profile-dropdown {
   position: absolute;
-  top: 44px;
+  top: 50px;
   right: 0;
   width: 220px;
   max-width: calc(100vw - 32px);
@@ -117,8 +116,8 @@
 /* Hamburger — only shown once the links no longer fit on one line. */
 .menu-toggle {
   display: none;
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
   border: none;
   border-radius: 10px;
   background: rgba(255, 255, 255, .18);
@@ -191,23 +190,23 @@
 @media (max-width: 400px) {
   .profile-btn,
   .menu-toggle {
-    width: 34px;
-    height: 34px;
+    width: 38px;
+    height: 38px;
   }
 
   .profile-icon {
-    font-size: 17px;
+    font-size: 19px;
   }
 
   .profile-dropdown {
-    top: 42px;
+    top: 46px;
   }
 }
 
 /* Light/dark switch, same hit area as the account button beside it. */
 .theme-btn {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   flex: 0 0 auto;
   border: none;
   border-radius: 50%;
