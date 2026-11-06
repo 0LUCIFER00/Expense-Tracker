@@ -121,36 +121,30 @@
   margin: 0.25rem 0 0;
 }
 
-/* ---- overview: one strip ---- */
+/* ---- overview: two tight rows ---- */
 
 .overview {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem 1.5rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
 }
 
 .overview.dim {
   opacity: 0.6;
 }
 
-.overview-main {
-  flex: 1 1 360px;
-  min-width: 0;
-}
-
-.overview-top {
+.ov-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  align-items: center;
+  gap: 0.5rem 0.875rem;
 }
 
 .figure {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.375rem;
   font-weight: 800;
 }
 
@@ -161,23 +155,14 @@
 }
 
 .et-meter.big {
+  flex: 1 1 200px;
   height: 10px;
 }
 
-/* On the figure's line, so the strip stays one line plus the meter. */
 .overview-line {
-  flex: 1 1 auto;
   margin: 0;
   font-size: 0.8125rem;
   color: var(--ink-2);
-}
-
-.empty-body,
-.view-only {
-  margin: 0.5rem 0 0;
-  font-size: 0.8125rem;
-  color: var(--ink-2);
-  line-height: 1.5;
 }
 
 .empty-title {
@@ -186,17 +171,32 @@
   font-weight: 800;
 }
 
+.empty-body,
 .view-only {
-  flex: 0 1 260px;
   margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.view-only {
   color: var(--ink-3);
 }
 
+/* On the right of the first row, and smaller than a form's buttons. */
 .actions {
+  margin-left: auto;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+}
+
+.actions .et-btn-primary,
+.actions .et-btn-ghost {
+  min-height: 34px;
+  padding: 0 0.875rem;
+  font-size: 0.8125rem;
 }
 
 .text-btn {

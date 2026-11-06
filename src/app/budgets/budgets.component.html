@@ -45,65 +45,71 @@
       <div class="main-col">
         <!-- The month at a glance, in one strip. -->
         <section class="card overview" [class.dim]="loading">
-          <div class="overview-main">
+          <!-- Row one: the figure and its status, the buttons on the right. -->
+          <div class="ov-row">
             @if (view.total !== null) {
-              <div class="overview-top">
-                <p class="figure tnum">
-                  ₹{{ view.spent | number }}
-                  <span class="of">of ₹{{ view.total | number }}{{ view.fromCategories ? ' (from categories)' : '' }}</span>
-                </p>
-                <p class="overview-line tnum">
-                  @if (isOver) {
-                    <span class="et-over">₹{{ -view.remaining! | number }} over budget</span>
-                  } @else {
-                    ₹{{ view.remaining | number }} left
-                  }
-                  @if (view.overCount) {
-                    · <span class="et-over">{{ view.overCount }} {{ view.overCount === 1 ? 'category' : 'categories' }} over</span>
-                  }
-                  @if (daysToGo) {
-                    · {{ daysToGo }} {{ daysToGo === 1 ? 'day' : 'days' }} to go
-                  }
-                </p>
-                <span class="et-status" [attr.data-status]="view.status">
-                  {{ view.percent | number: '1.0-2' }}% used
-                </span>
-              </div>
+              <p class="figure tnum">
+                ₹{{ view.spent | number }}
+                <span class="of">of ₹{{ view.total | number }}{{ view.fromCategories ? ' (from categories)' : '' }}</span>
+              </p>
+              <span class="et-status" [attr.data-status]="view.status">
+                {{ view.percent | number: '1.0-2' }}% used
+              </span>
+            } @else {
+              <h2 class="empty-title">No budget for {{ monthName }} yet</h2>
+            }
 
+            @if (view.canManage) {
+              <div class="actions">
+                <button type="button" class="et-btn-primary" (click)="onEdit()">
+                  {{ view.exists ? 'Edit budget' : 'Create budget' }}
+                </button>
+                @if (previous) {
+                  <button type="button" class="et-btn-ghost" (click)="onCopy()">
+                    Copy from {{ previousName }}
+                  </button>
+                }
+                @if (view.exists) {
+                  <button type="button" class="text-btn danger" (click)="onAskDelete()" [disabled]="busy">
+                    Remove
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Row two: the meter, with what is left beside it. -->
+          @if (view.total !== null) {
+            <div class="ov-row">
               <span class="et-meter big" role="img"
                 [attr.aria-label]="(view.percent | number: '1.0-2') + '% of the budget used'">
                 <span class="et-meter-fill" [attr.data-status]="view.status"
                   [style.width.%]="width(view.percent)"></span>
               </span>
-
-            } @else {
-              <h2 class="empty-title">No budget for {{ monthName }} yet</h2>
-              <p class="empty-body tnum">
-                ₹{{ view.spent | number }} spent so far this month.
-                @if (view.canManage) {
-                  Set an overall limit, limits per category, or both.
+              <p class="overview-line tnum">
+                @if (isOver) {
+                  <span class="et-over">₹{{ -view.remaining! | number }} over budget</span>
+                } @else {
+                  ₹{{ view.remaining | number }} left
+                }
+                @if (view.overCount) {
+                  · <span class="et-over">{{ view.overCount }} {{ view.overCount === 1 ? 'category' : 'categories' }} over</span>
+                }
+                @if (daysToGo) {
+                  · {{ daysToGo }} {{ daysToGo === 1 ? 'day' : 'days' }} to go
                 }
               </p>
-            }
-          </div>
-
-          @if (view.canManage) {
-            <div class="actions">
-              <button type="button" class="et-btn-primary" (click)="onEdit()">
-                {{ view.exists ? 'Edit budget' : 'Create budget' }}
-              </button>
-              @if (previous) {
-                <button type="button" class="et-btn-ghost" (click)="onCopy()">
-                  Copy from {{ previousName }}
-                </button>
-              }
-              @if (view.exists) {
-                <button type="button" class="text-btn danger" (click)="onAskDelete()" [disabled]="busy">
-                  Remove
-                </button>
-              }
             </div>
           } @else {
+            <p class="empty-body tnum">
+              ₹{{ view.spent | number }} spent so far this month.
+              @if (view.canManage) {
+                Set an overall limit, limits per category, or both.
+              }
+            </p>
+          }
+
+          @if (!view.canManage) {
             <p class="view-only">
               View only on this sign-in. Changing budgets needs <strong>Manage budgets</strong>,
               or your full-access password.
