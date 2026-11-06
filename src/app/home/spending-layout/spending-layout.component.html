@@ -2,71 +2,120 @@
 
   <div class="panels">
 
-    <section class="card focus-card">
-      <div class="focus-top">
-        <p class="today">{{ data.today | date: 'EEEE, d MMMM' }}</p>
+    <!--
+      The main card, with the strips under it on the same side, so the
+      right-hand column runs the full height and Recent keeps its room.
+    -->
+    <div class="main-col">
+      <section class="card focus-card">
+        <div class="focus-top">
+          <p class="today">{{ data.today | date: 'EEEE, d MMMM' }}</p>
 
-        <a class="primary-action" routerLink="/add-expense">
-          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Add expense
-        </a>
-      </div>
-
-      <p class="figure tnum">₹{{ data.spent | number }}</p>
-
-      <p class="caption">
-        <span>spent in {{ data.monthName }}</span>
-
-        @if (data.difference) {
-          <span class="delta" [class.more]="data.spentMore"
-            [class.less]="!data.spentMore">
-            ₹{{ data.difference | number }}
-            {{ data.spentMore ? 'more' : 'less' }} than {{ data.lastMonthName }}
-          </span>
-        }
-      </p>
-
-      <app-spend-chart [days]="data.days" [busiest]="busiestDay"></app-spend-chart>
-
-      <!-- Pinned to the foot, so the card reads full whatever is above it. -->
-      <div class="stats">
-        <div class="stat">
-          <p class="stat-label">Daily average</p>
-          <p class="stat-value tnum">₹{{ data.dailyAverage | number }}</p>
+          <a class="primary-action" routerLink="/add-expense">
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add expense
+          </a>
         </div>
 
-        <div class="stat">
-          <p class="stat-label">Busiest day</p>
-          <p class="stat-value tnum">₹{{ busiestDay | number }}</p>
-        </div>
+        <p class="figure tnum">₹{{ data.spent | number }}</p>
 
-        <div class="stat">
-          <p class="stat-label">Entries this month</p>
-          <p class="stat-value tnum">{{ data.entries }}</p>
-        </div>
+        <p class="caption">
+          <span>spent in {{ data.monthName }}</span>
 
-        <!--
-        The rate only means something once a few days are in, so for the
-        first of the month the slot shows what there is to compare against
-        instead of standing empty.
-        -->
-        @if (data.projected !== null) {
+          @if (data.difference) {
+            <span class="delta" [class.more]="data.spentMore"
+              [class.less]="!data.spentMore">
+              ₹{{ data.difference | number }}
+              {{ data.spentMore ? 'more' : 'less' }} than {{ data.lastMonthName }}
+            </span>
+          }
+        </p>
+
+        <app-spend-chart [days]="data.days" [busiest]="busiestDay"></app-spend-chart>
+
+        <!-- Pinned to the foot, so the card reads full whatever is above it. -->
+        <div class="stats">
           <div class="stat">
-            <p class="stat-label">On pace for</p>
-            <p class="stat-value tnum">₹{{ data.projected | number }}</p>
+            <p class="stat-label">Daily average</p>
+            <p class="stat-value tnum">₹{{ data.dailyAverage | number }}</p>
           </div>
+
+          <div class="stat">
+            <p class="stat-label">Busiest day</p>
+            <p class="stat-value tnum">₹{{ busiestDay | number }}</p>
+          </div>
+
+          <div class="stat">
+            <p class="stat-label">Entries this month</p>
+            <p class="stat-value tnum">{{ data.entries }}</p>
+          </div>
+
+          <!--
+          The rate only means something once a few days are in, so for the
+          first of the month the slot shows what there is to compare against
+          instead of standing empty.
+          -->
+          @if (data.projected !== null) {
+            <div class="stat">
+              <p class="stat-label">On pace for</p>
+              <p class="stat-value tnum">₹{{ data.projected | number }}</p>
+            </div>
+          }
+
+          @if (data.projected === null) {
+            <div class="stat">
+              <p class="stat-label">All of {{ data.lastMonthName }}</p>
+              <p class="stat-value tnum">₹{{ data.lastMonthSpent | number }}</p>
+            </div>
+          }
+        </div>
+      </section>
+
+      <div class="et-strips">
+
+        <!-- Only when there is something waiting; nobody needs to be told "none". -->
+        @if (data.pending) {
+          <section class="et-strip">
+            <span class="et-strip-icon waiting" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18">
+                <circle cx="12" cy="12" r="8.5" />
+                <path d="M12 7.6V12l2.8 2" />
+              </svg>
+            </span>
+            <div class="et-strip-text">
+              <p class="et-strip-title">
+                {{ data.pending }}
+                {{ data.pending === 1 ? 'entry is' : 'entries are' }} waiting for an admin
+              </p>
+              <p class="et-strip-body">
+                They were dated other than today, so no money has moved yet.
+              </p>
+            </div>
+            <a class="secondary-action" routerLink="/transactions" [queryParams]="{ tab: 'out' }">Pending approvals</a>
+          </section>
         }
 
-        @if (data.projected === null) {
-          <div class="stat">
-            <p class="stat-label">All of {{ data.lastMonthName }}</p>
-            <p class="stat-value tnum">₹{{ data.lastMonthSpent | number }}</p>
-          </div>
+        @if (data.offerWhatsapp) {
+          <section class="et-strip">
+            <span class="et-strip-icon whatsapp" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18">
+                <path d="M21 11.6a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-5A8.5 8.5 0 1 1 21 11.6Z" />
+              </svg>
+            </span>
+            <div class="et-strip-text">
+              <p class="et-strip-title">Add from WhatsApp without signing in</p>
+              <p class="et-strip-body">
+                Send <strong>250 coffee paytm</strong> and it is recorded.
+              </p>
+            </div>
+            <a class="secondary-action" routerLink="/settings">Connect</a>
+          </section>
         }
+
       </div>
-    </section>
+    </div>
 
     <div class="side">
       <!-- This month against its budget. Hidden if the budget could not load. -->
@@ -157,49 +206,6 @@
       </section>
 
     </div>
-  </div>
-
-  <div class="et-strips">
-
-    <!-- Only when there is something waiting; nobody needs to be told "none". -->
-    @if (data.pending) {
-      <section class="et-strip">
-        <span class="et-strip-icon waiting" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="18" height="18">
-            <circle cx="12" cy="12" r="8.5" />
-            <path d="M12 7.6V12l2.8 2" />
-          </svg>
-        </span>
-        <div class="et-strip-text">
-          <p class="et-strip-title">
-            {{ data.pending }}
-            {{ data.pending === 1 ? 'entry is' : 'entries are' }} waiting for an admin
-          </p>
-          <p class="et-strip-body">
-            They were dated other than today, so no money has moved yet.
-          </p>
-        </div>
-        <a class="secondary-action" routerLink="/transactions" [queryParams]="{ tab: 'out' }">Pending approvals</a>
-      </section>
-    }
-
-    @if (data.offerWhatsapp) {
-      <section class="et-strip">
-        <span class="et-strip-icon whatsapp" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="18" height="18">
-            <path d="M21 11.6a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-5A8.5 8.5 0 1 1 21 11.6Z" />
-          </svg>
-        </span>
-        <div class="et-strip-text">
-          <p class="et-strip-title">Add from WhatsApp without signing in</p>
-          <p class="et-strip-body">
-            Send <strong>250 coffee paytm</strong> and it is recorded.
-          </p>
-        </div>
-        <a class="secondary-action" routerLink="/settings">Connect</a>
-      </section>
-    }
-
   </div>
 
 </div>

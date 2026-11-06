@@ -71,12 +71,34 @@
  * flex: 1.4 takes the larger share while both are on one line; 420px is the
  * width below which the focus card drops to its own.
  */
-.focus-card {
+/*
+ * The left-hand column: the main card, and under it the strips (WhatsApp,
+ * waiting entries). Kept to this side so the right-hand column runs the full
+ * height and the Recent list keeps its room.
+ */
+.main-col {
   flex: 1.4 1 420px;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: 0.75rem;
+}
+
+.focus-card {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
   padding: 1rem 1.25rem;
+}
+
+/* Stacked, one under the other, at the width of the column. */
+.main-col .et-strips {
+  flex-direction: column;
+}
+
+.main-col .et-strip {
+  flex: 0 0 auto;
 }
 
 .side {
@@ -362,6 +384,7 @@ app-spend-chart {
     flex-wrap: nowrap;
   }
 
+  .main-col,
   .focus-card,
   .side {
     min-height: 0;
@@ -393,6 +416,7 @@ app-spend-chart {
   }
 
   .panels,
+  .main-col,
   .side,
   .et-strips {
     gap: 0.5rem;

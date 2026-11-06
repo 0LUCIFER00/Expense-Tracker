@@ -68,29 +68,36 @@
   gap: 0.625rem;
 }
 
+/* One line each: name and kind on the left, the amount on the right. */
 .account-tile {
-  flex: 1 1 150px;
+  flex: 1 1 200px;
   min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.125rem 0.5rem;
   background-color: var(--surface);
   border: 1px solid var(--surface-border);
   border-radius: 12px;
-  padding: 0.6875rem 0.8125rem;
+  padding: 0.5rem 0.875rem;
   box-shadow: var(--shadow);
 }
 
 .tile-name {
   margin: 0;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--ink-2);
+  min-width: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .tile-amount {
-  margin: 0.3125rem 0 0;
-  font-size: 1.25rem;
+  order: 2;
+  margin: 0 0 0 auto;
+  font-size: 1.0625rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--ink);
@@ -98,8 +105,9 @@
 }
 
 .tile-kind {
-  margin: 0.1875rem 0 0;
-  font-size: 0.625rem;
+  order: 1;
+  margin: 0;
+  font-size: 0.6875rem;
   color: var(--ink-3);
 }
 
@@ -116,12 +124,34 @@
  * flex: 1.35 takes the larger share while both are on one line; 420px is the
  * width below which the focus card drops to its own.
  */
-.focus-card {
+/*
+ * The left-hand column: the main card, and under it the strips (WhatsApp,
+ * waiting entries). Kept to this side so the right-hand column runs the full
+ * height and the Recent list keeps its room.
+ */
+.main-col {
   flex: 1.35 1 420px;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: 0.75rem;
+}
+
+.focus-card {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
   padding: 1rem 1.25rem;
+}
+
+/* Stacked, one under the other, at the width of the column. */
+.main-col .et-strips {
+  flex-direction: column;
+}
+
+.main-col .et-strip {
+  flex: 0 0 auto;
 }
 
 .side {
@@ -395,6 +425,7 @@
     flex-wrap: nowrap;
   }
 
+  .main-col,
   .focus-card,
   .side {
     min-height: 0;
@@ -426,6 +457,7 @@
   }
 
   .panels,
+  .main-col,
   .side {
     gap: 0.5rem;
   }
@@ -436,11 +468,7 @@
   }
 
   .account-tile {
-    padding: 0.5rem 0.6875rem;
-  }
-
-  .tile-amount {
-    font-size: 1.0625rem;
+    padding: 0.375rem 0.75rem;
   }
 
   .figure {
@@ -478,9 +506,10 @@
   }
 }
 
+/* A full row each, so every tile stays on one line like on a wider screen. */
 @media (max-width: 480px) {
   .account-tile {
-    flex: 1 1 calc(50% - 0.3125rem);
+    flex: 1 1 100%;
   }
 
   .primary-action,
