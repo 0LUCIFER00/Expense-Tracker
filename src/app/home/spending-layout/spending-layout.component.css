@@ -426,6 +426,20 @@ app-spend-chart {
   .et-strip {
     padding: 0.5rem 1rem;
   }
+
+  /* The category card: a slimmer bar and a tighter legend. */
+  .card-head {
+    margin-bottom: 0.25rem;
+  }
+
+  .bar {
+    height: 8px;
+  }
+
+  .legend {
+    gap: 0.25rem 0.75rem;
+    margin-top: 0.375rem;
+  }
 }
 
 @media (max-width: 480px) {

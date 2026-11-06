@@ -140,3 +140,38 @@
     display: none;
   }
 }
+
+/*
+ * Shorter again (a laptop at 125% scaling with some zoom): the same facts on
+ * fewer, tighter lines, matching the spacing Home's own cards use there.
+ */
+@media (min-width: 900px) and (max-height: 760px) {
+  .budget-card {
+    padding: 0.5625rem 0.875rem;
+  }
+
+  .head {
+    margin-bottom: 0.25rem;
+  }
+
+  .title {
+    font-size: 0.8125rem;
+  }
+
+  .figures {
+    margin-bottom: 0.25rem;
+  }
+
+  .spent {
+    font-size: 0.9375rem;
+  }
+
+  .et-meter {
+    height: 6px;
+  }
+
+  .left {
+    margin-top: 0.25rem;
+    font-size: 0.6875rem;
+  }
+}
