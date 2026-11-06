@@ -1,28 +1,31 @@
 <!--
-  polite, not assertive: these report what just happened, and interrupting a
-  screen reader mid-sentence to say "saved" helps nobody.
+polite, not assertive: these report what just happened, and interrupting a
+screen reader mid-sentence to say "saved" helps nobody.
 -->
 <div class="toast-stack" role="status" aria-live="polite">
-  <div class="toast" *ngFor="let toast of toasts$ | async; trackBy: trackById"
-    [class.error]="toast.kind === 'error'">
-
-    <span class="toast-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="16" height="16">
-        <path *ngIf="toast.kind === 'success'" d="m5 12.5 4.5 4.5L19 7" />
-        <ng-container *ngIf="toast.kind === 'error'">
-          <path d="M12 7.5v5.5" />
-          <path d="M12 16.4v.2" />
-        </ng-container>
-      </svg>
-    </span>
-
-    <p class="toast-text">{{ toast.text }}</p>
-
-    <button type="button" class="toast-close" aria-label="Dismiss"
-      (click)="onDismiss(toast)">
-      <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
-        <path d="M6 6l12 12M18 6 6 18" />
-      </svg>
-    </button>
-  </div>
+  @for (toast of toasts$ | async; track toast.id) {
+    <div class="toast"
+      [class.error]="toast.kind === 'error'">
+      <span class="toast-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="16" height="16">
+          @if (toast.kind === 'success') {
+            <path d="m5 12.5 4.5 4.5L19 7" />
+          }
+          @if (toast.kind === 'error') {
+            <ng-container>
+              <path d="M12 7.5v5.5" />
+              <path d="M12 16.4v.2" />
+            </ng-container>
+          }
+        </svg>
+      </span>
+      <p class="toast-text">{{ toast.text }}</p>
+      <button type="button" class="toast-close" aria-label="Dismiss"
+        (click)="onDismiss(toast)">
+        <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
+          <path d="M6 6l12 12M18 6 6 18" />
+        </svg>
+      </button>
+    </div>
+  }
 </div>

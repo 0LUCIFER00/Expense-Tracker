@@ -30,14 +30,16 @@
 
         <select id="category" class="text-field" formControlName="category">
           <option value="">None</option>
-          <option *ngFor="let name of categories" [value]="name">{{ name }}</option>
+          @for (name of categories; track name) {
+            <option [value]="name">{{ name }}</option>
+          }
         </select>
 
         <p class="field-note">Groups your spending, so the dashboard can show where it goes.</p>
       </div>
 
       <!-- Paid for a group. The whole amount still leaves the account; only your
-           share counts as your spending. -->
+      share counts as your spending. -->
       <div class="field field-split">
         <span class="field-label">Split</span>
 
@@ -47,24 +49,32 @@
             Split bill
           </label>
 
-          <label class="split-count" *ngIf="isSplit">
-            between
-            <input class="text-field members-input tnum" formControlName="members" type="number"
-              inputmode="numeric" [min]="minMembers" [max]="maxMembers" aria-label="Number of people">
-            people
-          </label>
+          @if (isSplit) {
+            <label class="split-count">
+              between
+              <input class="text-field members-input tnum" formControlName="members" type="number"
+                inputmode="numeric" [min]="minMembers" [max]="maxMembers" aria-label="Number of people">
+              people
+            </label>
+          }
         </div>
 
-        <p class="field-note good" *ngIf="splitPreview as split">
-          Your share ₹{{ split.personal | number }} · ₹{{ split.share | number }} each from the
-          other {{ split.members - 1 }}
-        </p>
+        @if (splitPreview; as split) {
+          <p class="field-note good">
+            Your share ₹{{ split.personal | number }} · ₹{{ split.share | number }} each from the
+            other {{ split.members - 1 }}
+          </p>
+        }
 
-        <p class="field-note" *ngIf="isSplit && !splitPreview">
-          Enter the amount, and between {{ minMembers }} and {{ maxMembers }} people, you included.
-        </p>
+        @if (isSplit && !splitPreview) {
+          <p class="field-note">
+            Enter the amount, and between {{ minMembers }} and {{ maxMembers }} people, you included.
+          </p>
+        }
 
-        <p class="field-note" *ngIf="!isSplit">Paid for a group? Count yourself in.</p>
+        @if (!isSplit) {
+          <p class="field-note">Paid for a group? Count yourself in.</p>
+        }
       </div>
 
       <div class="field field-source">
@@ -75,87 +85,101 @@
 
           <option value="">Don't debit any account</option>
 
-          <option *ngFor="let item of availableBalances" [value]="item.id">
-            {{ item.category }}<ng-container *ngIf="item.balance !== null"> — ₹{{ item.balance | number }}</ng-container>
+          @for (item of availableBalances; track item.id) {
+            <option [value]="item.id">
+              {{ item.category }}@if (item.balance !== null) {
+              — ₹{{ item.balance | number }}
+            }
           </option>
+        }
 
-        </select>
+      </select>
 
-        <p class="field-note good" *ngIf="expenseAccess && canSeeBalances">
+      @if (expenseAccess && canSeeBalances) {
+        <p class="field-note good">
           Balance shown beside each account, so you pick with the figure in front of you
         </p>
+      }
 
-        <p class="field-note" *ngIf="!expenseAccess">
+      @if (!expenseAccess) {
+        <p class="field-note">
           This account may only log expenses, not spend from a balance.
         </p>
-      </div>
-
-      <div class="field field-date">
-        <label class="field-label" for="date">Date</label>
-        <input id="date" class="text-field" formControlName="date" type="date">
-      </div>
-
+      }
     </div>
 
-    <div class="form-actions">
-      <button type="button" class="btn-good" *ngIf="expenseAccess"
+    <div class="field field-date">
+      <label class="field-label" for="date">Date</label>
+      <input id="date" class="text-field" formControlName="date" type="date">
+    </div>
+
+  </div>
+
+  <div class="form-actions">
+    @if (expenseAccess) {
+      <button type="button" class="btn-good"
         [disabled]="isMainFormInvalid() || submitting || !expenseForm.get('source')?.value"
         (click)="onSubmit(true)">
         Add and update balance
       </button>
+    }
 
-      <button type="button" class="btn-ghost" [disabled]="isMainFormInvalid() || submitting"
-        (click)="onSubmit(false)">
-        Log only
-      </button>
-    </div>
+    <button type="button" class="btn-ghost" [disabled]="isMainFormInvalid() || submitting"
+      (click)="onSubmit(false)">
+      Log only
+    </button>
+  </div>
 
-    <p class="field-note form-foot">
-      Two buttons instead of one that changes label — both choices visible, neither
-      hidden behind a selection.
-    </p>
-  </form>
+  <p class="field-note form-foot">
+    Two buttons instead of one that changes label — both choices visible, neither
+    hidden behind a selection.
+  </p>
+</form>
 
-  <aside class="add-aside">
+<aside class="add-aside">
 
-    <!-- Only once an account is chosen, and only if its figure may be shown. -->
-    <section class="card" *ngIf="selectedAccount && canSeeBalances">
+  <!-- Only once an account is chosen, and only if its figure may be shown. -->
+  @if (selectedAccount && canSeeBalances) {
+    <section class="card">
       <h2 class="card-title">Balance after</h2>
-
       <div class="after-row">
         <span class="after-label">{{ selectedAccount.category }} now</span>
         <span class="after-value tnum">₹{{ selectedAccount.balance | number }}</span>
       </div>
-
       <div class="after-row last">
         <span class="after-label">will be</span>
         <span class="after-value tnum" [class.short]="balanceAfter !== null && balanceAfter < 0">
           {{ balanceAfter === null ? '—' : '₹' + (balanceAfter | number) }}
         </span>
       </div>
-
-      <p class="field-note" *ngIf="balanceAfter !== null && balanceAfter < 0">
-        That is more than the account holds, so it would be refused.
-      </p>
-
-      <p class="field-note" *ngIf="balanceAfter === null || balanceAfter >= 0">
-        Shown before you commit, not only in the confirmation afterwards
-      </p>
+      @if (balanceAfter !== null && balanceAfter < 0) {
+        <p class="field-note">
+          That is more than the account holds, so it would be refused.
+        </p>
+      }
+      @if (balanceAfter === null || balanceAfter >= 0) {
+        <p class="field-note">
+          Shown before you commit, not only in the confirmation afterwards
+        </p>
+      }
     </section>
+  }
 
-    <section class="card">
-      <h2 class="card-title">Add via WhatsApp</h2>
-      <p class="aside-body">The same expense over WhatsApp, no sign-in:</p>
+  <section class="card">
+    <h2 class="card-title">Add via WhatsApp</h2>
+    <p class="aside-body">The same expense over WhatsApp, no sign-in:</p>
 
-      <p class="command tnum">{{ sampleCommand }}</p>
+    <p class="command tnum">{{ sampleCommand }}</p>
 
-      <a class="card-link" routerLink="/help_support">All the commands</a>
-    </section>
+    <a class="card-link" routerLink="/help_support">All the commands</a>
+  </section>
 
-  </aside>
+</aside>
 
 </div>
 
-<app-expense-date-popup *ngIf="showDatePopup" [popupType]="popupType" [canAddDirectly]="updatePermission"
-  (cancel)="closeDatePopup()" (add)="confirmFromPopup()" (adminPermission)="confirmFromPopup()">
-</app-expense-date-popup>
+@if (showDatePopup) {
+  <app-expense-date-popup [popupType]="popupType" [canAddDirectly]="updatePermission"
+    (cancel)="closeDatePopup()" (add)="confirmFromPopup()" (adminPermission)="confirmFromPopup()">
+  </app-expense-date-popup>
+}

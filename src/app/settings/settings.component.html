@@ -30,24 +30,24 @@
       </label>
     </div>
 
-    <p class="permissions-note" *ngIf="!isAdminSession">
-      <ng-container *ngIf="hasAdminPassword">
-        Permissions are managed by the admin. Sign out and sign in with your full-access
-        password to change them.
-      </ng-container>
-      <ng-container *ngIf="!hasAdminPassword">
-        Turn on <strong>Create full access</strong> above to set a full-access password.
-        You can then sign in with it to control what a normal user may do.
-      </ng-container>
-    </p>
+    @if (!isAdminSession) {
+      <p class="permissions-note">
+        @if (hasAdminPassword) {
+          Permissions are managed by the admin. Sign out and sign in with your full-access
+          password to change them.
+        }
+        @if (!hasAdminPassword) {
+          Turn on <strong>Create full access</strong> above to set a full-access password.
+          You can then sign in with it to control what a normal user may do.
+        }
+      </p>
+    }
 
-    <ng-container *ngIf="isAdminSession">
-
+    @if (isAdminSession) {
       <div class="matrix-head">
         <span></span>
         <span>Normal user</span>
       </div>
-
       <div class="settings-row">
         <div class="setting-label">
           <span class="setting-name">See account balances</span>
@@ -56,7 +56,6 @@
             WhatsApp balance reply and the figure after an expense
           </span>
         </div>
-
         <div class="setting-toggle">
           <label class="switch">
             <input type="checkbox" [(ngModel)]="addBalanceUserAccess" (change)="onAccessChange()">
@@ -65,7 +64,6 @@
           </label>
         </div>
       </div>
-
       <div class="settings-row">
         <div class="setting-label">
           <span class="setting-name">Add income</span>
@@ -75,7 +73,6 @@
             this can stay on while they are hidden.
           </span>
         </div>
-
         <div class="setting-toggle">
           <label class="switch">
             <input type="checkbox" [(ngModel)]="addMoneyUserAccess" (change)="onAccessChange()">
@@ -84,7 +81,6 @@
           </label>
         </div>
       </div>
-
       <div class="settings-row">
         <div class="setting-label">
           <span class="setting-name">See balances over WhatsApp</span>
@@ -94,7 +90,6 @@
             Turning the switch above off hides them here too, whatever this says.
           </span>
         </div>
-
         <div class="setting-toggle">
           <label class="switch">
             <input type="checkbox" [(ngModel)]="whatsappBalanceUserAccess"
@@ -104,7 +99,6 @@
           </label>
         </div>
       </div>
-
       <div class="settings-row">
         <div class="setting-label">
           <span class="setting-name">Debit from an account</span>
@@ -112,7 +106,6 @@
             Lets an expense reduce a balance, rather than only being logged
           </span>
         </div>
-
         <div class="setting-toggle">
           <label class="switch">
             <input type="checkbox" [(ngModel)]="addExpenseUserAccess" (change)="onAccessChange()">
@@ -121,7 +114,6 @@
           </label>
         </div>
       </div>
-
       <div class="settings-row">
         <div class="setting-label">
           <span class="setting-name">Change transaction dates</span>
@@ -129,7 +121,6 @@
             Without it, an entry dated other than today waits for an admin to approve it
           </span>
         </div>
-
         <div class="setting-toggle">
           <label class="switch">
             <input type="checkbox" [(ngModel)]="updatePermissionUser" (change)="onAccessChange()">
@@ -138,7 +129,6 @@
           </label>
         </div>
       </div>
-
       <div class="settings-row">
         <div class="setting-label">
           <span class="setting-name">See which account was used</span>
@@ -146,7 +136,6 @@
             Shows the account column in the expense list
           </span>
         </div>
-
         <div class="setting-toggle">
           <label class="switch">
             <input type="checkbox" [(ngModel)]="viewPermissionUser" (change)="onAccessChange()">
@@ -155,7 +144,6 @@
           </label>
         </div>
       </div>
-
       <div class="settings-row">
         <div class="setting-label">
           <span class="setting-name">Remove an expense</span>
@@ -163,7 +151,6 @@
             Shows the delete button; removing one puts any debited money back
           </span>
         </div>
-
         <div class="setting-toggle">
           <label class="switch">
             <input type="checkbox" [(ngModel)]="removePermissionUser" (change)="onAccessChange()">
@@ -172,177 +159,178 @@
           </label>
         </div>
       </div>
-
       <p class="card-note">
         Each row says what it does in plain words. Signed in with your full-access
         password you always have everything, so there is nothing to set for yourself.
       </p>
-
-    </ng-container>
-
-  </section>
-
-  <section class="card whatsapp-card" *ngIf="whatsappStatus">
-
-    <div class="whatsapp-head">
-      <span class="whatsapp-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="20" height="20">
-          <path d="M21 11.6a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-5A8.5 8.5 0 1 1 21 11.6Z" />
-        </svg>
-      </span>
-
-      <h2 class="card-title">Add expenses over WhatsApp</h2>
-
-      <span class="chip" [class.on]="whatsappStatus.connected">
-        {{ whatsappStatus.connected ? 'Connected' : 'Not connected' }}
-      </span>
-    </div>
-
-    <p class="card-body" *ngIf="!whatsappStatus.available">
-      The server has no WhatsApp credentials configured yet, so this cannot be
-      switched on.
-    </p>
-
-    <ng-container *ngIf="whatsappStatus.available">
-
-      <p class="card-body" *ngIf="whatsappStatus.connected">
-        Messages from <strong class="tnum">{{ whatsappStatus.number }}</strong> are
-        added to this account.
-      </p>
-
-      <p class="card-body" *ngIf="!whatsappStatus.connected && !whatsappCode">
-        Connect your phone and you can add an expense by sending a message, without
-        signing in.
-      </p>
-
-      <div class="command-row">
-        <span class="command tnum">250 coffee hdfc</span>
-        <span class="command tnum">balance</span>
-        <span class="command tnum">today</span>
-        <span class="command tnum">undo</span>
-      </div>
-
-      <div class="link-code" *ngIf="whatsappCode && !whatsappStatus.connected">
-        <p *ngIf="whatsappChatUrl">
-          Tap below to open WhatsApp with the message ready, then just press send:
-        </p>
-
-        <p *ngIf="!whatsappChatUrl">
-          Send this message to
-          <strong *ngIf="whatsappBusinessNumber">+{{ whatsappBusinessNumber }}</strong>
-          <strong *ngIf="!whatsappBusinessNumber">our WhatsApp number</strong>
-          from the phone you want to link:
-        </p>
-
-        <p class="command tnum code">link {{ whatsappCode }}</p>
-
-        <p class="card-note">Expires in {{ whatsappCodeMinutes }} minutes.</p>
-      </div>
-
-      <div class="whatsapp-actions">
-        <a *ngIf="whatsappChatUrl && !whatsappStatus.connected" class="et-btn-primary"
-          [href]="whatsappChatUrl" target="_blank" rel="noopener">
-          Open WhatsApp
-        </a>
-
-        <button type="button" class="et-btn-primary" *ngIf="!whatsappStatus.connected"
-          [disabled]="whatsappBusy" (click)="onConnectWhatsapp()">
-          {{ whatsappCode ? 'Get a new code' : 'Connect WhatsApp' }}
-        </button>
-
-        <button type="button" class="et-btn-ghost" *ngIf="whatsappCode && !whatsappStatus.connected"
-          (click)="onRefreshWhatsapp()">
-          I've sent it — check now
-        </button>
-
-        <button type="button" class="et-btn-danger" *ngIf="whatsappStatus.connected"
-          [disabled]="whatsappBusy" (click)="onDisconnectWhatsapp()">
-          Disconnect
-        </button>
-
-        <a class="card-link" routerLink="/help_support">What else can I send?</a>
-      </div>
-
-    </ng-container>
+    }
 
   </section>
+
+  @if (whatsappStatus) {
+    <section class="card whatsapp-card">
+      <div class="whatsapp-head">
+        <span class="whatsapp-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path d="M21 11.6a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-5A8.5 8.5 0 1 1 21 11.6Z" />
+          </svg>
+        </span>
+        <h2 class="card-title">Add expenses over WhatsApp</h2>
+        <span class="chip" [class.on]="whatsappStatus.connected">
+          {{ whatsappStatus.connected ? 'Connected' : 'Not connected' }}
+        </span>
+      </div>
+      @if (!whatsappStatus.available) {
+        <p class="card-body">
+          The server has no WhatsApp credentials configured yet, so this cannot be
+          switched on.
+        </p>
+      }
+      @if (whatsappStatus.available) {
+        @if (whatsappStatus.connected) {
+          <p class="card-body">
+            Messages from <strong class="tnum">{{ whatsappStatus.number }}</strong> are
+            added to this account.
+          </p>
+        }
+        @if (!whatsappStatus.connected && !whatsappCode) {
+          <p class="card-body">
+            Connect your phone and you can add an expense by sending a message, without
+            signing in.
+          </p>
+        }
+        <div class="command-row">
+          <span class="command tnum">250 coffee hdfc</span>
+          <span class="command tnum">balance</span>
+          <span class="command tnum">today</span>
+          <span class="command tnum">undo</span>
+        </div>
+        @if (whatsappCode && !whatsappStatus.connected) {
+          <div class="link-code">
+            @if (whatsappChatUrl) {
+              <p>
+                Tap below to open WhatsApp with the message ready, then just press send:
+              </p>
+            }
+            @if (!whatsappChatUrl) {
+              <p>
+                Send this message to
+                @if (whatsappBusinessNumber) {
+                  <strong>+{{ whatsappBusinessNumber }}</strong>
+                }
+                @if (!whatsappBusinessNumber) {
+                  <strong>our WhatsApp number</strong>
+                }
+                from the phone you want to link:
+              </p>
+            }
+            <p class="command tnum code">link {{ whatsappCode }}</p>
+            <p class="card-note">Expires in {{ whatsappCodeMinutes }} minutes.</p>
+          </div>
+        }
+        <div class="whatsapp-actions">
+          @if (whatsappChatUrl && !whatsappStatus.connected) {
+            <a class="et-btn-primary"
+              [href]="whatsappChatUrl" target="_blank" rel="noopener">
+              Open WhatsApp
+            </a>
+          }
+          @if (!whatsappStatus.connected) {
+            <button type="button" class="et-btn-primary"
+              [disabled]="whatsappBusy" (click)="onConnectWhatsapp()">
+              {{ whatsappCode ? 'Get a new code' : 'Connect WhatsApp' }}
+            </button>
+          }
+          @if (whatsappCode && !whatsappStatus.connected) {
+            <button type="button" class="et-btn-ghost"
+              (click)="onRefreshWhatsapp()">
+              I've sent it — check now
+            </button>
+          }
+          @if (whatsappStatus.connected) {
+            <button type="button" class="et-btn-danger"
+              [disabled]="whatsappBusy" (click)="onDisconnectWhatsapp()">
+              Disconnect
+            </button>
+          }
+          <a class="card-link" routerLink="/help_support">What else can I send?</a>
+        </div>
+      }
+    </section>
+  }
 
 </div>
 
 <!-- Enable Full Access Popup -->
-<div class="et-overlay" *ngIf="showPopup">
-  <div class="et-popup">
-    <h3>Create full access</h3>
-
-    <p class="et-popup-body">
-      This becomes a second password for the same account. Sign in with it to
-      manage what a normal user may do.
-    </p>
-
-    <div class="form-group">
-      <label for="popupUser">Current user</label>
-      <input id="popupUser" type="text" [value]="currentUserName" readonly class="et-field">
-    </div>
-
-    <div class="form-group">
-      <label for="popupAdminPassword">Full-access password</label>
-      <input id="popupAdminPassword" type="password" class="et-field" [(ngModel)]="adminPassword"
-        placeholder="At least 8 characters">
-    </div>
-
-    <div class="form-group">
-      <label for="popupConfirmPassword">Confirm full-access password</label>
-      <input id="popupConfirmPassword" type="password" class="et-field"
-        [(ngModel)]="confirmPassword" placeholder="Repeat the full-access password">
-    </div>
-
-    <p class="et-field-error" *ngIf="confirmPassword && adminPassword !== confirmPassword">
-      Passwords do not match
-    </p>
-
-    <p class="et-field-error" *ngIf="setPasswordError">{{ setPasswordError }}</p>
-
-    <div class="et-popup-actions">
-      <button type="button" class="et-btn-ghost" (click)="onCancel()">Cancel</button>
-
-      <button type="button" class="et-btn-primary" (click)="onOk()"
-        [disabled]="adminPassword.length < passwordMin || adminPassword !== confirmPassword">
-        Create
-      </button>
+@if (showPopup) {
+  <div class="et-overlay">
+    <div class="et-popup">
+      <h3>Create full access</h3>
+      <p class="et-popup-body">
+        This becomes a second password for the same account. Sign in with it to
+        manage what a normal user may do.
+      </p>
+      <div class="form-group">
+        <label for="popupUser">Current user</label>
+        <input id="popupUser" type="text" [value]="currentUserName" readonly class="et-field">
+      </div>
+      <div class="form-group">
+        <label for="popupAdminPassword">Full-access password</label>
+        <input id="popupAdminPassword" type="password" class="et-field" [(ngModel)]="adminPassword"
+          placeholder="At least 8 characters">
+      </div>
+      <div class="form-group">
+        <label for="popupConfirmPassword">Confirm full-access password</label>
+        <input id="popupConfirmPassword" type="password" class="et-field"
+          [(ngModel)]="confirmPassword" placeholder="Repeat the full-access password">
+      </div>
+      @if (confirmPassword && adminPassword !== confirmPassword) {
+        <p class="et-field-error">
+          Passwords do not match
+        </p>
+      }
+      @if (setPasswordError) {
+        <p class="et-field-error">{{ setPasswordError }}</p>
+      }
+      <div class="et-popup-actions">
+        <button type="button" class="et-btn-ghost" (click)="onCancel()">Cancel</button>
+        <button type="button" class="et-btn-primary" (click)="onOk()"
+          [disabled]="adminPassword.length < passwordMin || adminPassword !== confirmPassword">
+          Create
+        </button>
+      </div>
     </div>
   </div>
-</div>
+}
 
 <!-- Disable Full Access Popup -->
-<div class="et-overlay" *ngIf="showChancelPopup">
-  <div class="et-popup">
-    <h3>Remove full access</h3>
-
-    <p class="et-popup-body">
-      Every permission goes back to granted, because with no admin there is nobody
-      left who could change them.
-    </p>
-
-    <div class="form-group">
-      <label for="cancelUser">Current user</label>
-      <input id="cancelUser" type="text" [value]="currentUserName" readonly class="et-field">
-    </div>
-
-    <div class="form-group">
-      <label for="cancelAdminPassword">Full-access password</label>
-      <input id="cancelAdminPassword" type="password" class="et-field"
-        [(ngModel)]="adminCancelPassword" placeholder="Enter the full-access password">
-    </div>
-
-    <p class="et-field-error" *ngIf="cancelPasswordError">{{ cancelPasswordError }}</p>
-
-    <div class="et-popup-actions">
-      <button type="button" class="et-btn-ghost" (click)="onCancelCancel()">Cancel</button>
-
-      <button type="button" class="et-btn-danger" (click)="onOkCancel()"
-        [disabled]="!adminCancelPassword">
-        Remove
-      </button>
+@if (showChancelPopup) {
+  <div class="et-overlay">
+    <div class="et-popup">
+      <h3>Remove full access</h3>
+      <p class="et-popup-body">
+        Every permission goes back to granted, because with no admin there is nobody
+        left who could change them.
+      </p>
+      <div class="form-group">
+        <label for="cancelUser">Current user</label>
+        <input id="cancelUser" type="text" [value]="currentUserName" readonly class="et-field">
+      </div>
+      <div class="form-group">
+        <label for="cancelAdminPassword">Full-access password</label>
+        <input id="cancelAdminPassword" type="password" class="et-field"
+          [(ngModel)]="adminCancelPassword" placeholder="Enter the full-access password">
+      </div>
+      @if (cancelPasswordError) {
+        <p class="et-field-error">{{ cancelPasswordError }}</p>
+      }
+      <div class="et-popup-actions">
+        <button type="button" class="et-btn-ghost" (click)="onCancelCancel()">Cancel</button>
+        <button type="button" class="et-btn-danger" (click)="onOkCancel()"
+          [disabled]="!adminCancelPassword">
+          Remove
+        </button>
+      </div>
     </div>
   </div>
-</div>
+}

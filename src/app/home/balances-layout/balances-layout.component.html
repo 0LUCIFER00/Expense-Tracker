@@ -1,13 +1,17 @@
 <div class="layout">
 
   <!-- The accounts are the one list always populated, so they anchor the page. -->
-  <section class="account-strip" *ngIf="data.canSeeBalances && data.accounts.length">
-    <div class="account-tile" *ngFor="let account of data.accounts">
-      <p class="tile-name">{{ account.name }}</p>
-      <p class="tile-amount tnum">₹{{ account.balance | number }}</p>
-      <p class="tile-kind">{{ account.kind }}</p>
-    </div>
-  </section>
+  @if (data.canSeeBalances && data.accounts.length) {
+    <section class="account-strip">
+      @for (account of data.accounts; track $index) {
+        <div class="account-tile">
+          <p class="tile-name">{{ account.name }}</p>
+          <p class="tile-amount tnum">₹{{ account.balance | number }}</p>
+          <p class="tile-kind">{{ account.kind }}</p>
+        </div>
+      }
+    </section>
+  }
 
   <div class="panels">
 
@@ -21,11 +25,13 @@
           <p class="caption">
             <span>spent in {{ data.monthName }}</span>
 
-            <span class="delta" *ngIf="data.difference" [class.more]="data.spentMore"
-              [class.less]="!data.spentMore">
-              ₹{{ data.difference | number }}
-              {{ data.spentMore ? 'more' : 'less' }} than {{ data.lastMonthName }}
-            </span>
+            @if (data.difference) {
+              <span class="delta" [class.more]="data.spentMore"
+                [class.less]="!data.spentMore">
+                ₹{{ data.difference | number }}
+                {{ data.spentMore ? 'more' : 'less' }} than {{ data.lastMonthName }}
+              </span>
+            }
           </p>
         </div>
 
@@ -41,10 +47,12 @@
 
       <!-- Pinned to the foot, so the card reads full whatever is above it. -->
       <div class="stats">
-        <div class="stat" *ngIf="data.canSeeBalances">
-          <p class="stat-label">Held across accounts</p>
-          <p class="stat-value tnum">₹{{ data.accountsTotal | number }}</p>
-        </div>
+        @if (data.canSeeBalances) {
+          <div class="stat">
+            <p class="stat-label">Held across accounts</p>
+            <p class="stat-value tnum">₹{{ data.accountsTotal | number }}</p>
+          </div>
+        }
 
         <div class="stat">
           <p class="stat-label">Daily average</p>
@@ -57,19 +65,23 @@
         </div>
 
         <!--
-          The rate only means something once a few days are in, so for the
-          first of the month the slot shows what there is to compare against
-          instead of standing empty.
+        The rate only means something once a few days are in, so for the
+        first of the month the slot shows what there is to compare against
+        instead of standing empty.
         -->
-        <div class="stat" *ngIf="data.projected !== null">
-          <p class="stat-label">On pace for</p>
-          <p class="stat-value tnum">₹{{ data.projected | number }}</p>
-        </div>
+        @if (data.projected !== null) {
+          <div class="stat">
+            <p class="stat-label">On pace for</p>
+            <p class="stat-value tnum">₹{{ data.projected | number }}</p>
+          </div>
+        }
 
-        <div class="stat" *ngIf="data.projected === null">
-          <p class="stat-label">All of {{ data.lastMonthName }}</p>
-          <p class="stat-value tnum">₹{{ data.lastMonthSpent | number }}</p>
-        </div>
+        @if (data.projected === null) {
+          <div class="stat">
+            <p class="stat-label">All of {{ data.lastMonthName }}</p>
+            <p class="stat-value tnum">₹{{ data.lastMonthSpent | number }}</p>
+          </div>
+        }
       </div>
     </section>
 
@@ -82,33 +94,40 @@
           <span class="card-meta">{{ data.monthName }}</span>
         </div>
 
-        <p class="card-empty" *ngIf="!slices.length">Nothing recorded this month yet.</p>
+        @if (!slices.length) {
+          <p class="card-empty">Nothing recorded this month yet.</p>
+        }
 
-        <ng-container *ngIf="slices.length">
+        @if (slices.length) {
           <span class="bar" aria-hidden="true">
-            <span class="bar-slice" *ngFor="let slice of slices" [attr.data-tone]="slice.tone"
+            @for (slice of slices; track slice.name) {
+              <span class="bar-slice" [attr.data-tone]="slice.tone"
               [style.width.%]="slice.width"></span>
+            }
           </span>
-
           <div class="legend">
-            <span class="legend-item" *ngFor="let slice of slices">
-              <span class="legend-dot" aria-hidden="true" [attr.data-tone]="slice.tone"></span>
-              {{ slice.name }}
-              <span class="legend-amount tnum">₹{{ slice.total | number }}</span>
-            </span>
+            @for (slice of slices; track slice.name) {
+              <span class="legend-item">
+                <span class="legend-dot" aria-hidden="true" [attr.data-tone]="slice.tone"></span>
+                {{ slice.name }}
+                <span class="legend-amount tnum">₹{{ slice.total | number }}</span>
+              </span>
+            }
           </div>
-        </ng-container>
+        }
       </section>
 
       <section class="card recent-card">
         <h2 class="card-title">Recent</h2>
 
-        <p class="card-empty" *ngIf="!data.recent.length">
-          Your last few expenses will show up here.
-        </p>
+        @if (!data.recent.length) {
+          <p class="card-empty">
+            Your last few expenses will show up here.
+          </p>
+        }
 
         <div class="scroll-area">
-          <ng-container *ngFor="let item of data.recent">
+          @for (item of data.recent; track item.id) {
             <!-- A split one opens who has paid back; the card scrolls, so it has room. -->
             <div class="recent-row" [class.et-splittable]="item.splitMembers"
               [class.et-open]="expandedId === item.id"
@@ -117,27 +136,30 @@
               [attr.aria-expanded]="item.splitMembers ? expandedId === item.id : null"
               (click)="onToggleSplit(item)" (keydown.enter)="onToggleSplit(item)">
               <span class="recent-date tnum">{{ item.date | date: 'd MMM' }}</span>
-
               <span class="recent-what">
                 {{ item.description }}
-                <span class="recent-meta" *ngIf="item.sourceCategory || item.category">
-                  · {{ item.sourceCategory || item.category }}
-                </span>
-                <span class="et-split-tag" *ngIf="item.splitMembers">
-                  Split {{ item.splitMembers }} · yours ₹{{ item.personalShare | number }}
-                  <span class="et-split-caret" aria-hidden="true">▾</span>
-                </span>
+                @if (item.sourceCategory || item.category) {
+                  <span class="recent-meta">
+                    · {{ item.sourceCategory || item.category }}
+                  </span>
+                }
+                @if (item.splitMembers) {
+                  <span class="et-split-tag">
+                    Split {{ item.splitMembers }} · yours ₹{{ item.personalShare | number }}
+                    <span class="et-split-caret" aria-hidden="true">▾</span>
+                  </span>
+                }
               </span>
-
               <span class="recent-amount tnum" [class.pending]="item.isPendingApproval">
                 ₹{{ item.amount | number }}
               </span>
             </div>
-
-            <app-split-history *ngIf="expandedId === item.id && data.splits[item.id] as split"
-              [split]="split">
-            </app-split-history>
-          </ng-container>
+            @if (expandedId === item.id && data.splits[item.id]; as split) {
+              <app-split-history
+                [split]="split">
+              </app-split-history>
+            }
+          }
         </div>
 
         <a class="card-link" routerLink="/transactions" [queryParams]="{ tab: 'out' }">See all debits</a>
@@ -146,47 +168,46 @@
     </div>
   </div>
 
-  <div class="et-strips" *ngIf="data.pending || data.offerWhatsapp">
-
-    <!-- Only when there is something waiting; nobody needs to be told "none". -->
-    <section class="et-strip" *ngIf="data.pending">
-      <span class="et-strip-icon waiting" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="18" height="18">
-          <circle cx="12" cy="12" r="8.5" />
-          <path d="M12 7.6V12l2.8 2" />
-        </svg>
-      </span>
-
-      <div class="et-strip-text">
-        <p class="et-strip-title">
-          {{ data.pending }}
-          {{ data.pending === 1 ? 'entry is' : 'entries are' }} waiting for an admin
-        </p>
-        <p class="et-strip-body">
-          They were dated other than today, so no money has moved yet.
-        </p>
-      </div>
-
-      <a class="secondary-action" routerLink="/transactions" [queryParams]="{ tab: 'out' }">Pending approvals</a>
-    </section>
-
-    <section class="et-strip" *ngIf="data.offerWhatsapp">
-      <span class="et-strip-icon whatsapp" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="18" height="18">
-          <path d="M21 11.6a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-5A8.5 8.5 0 1 1 21 11.6Z" />
-        </svg>
-      </span>
-
-      <div class="et-strip-text">
-        <p class="et-strip-title">Add from WhatsApp without signing in</p>
-        <p class="et-strip-body">
-          Send <strong>250 coffee paytm</strong> and it is recorded.
-        </p>
-      </div>
-
-      <a class="secondary-action" routerLink="/settings">Connect</a>
-    </section>
-
-  </div>
+  @if (data.pending || data.offerWhatsapp) {
+    <div class="et-strips">
+      <!-- Only when there is something waiting; nobody needs to be told "none". -->
+      @if (data.pending) {
+        <section class="et-strip">
+          <span class="et-strip-icon waiting" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18">
+              <circle cx="12" cy="12" r="8.5" />
+              <path d="M12 7.6V12l2.8 2" />
+            </svg>
+          </span>
+          <div class="et-strip-text">
+            <p class="et-strip-title">
+              {{ data.pending }}
+              {{ data.pending === 1 ? 'entry is' : 'entries are' }} waiting for an admin
+            </p>
+            <p class="et-strip-body">
+              They were dated other than today, so no money has moved yet.
+            </p>
+          </div>
+          <a class="secondary-action" routerLink="/transactions" [queryParams]="{ tab: 'out' }">Pending approvals</a>
+        </section>
+      }
+      @if (data.offerWhatsapp) {
+        <section class="et-strip">
+          <span class="et-strip-icon whatsapp" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18">
+              <path d="M21 11.6a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-5A8.5 8.5 0 1 1 21 11.6Z" />
+            </svg>
+          </span>
+          <div class="et-strip-text">
+            <p class="et-strip-title">Add from WhatsApp without signing in</p>
+            <p class="et-strip-body">
+              Send <strong>250 coffee paytm</strong> and it is recorded.
+            </p>
+          </div>
+          <a class="secondary-action" routerLink="/settings">Connect</a>
+        </section>
+      }
+    </div>
+  }
 
 </div>

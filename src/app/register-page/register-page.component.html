@@ -13,10 +13,12 @@
             type="text"
             formControlName="name"
             placeholder="Enter your full name"
-          />
-          <small class="error" *ngIf="registerForm.get('name')?.touched && registerForm.get('name')?.invalid">
-            Name must be at least 3 characters
-          </small>
+            />
+          @if (registerForm.get('name')?.touched && registerForm.get('name')?.invalid) {
+            <small class="error">
+              Name must be at least 3 characters
+            </small>
+          }
         </div>
 
         <div class="form-group">
@@ -26,10 +28,12 @@
             type="email"
             formControlName="email"
             placeholder="Enter your email"
-          />
-          <small class="error" *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.invalid">
-            Valid email is required
-          </small>
+            />
+          @if (registerForm.get('email')?.touched && registerForm.get('email')?.invalid) {
+            <small class="error">
+              Valid email is required
+            </small>
+          }
         </div>
 
         <div class="form-group">
@@ -39,10 +43,12 @@
             type="password"
             formControlName="password"
             placeholder="Enter your password"
-          />
-          <small class="error" *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.invalid">
-            Password must be at least 8 characters
-          </small>
+            />
+          @if (registerForm.get('password')?.touched && registerForm.get('password')?.invalid) {
+            <small class="error">
+              Password must be at least 8 characters
+            </small>
+          }
         </div>
 
         <div class="form-group">
@@ -52,16 +58,19 @@
             type="password"
             formControlName="confirmPassword"
             placeholder="Confirm your password"
-          />
-          <small class="error" *ngIf="registerForm.get('confirmPassword')?.touched && registerForm.get('confirmPassword')?.invalid">
-            Confirm password is required
-          </small>
-          <small
-            class="error"
-            *ngIf="registerForm.touched && registerForm.errors?.['passwordMismatch']"
-          >
-            Password and confirm password must match
-          </small>
+            />
+          @if (registerForm.get('confirmPassword')?.touched && registerForm.get('confirmPassword')?.invalid) {
+            <small class="error">
+              Confirm password is required
+            </small>
+          }
+          @if (registerForm.touched && registerForm.errors?.['passwordMismatch']) {
+            <small
+              class="error"
+              >
+              Password and confirm password must match
+            </small>
+          }
         </div>
 
         <button type="submit" [disabled]="registerForm.invalid || submitting">Register</button>

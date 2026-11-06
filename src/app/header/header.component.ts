@@ -1,4 +1,4 @@
-import { NgIf } from '@angular/common';
+
 import {
   Component,
   ElementRef,
@@ -16,7 +16,7 @@ import { ThemeService } from '../shared/theme.service';
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [RouterLink, NgIf],
+  imports: [RouterLink],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.css', './header.component.dark.css']
 })

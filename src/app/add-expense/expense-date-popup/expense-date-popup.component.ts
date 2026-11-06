@@ -1,10 +1,10 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
   selector: 'app-expense-date-popup',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './expense-date-popup.component.html',
   styleUrls: ['./expense-date-popup.component.css', './expense-date-popup.component.dark.css']
 })

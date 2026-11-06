@@ -239,11 +239,6 @@ export class ExpenseListComponent implements OnInit {
     });
   }
 
-  /** Keeps a row's DOM across reloads instead of rebuilding the whole list. */
-  trackRow(_index: number, row: TransactionRow): string {
-    return row.key;
-  }
-
   /** The split a row belongs to: its own if it was split, or the one a repayment pays back. */
   splitFor(row: TransactionRow): SplitSummary | null {
     const id = row.expense?.splitMembers ? row.expense.id : row.income?.splitExpenseId;

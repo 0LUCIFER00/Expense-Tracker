@@ -23,9 +23,4 @@ export class ToastHostComponent {
   onDismiss(toast: Toast): void {
     this.toastService.dismiss(toast.id);
   }
-
-  /** Keeps a toast's element across renders, so its entrance plays once. */
-  trackById(_index: number, toast: Toast): number {
-    return toast.id;
-  }
 }

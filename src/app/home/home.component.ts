@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, OnInit, inject } from '@angular/core';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -37,11 +37,10 @@ import { SpendingLayoutComponent } from './spending-layout/spending-layout.compo
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
   imports: [
-    CommonModule,
     FitsScreenDirective,
     BalancesLayoutComponent,
     SpendingLayoutComponent
-  ]
+]
 })
 export class HomeComponent implements OnInit {
   private readonly expenseService = inject(ExpenseService);

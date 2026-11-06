@@ -44,7 +44,7 @@ when using a shared or public computer.
 
 | Layer | Technology |
 |---|---|
-| Front end | **Angular 19** (standalone components, reactive forms, lazy-loaded routes), TypeScript 5.7, RxJS |
+| Front end | **Angular 21** (standalone components, reactive forms, lazy-loaded routes, `@if`/`@for` control flow), TypeScript 5.9, RxJS |
 | Styling | Hand-written CSS with design tokens (CSS custom properties), full **light and dark theme** |
 | Back end | **Node.js + Express 4** (ES modules, `.mjs`) |
 | Database | **PostgreSQL** (hosted on **Aiven**, Singapore region), accessed with `pg` (node-postgres) using plain SQL |
@@ -460,8 +460,9 @@ All routes are under `/api` and need the session cookie unless noted.
   (content security policy, no framing), and API responses are never cached.
 
 Known outstanding items (see AUDIT_REPORT.md): the Aiven CA certificate is not yet
-verified until `DATABASE_CA_CERT` is set; Angular 19 has advisories fixed only in v21;
-development shares the production database; the app connects as Aiven's admin user.
+verified until `DATABASE_CA_CERT` is set; development shares the production
+database; the app connects as Aiven's admin user. (The Angular advisories were closed
+by upgrading to Angular 21; `npm audit` reports none.)
 
 ---
 

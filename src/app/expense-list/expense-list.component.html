@@ -4,36 +4,46 @@
 
     <!-- Which half of the ledger. Debit is the old View Expenses page. -->
     <div class="tab-bar" role="tablist" aria-label="Transactions">
-      <button type="button" role="tab" class="tab" *ngFor="let t of tabs"
-        [class.on]="tab === t.value" [attr.aria-selected]="tab === t.value"
-        (click)="onTab(t.value)">
-        {{ t.label }}
-      </button>
+      @for (t of tabs; track t.value) {
+        <button type="button" role="tab" class="tab"
+          [class.on]="tab === t.value" [attr.aria-selected]="tab === t.value"
+          (click)="onTab(t.value)">
+          {{ t.label }}
+        </button>
+      }
     </div>
 
     <div class="filter-bar">
       <div class="filter">
         <label for="yearFilter">Year</label>
         <select id="yearFilter" (change)="onFilterYear($event)">
-          <option *ngFor="let y of years" [value]="y.value">{{ y.label }}</option>
+          @for (y of years; track y.value) {
+            <option [value]="y.value">{{ y.label }}</option>
+          }
         </select>
       </div>
 
       <div class="filter">
         <label for="monthFilter">Month</label>
         <select id="monthFilter" (change)="onFilterMonth($event)">
-          <option *ngFor="let m of months" [value]="m.value">{{ m.label }}</option>
+          @for (m of months; track m.value) {
+            <option [value]="m.value">{{ m.label }}</option>
+          }
         </select>
       </div>
 
-      <div class="filter" *ngIf="usedCategories.length > 1">
-        <label for="categoryFilter">Category</label>
-        <select id="categoryFilter" (change)="onFilterCategory($event)">
-          <option value="">All</option>
-          <option *ngFor="let name of usedCategories" [value]="name"
-            [selected]="name === selectedCategory">{{ name }}</option>
-        </select>
-      </div>
+      @if (usedCategories.length > 1) {
+        <div class="filter">
+          <label for="categoryFilter">Category</label>
+          <select id="categoryFilter" (change)="onFilterCategory($event)">
+            <option value="">All</option>
+            @for (name of usedCategories; track name) {
+              <option [value]="name"
+              [selected]="name === selectedCategory">{{ name }}</option>
+            }
+          </select>
+        </div>
+      }
 
       <div class="filter-actions">
         <button type="button" class="export-btn" [disabled]="!canExport" (click)="onExportCsv()">
@@ -44,11 +54,17 @@
         </button>
 
         <!-- Debit is your share only; a repayment is never counted as money in. -->
-        <span class="total-pill tnum" *ngIf="tab !== 'in'">Debit ₹{{ total | number }}</span>
-        <span class="total-pill in tnum" *ngIf="tab !== 'out'">Credit ₹{{ moneyIn | number }}</span>
-        <span class="total-pill back tnum" *ngIf="tab !== 'out' && paidBack">
-          Repaid ₹{{ paidBack | number }}
-        </span>
+        @if (tab !== 'in') {
+          <span class="total-pill tnum">Debit ₹{{ total | number }}</span>
+        }
+        @if (tab !== 'out') {
+          <span class="total-pill in tnum">Credit ₹{{ moneyIn | number }}</span>
+        }
+        @if (tab !== 'out' && paidBack) {
+          <span class="total-pill back tnum">
+            Repaid ₹{{ paidBack | number }}
+          </span>
+        }
       </div>
     </div>
 
@@ -68,10 +84,12 @@
         <span class="sortable" role="columnheader" (click)="onSort('category')">
           {{ tab === 'in' ? 'Source' : 'Category' }}{{ getSortIcon('category') }}
         </span>
-        <span class="sortable" role="columnheader" *ngIf="canViewSourceDetails"
-          (click)="onSort('account')">
-          Account{{ getSortIcon('account') }}
-        </span>
+        @if (canViewSourceDetails) {
+          <span class="sortable" role="columnheader"
+            (click)="onSort('account')">
+            Account{{ getSortIcon('account') }}
+          </span>
+        }
         <span class="sortable" role="columnheader" (click)="onSort('status')">
           Status{{ getSortIcon('status') }}
         </span>
@@ -79,92 +97,98 @@
       </div>
 
       <!-- Tracked by key, so a reload after a change reuses the rows it can. -->
-      <ng-container *ngFor="let row of rows; trackBy: trackRow">
-
-      <!--
+      @for (row of rows; track row.key) {
+        <!--
         A row tied to a split opens its repayment history: the split expense
         itself, or a repayment against one. An ordinary row does nothing.
-      -->
-      <div class="table-row" [class.no-account]="!canViewSourceDetails"
-        [class.row-out]="row.kind === 'out'" [class.row-in]="row.kind === 'in'"
-        [class.et-splittable]="splitFor(row)" [class.et-open]="expandedId === row.key"
-        [attr.role]="splitFor(row) ? 'button' : null"
-        [attr.tabindex]="splitFor(row) ? 0 : null"
-        [attr.aria-expanded]="splitFor(row) ? expandedId === row.key : null"
-        (click)="onToggleSplit(row)" (keydown.enter)="onToggleSplit(row)">
-
-        <span class="cell-date tnum" data-label="Date">{{ row.date | date:'d MMM' }}</span>
-
-        <span class="cell-amount tnum" data-label="Amount" [class.in]="row.kind === 'in'">
-          {{ row.kind === 'in' ? '+' : '' }}₹{{ row.amount | number }}
-        </span>
-
-        <span class="cell-what" data-label="Description">
-          {{ row.description }}
-          <span class="et-split-tag" *ngIf="row.expense?.splitMembers">
-            Split {{ row.expense?.splitMembers }} · yours ₹{{ row.expense?.personalShare | number }}
-            <span class="et-split-caret" aria-hidden="true">▾</span>
+        -->
+        <div class="table-row" [class.no-account]="!canViewSourceDetails"
+          [class.row-out]="row.kind === 'out'" [class.row-in]="row.kind === 'in'"
+          [class.et-splittable]="splitFor(row)" [class.et-open]="expandedId === row.key"
+          [attr.role]="splitFor(row) ? 'button' : null"
+          [attr.tabindex]="splitFor(row) ? 0 : null"
+          [attr.aria-expanded]="splitFor(row) ? expandedId === row.key : null"
+          (click)="onToggleSplit(row)" (keydown.enter)="onToggleSplit(row)">
+          <span class="cell-date tnum" data-label="Date">{{ row.date | date:'d MMM' }}</span>
+          <span class="cell-amount tnum" data-label="Amount" [class.in]="row.kind === 'in'">
+            {{ row.kind === 'in' ? '+' : '' }}₹{{ row.amount | number }}
           </span>
-          <span class="et-split-tag" *ngIf="row.income?.splitDescription">
-            Repayment for {{ row.income?.splitDescription }}
-            <span class="et-split-caret" aria-hidden="true">▾</span>
+          <span class="cell-what" data-label="Description">
+            {{ row.description }}
+            @if (row.expense?.splitMembers) {
+              <span class="et-split-tag">
+                Split {{ row.expense?.splitMembers }} · yours ₹{{ row.expense?.personalShare | number }}
+                <span class="et-split-caret" aria-hidden="true">▾</span>
+              </span>
+            }
+            @if (row.income?.splitDescription) {
+              <span class="et-split-tag">
+                Repayment for {{ row.income?.splitDescription }}
+                <span class="et-split-caret" aria-hidden="true">▾</span>
+              </span>
+            }
           </span>
-        </span>
+          <span class="cell-category" [attr.data-label]="row.kind === 'in' ? 'Source' : 'Category'">
+            <span class="chip" [attr.data-cat]="row.category">{{ row.category }}</span>
+          </span>
+          @if (canViewSourceDetails) {
+            <span class="cell-account" data-label="Account">
+              {{ row.account || '—' }}
+            </span>
+          }
+          <span class="cell-status" data-label="Status">
+            <span class="chip" [attr.data-status]="row.status.toLowerCase()">{{ row.status }}</span>
+          </span>
+          <span class="cell-actions">
+            @if (row.expense; as e) {
+              @if (e.isPendingApproval && canApprovePending) {
+                <button type="button" class="icon-btn approve"
+                  aria-label="Approve this expense" (click)="$event.stopPropagation(); onApprovePending(e)">
+                  <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
+                    <path d="m5 12.5 4.5 4.5L19 7" />
+                  </svg>
+                </button>
+              }
+              @if (canRemoveExpenses) {
+                <button type="button" class="icon-btn remove"
+                  aria-label="Remove this expense" (click)="$event.stopPropagation(); onDelete(e)">
+                  <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
+                    <path d="M6 6l12 12M18 6 6 18" />
+                  </svg>
+                </button>
+              }
+            }
+            @if (row.income && canRemoveExpenses) {
+              <button type="button" class="icon-btn remove"
+                aria-label="Remove this income" (click)="$event.stopPropagation(); onDeleteIncome(row.income)">
+                <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6 6 18" />
+                </svg>
+              </button>
+            }
+          </span>
+        </div>
+        @if (expandedId === row.key && splitFor(row); as split) {
+          <app-split-history [split]="split">
+          </app-split-history>
+        }
+      }
 
-        <span class="cell-category" [attr.data-label]="row.kind === 'in' ? 'Source' : 'Category'">
-          <span class="chip" [attr.data-cat]="row.category">{{ row.category }}</span>
-        </span>
+    </div>
 
-        <span class="cell-account" data-label="Account" *ngIf="canViewSourceDetails">
-          {{ row.account || '—' }}
-        </span>
+    @if (rows.length && canRemoveExpenses) {
+      <p class="table-note">
+        Removing an entry puts the money back the way it was — you are told which
+        account it went to.
+      </p>
+    }
 
-        <span class="cell-status" data-label="Status">
-          <span class="chip" [attr.data-status]="row.status.toLowerCase()">{{ row.status }}</span>
-        </span>
-
-        <span class="cell-actions">
-          <ng-container *ngIf="row.expense as e">
-            <button type="button" class="icon-btn approve" *ngIf="e.isPendingApproval && canApprovePending"
-              aria-label="Approve this expense" (click)="$event.stopPropagation(); onApprovePending(e)">
-              <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
-                <path d="m5 12.5 4.5 4.5L19 7" />
-              </svg>
-            </button>
-
-            <button type="button" class="icon-btn remove" *ngIf="canRemoveExpenses"
-              aria-label="Remove this expense" (click)="$event.stopPropagation(); onDelete(e)">
-              <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
-                <path d="M6 6l12 12M18 6 6 18" />
-              </svg>
-            </button>
-          </ng-container>
-
-          <button type="button" class="icon-btn remove" *ngIf="row.income && canRemoveExpenses"
-            aria-label="Remove this income" (click)="$event.stopPropagation(); onDeleteIncome(row.income)">
-            <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
-              <path d="M6 6l12 12M18 6 6 18" />
-            </svg>
-          </button>
-        </span>
+    @if (rows.length === 0) {
+      <div class="no-record">
+        <h3>No record found</h3>
+        <p>Nothing matches these filters.</p>
       </div>
-
-      <app-split-history *ngIf="expandedId === row.key && splitFor(row) as split" [split]="split">
-      </app-split-history>
-
-      </ng-container>
-
-    </div>
-
-    <p class="table-note" *ngIf="rows.length && canRemoveExpenses">
-      Removing an entry puts the money back the way it was — you are told which
-      account it went to.
-    </p>
-
-    <div *ngIf="rows.length === 0" class="no-record">
-      <h3>No record found</h3>
-      <p>Nothing matches these filters.</p>
-    </div>
+    }
 
   </div>
 

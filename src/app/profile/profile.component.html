@@ -30,14 +30,16 @@
         <p class="field-note">Used to sign in. Changing it changes your sign-in.</p>
 
         <!-- Only when the email changes: it is the sign-in, so it needs proof. -->
-        <ng-container *ngIf="emailChanged">
+        @if (emailChanged) {
           <label class="et-field-label" for="emailPassword">Current password</label>
           <input id="emailPassword" class="et-field" type="password" [(ngModel)]="emailPassword"
             [disabled]="detailsBusy" autocomplete="current-password"
             placeholder="Needed to change your sign-in email">
-        </ng-container>
+        }
 
-        <p class="et-field-error" *ngIf="detailsError">{{ detailsError }}</p>
+        @if (detailsError) {
+          <p class="et-field-error">{{ detailsError }}</p>
+        }
 
         <button type="button" class="et-btn-primary"
           [disabled]="!detailsChanged || detailsBusy || (emailChanged && !emailPassword)"
@@ -67,11 +69,15 @@
           [(ngModel)]="confirmPassword" [disabled]="passwordBusy"
           placeholder="Repeat the new password">
 
-        <p class="et-field-error" *ngIf="confirmPassword && !passwordsMatch">
-          The new passwords do not match.
-        </p>
+        @if (confirmPassword && !passwordsMatch) {
+          <p class="et-field-error">
+            The new passwords do not match.
+          </p>
+        }
 
-        <p class="et-field-error" *ngIf="passwordError">{{ passwordError }}</p>
+        @if (passwordError) {
+          <p class="et-field-error">{{ passwordError }}</p>
+        }
 
         <button type="button" class="et-btn-ghost" [disabled]="!canSubmitPassword"
           (click)="onChangePassword()">
@@ -98,10 +104,12 @@
           <span class="fact-value tnum">{{ totalExpenses }}</span>
         </div>
 
-        <div class="fact" *ngIf="canSeeBalances">
-          <span class="fact-label">Accounts</span>
-          <span class="fact-value tnum">{{ accountCount }}</span>
-        </div>
+        @if (canSeeBalances) {
+          <div class="fact">
+            <span class="fact-label">Accounts</span>
+            <span class="fact-value tnum">{{ accountCount }}</span>
+          </div>
+        }
 
         <div class="fact last">
           <span class="fact-label">Full access</span>
@@ -112,14 +120,16 @@
       <section class="card">
         <h2 class="card-title">Linked WhatsApp</h2>
 
-        <ng-container *ngIf="whatsapp?.connected">
+        @if (whatsapp?.connected) {
           <p class="linked-number tnum">{{ whatsapp?.number }}</p>
           <p class="field-note">Messages from this number are added to your expenses.</p>
-        </ng-container>
+        }
 
-        <p class="card-body" *ngIf="whatsapp && !whatsapp.connected">
-          No phone linked yet.
-        </p>
+        @if (whatsapp && !whatsapp.connected) {
+          <p class="card-body">
+            No phone linked yet.
+          </p>
+        }
 
         <a class="card-link" routerLink="/settings">Manage in Settings</a>
       </section>
@@ -149,37 +159,36 @@
 </div>
 
 <!-- Deleting takes the expenses and balances with it, so it asks first. -->
-<div class="et-overlay" *ngIf="showDeletePopup">
-  <div class="et-popup">
-    <h3>Delete this account</h3>
-
-    <p class="et-popup-body">
-      Everything goes: {{ totalExpenses }}
-      {{ totalExpenses === 1 ? 'expense' : 'expenses' }}, your accounts and their
-      balances, and any linked phone. This cannot be undone.
-    </p>
-
-    <!-- With a full-access password set, only it can close the account. -->
-    <label class="et-field-label" for="deletePassword">
-      {{ user?.hasAdminPassword ? 'Your full-access password' : 'Your password' }}
-    </label>
-    <input id="deletePassword" class="et-field" type="password"
-      [(ngModel)]="deletePassword" [disabled]="deleteBusy"
+@if (showDeletePopup) {
+  <div class="et-overlay">
+    <div class="et-popup">
+      <h3>Delete this account</h3>
+      <p class="et-popup-body">
+        Everything goes: {{ totalExpenses }}
+        {{ totalExpenses === 1 ? 'expense' : 'expenses' }}, your accounts and their
+        balances, and any linked phone. This cannot be undone.
+      </p>
+      <!-- With a full-access password set, only it can close the account. -->
+      <label class="et-field-label" for="deletePassword">
+        {{ user?.hasAdminPassword ? 'Your full-access password' : 'Your password' }}
+      </label>
+      <input id="deletePassword" class="et-field" type="password"
+        [(ngModel)]="deletePassword" [disabled]="deleteBusy"
       [placeholder]="user?.hasAdminPassword
         ? 'Enter your full-access password to confirm'
         : 'Enter your password to confirm'">
-
-    <p class="et-field-error" *ngIf="deleteError">{{ deleteError }}</p>
-
-    <div class="et-popup-actions">
-      <button type="button" class="et-btn-ghost" [disabled]="deleteBusy" (click)="onCancelDelete()">
-        Keep my account
-      </button>
-
-      <button type="button" class="et-btn-danger" [disabled]="!deletePassword || deleteBusy"
-        (click)="onConfirmDelete()">
-        {{ deleteBusy ? 'Deleting…' : 'Delete everything' }}
-      </button>
+      @if (deleteError) {
+        <p class="et-field-error">{{ deleteError }}</p>
+      }
+      <div class="et-popup-actions">
+        <button type="button" class="et-btn-ghost" [disabled]="deleteBusy" (click)="onCancelDelete()">
+          Keep my account
+        </button>
+        <button type="button" class="et-btn-danger" [disabled]="!deletePassword || deleteBusy"
+          (click)="onConfirmDelete()">
+          {{ deleteBusy ? 'Deleting…' : 'Delete everything' }}
+        </button>
+      </div>
     </div>
   </div>
-</div>
+}

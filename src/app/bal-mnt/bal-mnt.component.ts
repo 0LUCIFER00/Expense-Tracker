@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -23,7 +23,7 @@ interface BalanceRow {
 @Component({
   selector: 'app-bal-mnt',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [FormsModule, RouterModule],
   templateUrl: './bal-mnt.component.html',
   styleUrl: './bal-mnt.component.css'
 })

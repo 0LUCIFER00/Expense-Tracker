@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
@@ -24,7 +24,7 @@ const SUPPORT_ADDRESS = 'support@example.com';
 @Component({
   selector: 'app-help-support',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   templateUrl: './help-support.component.html',
   styleUrl: './help-support.component.css'
 })

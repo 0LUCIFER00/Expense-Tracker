@@ -1,128 +1,114 @@
 <div class="body">
 
-    <div class="header-row">
-        <h2 class="header">Cash &amp; Accounts</h2>
-    </div>
+  <div class="header-row">
+    <h2 class="header">Cash &amp; Accounts</h2>
+  </div>
 
-    <p class="page-hint">
-        The accounts your money sits in. A row counts once you save it with the
-        tick. To put money in, use <a routerLink="/add-money">Add Income</a> rather
-        than editing the figure here — that way there is a record of where it
-        came from.
+  <p class="page-hint">
+    The accounts your money sits in. A row counts once you save it with the
+    tick. To put money in, use <a routerLink="/add-money">Add Income</a> rather
+    than editing the figure here — that way there is a record of where it
+    came from.
+  </p>
+
+  @if (readOnly) {
+    <p class="page-hint read-only-note">
+      These figures are view-only on this sign-in. Changing them needs
+      <strong>Debit from an account</strong>, or your full-access password.
     </p>
+  }
 
-    <p class="page-hint read-only-note" *ngIf="readOnly">
-        These figures are view-only on this sign-in. Changing them needs
-        <strong>Debit from an account</strong>, or your full-access password.
-    </p>
-
-    <!-- One switch for every field and button in the rows. -->
-    <fieldset class="balance-fieldset" [disabled]="readOnly">
+  <!-- One switch for every field and button in the rows. -->
+  <fieldset class="balance-fieldset" [disabled]="readOnly">
     <div class="balance-container">
 
-        <div class="balance-row" *ngFor="let item of balances; let i = index">
-
-            <div class="balance-field">
-                <label>Account type</label>
-
-                <select [(ngModel)]="item.type" (ngModelChange)="onTypeChange(item); onBalanceRowChange(item)">
-                    <option value="Hand Cash">Cash in hand</option>
-                    <option value="Wallet">Wallet</option>
-                    <option value="Bank Account">Bank Account</option>
-                </select>
+      @for (item of balances; track item; let i = $index) {
+        <div class="balance-row">
+          <div class="balance-field">
+            <label>Account type</label>
+            <select [(ngModel)]="item.type" (ngModelChange)="onTypeChange(item); onBalanceRowChange(item)">
+              <option value="Hand Cash">Cash in hand</option>
+              <option value="Wallet">Wallet</option>
+              <option value="Bank Account">Bank Account</option>
+            </select>
+          </div>
+          <div class="balance-field">
+            <label>
+              {{
+              item.type === 'Hand Cash'
+              ? 'Cash Type'
+              : item.type === 'Wallet'
+              ? 'Wallet Name'
+              : 'Bank Name'
+              }}
+            </label>
+            <select [(ngModel)]="item.category" (change)="onCategoryChange(item)">
+              <option value="">Select</option>
+              @for (option of getOptions(item.type); track option) {
+                <option [value]="option">
+                  {{ option }}
+                </option>
+              }
+              <option value="other">
+                + Add New
+              </option>
+            </select>
+          </div>
+          <div class="balance-field">
+            <label>Current balance</label>
+            <input type="number" [(ngModel)]="item.balance" (input)="onBalanceRowChange(item)"
+              placeholder="Enter balance">
             </div>
-
-            <div class="balance-field">
-                <label>
-                    {{
-                    item.type === 'Hand Cash'
-                    ? 'Cash Type'
-                    : item.type === 'Wallet'
-                    ? 'Wallet Name'
-                    : 'Bank Name'
-                    }}
-                </label>
-
-                <select [(ngModel)]="item.category" (change)="onCategoryChange(item)">
-
-                    <option value="">Select</option>
-
-                    <option *ngFor="let option of getOptions(item.type)" [value]="option">
-                        {{ option }}
-                    </option>
-
-                    <option value="other">
-                        + Add New
-                    </option>
-
-                </select>
-            </div>
-
-
-            <div class="balance-field">
-                <label>Current balance</label>
-
-                <input type="number" [(ngModel)]="item.balance" (input)="onBalanceRowChange(item)"
-                    placeholder="Enter balance">
-            </div>
-
             <div class="balance-actions">
-
-                <button type="button" class="add-balance-btn" *ngIf="i === balances.length - 1"
-                    [disabled]="item.busy" (click)="addRow()">
-                    +
+              @if (i === balances.length - 1) {
+                <button type="button" class="add-balance-btn"
+                  [disabled]="item.busy" (click)="addRow()">
+                  +
                 </button>
-
-                <button type="button" class="delete-balance-btn" *ngIf="balances.length > 1"
-                    [disabled]="item.busy" (click)="removeRow(i)">
-                    ×
+              }
+              @if (balances.length > 1) {
+                <button type="button" class="delete-balance-btn"
+                  [disabled]="item.busy" (click)="removeRow(i)">
+                  ×
                 </button>
-
-                <button type="button" class="save-balance-btn"
-                    [disabled]="item.saved || item.busy || !isRowComplete(item)"
-                    (click)="saveBalanceRow(item)">
-                    ✓
-                </button>
-
+              }
+              <button type="button" class="save-balance-btn"
+                [disabled]="item.saved || item.busy || !isRowComplete(item)"
+                (click)="saveBalanceRow(item)">
+                ✓
+              </button>
             </div>
+          </div>
+        }
 
-        </div>
-
-    </div>
+      </div>
     </fieldset>
 
-</div>
+  </div>
 
-<!-- Add New Option Popup -->
-<div class="custom-popup-overlay" *ngIf="popupVisible">
-
-    <div class="custom-popup">
-
+  <!-- Add New Option Popup -->
+  @if (popupVisible) {
+    <div class="custom-popup-overlay">
+      <div class="custom-popup">
         <h3>
-            Add New
-            {{
-            selectedItem?.type === 'Hand Cash'
-            ? 'Cash Type'
-            : selectedItem?.type === 'Wallet'
-            ? 'Wallet'
-            : 'Bank'
-            }}
+          Add New
+          {{
+          selectedItem?.type === 'Hand Cash'
+          ? 'Cash Type'
+          : selectedItem?.type === 'Wallet'
+          ? 'Wallet'
+          : 'Bank'
+          }}
         </h3>
-
         <input type="text" [(ngModel)]="popupValue" placeholder="Enter value">
-
         <div class="popup-actions">
-
-            <button type="button" class="popup-cancel-btn" (click)="popupVisible = false">
-                Cancel
-            </button>
-
-            <button type="button" class="popup-save-btn" (click)="saveNewOption()">
-                Add
-            </button>
-
+          <button type="button" class="popup-cancel-btn" (click)="popupVisible = false">
+            Cancel
+          </button>
+          <button type="button" class="popup-save-btn" (click)="saveNewOption()">
+            Add
+          </button>
         </div>
-
+      </div>
     </div>
-
-</div>
+  }

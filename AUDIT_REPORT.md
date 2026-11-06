@@ -122,7 +122,7 @@ real `permissionsFor`, which the server uses.
 | H4 | Database certificate not verified | Needs the Aiven CA, which only you can download | Aiven console → service → *CA certificate* → copy → Vercel env `DATABASE_CA_CERT`. The code already reads it; the startup warning disappears when it is right |
 | H5 | Development uses the production database | Infrastructure decision (you chose "not now") | A second Aiven database for development and tests |
 | M8 | App connects as `avnadmin` (can create roles and databases, bypasses RLS) | Needs a role created in Aiven | A role with select/insert/update/delete on the app tables only; I can write the SQL for you to run |
-| M9 | Angular 19 advisories (4 high, 3 moderate, fixed only in 21) | A major-version upgrade | Separate piece of work. Most don't apply here (no SSR, no XSRF cookie, no user-supplied date formats) |
+| ~~M9~~ | ~~Angular 19 advisories~~ **Closed** on branch `chore/angular-21`: upgraded 19 → 20 → 21; `npm audit --omit=dev` reports 0 vulnerabilities | — | Merge that branch |
 | M10 | No pagination | Data is 8 rows; filtering is client-side | Move year/month filtering to the API when history grows (thousands of rows) |
 | L2 | No explicit CSRF token | SameSite=Lax plus JSON-only bodies already block cross-site writes. An Origin check was **not** added because it can't be verified behind Vercel's proxy without deploying, and a wrong one would block every write | Add after a preview deploy confirms the forwarded host |
 | L7 | A WhatsApp message is marked handled before processing, so a crash part-way drops it silently | Deliberate: the alternative is double-booking on retry | The user resends; acceptable |
@@ -240,5 +240,5 @@ and dark-mode passes on the changed screens (they reuse existing styles).
 **Ready for preview; production after the preview checks in §9.** The code-side
 security findings are closed and tested. Financial integrity was verified with no
 rule changes. What remains is either a setting only you can make (CA certificate,
-database role, separate dev database) or a deliberate later project (Angular 21,
-pagination).
+database role, separate dev database) or a deliberate later project (pagination).
+The Angular 21 upgrade is done on its own branch, `chore/angular-21`.

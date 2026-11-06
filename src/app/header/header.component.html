@@ -4,9 +4,13 @@
   <nav class="nav-links" [class.open]="menuOpen" id="primary-nav">
     <a routerLink="/home" (click)="closeMenu()">Home</a>
     <a routerLink="/add-expense" (click)="closeMenu()">Add Expense</a>
-    <a *ngIf="showAddMoney" routerLink="/add-money" (click)="closeMenu()">Add Income</a>
+    @if (showAddMoney) {
+      <a routerLink="/add-money" (click)="closeMenu()">Add Income</a>
+    }
     <a routerLink="/transactions" (click)="closeMenu()">Transactions</a>
-    <a *ngIf="showBalanceManagement" routerLink="/money" (click)="closeMenu()">Cash &amp; Accounts</a>
+    @if (showBalanceManagement) {
+      <a routerLink="/money" (click)="closeMenu()">Cash &amp; Accounts</a>
+    }
   </nav>
 
   <div class="header-actions">
@@ -16,15 +20,19 @@
       [attr.title]="theme.isDark ? 'Switch to light' : 'Switch to dark'"
       aria-label="Switch between light and dark">
 
-      <svg *ngIf="theme.isDark" class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="4.2" />
-        <path d="M12 2.6v2.4M12 19v2.4M4.2 12H1.8M22.2 12h-2.4" />
-        <path d="M5.9 5.9 7.6 7.6M16.4 16.4l1.7 1.7M18.1 5.9l-1.7 1.7M7.6 16.4l-1.7 1.7" />
-      </svg>
+      @if (theme.isDark) {
+        <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.2" />
+          <path d="M12 2.6v2.4M12 19v2.4M4.2 12H1.8M22.2 12h-2.4" />
+          <path d="M5.9 5.9 7.6 7.6M16.4 16.4l1.7 1.7M18.1 5.9l-1.7 1.7M7.6 16.4l-1.7 1.7" />
+        </svg>
+      }
 
-      <svg *ngIf="!theme.isDark" class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M20.2 14.6A8.4 8.4 0 0 1 9.4 3.8a8.4 8.4 0 1 0 10.8 10.8Z" />
-      </svg>
+      @if (!theme.isDark) {
+        <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20.2 14.6A8.4 8.4 0 0 1 9.4 3.8a8.4 8.4 0 1 0 10.8 10.8Z" />
+        </svg>
+      }
 
     </button>
 
@@ -37,38 +45,34 @@
 
       </button>
 
-      <div class="profile-dropdown" #profileMenu *ngIf="showProfileMenu">
-
-        <a routerLink="/profile" (click)="closeProfileMenu()">
-          👤 My Profile
-        </a>
-
-        <a routerLink="/settings" (click)="closeProfileMenu()">
-          ⚙️ Settings
-        </a>
-
-        <a routerLink="/help_support" (click)="closeProfileMenu()">
-          ❓ Help &amp; Support
-        </a>
-
-        <hr>
-
-        <a href="javascript:void(0)" (click)="logout()">
-          🚪 Logout
-        </a>
+      @if (showProfileMenu) {
+        <div class="profile-dropdown" #profileMenu>
+          <a routerLink="/profile" (click)="closeProfileMenu()">
+            👤 My Profile
+          </a>
+          <a routerLink="/settings" (click)="closeProfileMenu()">
+            ⚙️ Settings
+          </a>
+          <a routerLink="/help_support" (click)="closeProfileMenu()">
+            ❓ Help &amp; Support
+          </a>
+          <hr>
+            <a href="javascript:void(0)" (click)="logout()">
+              🚪 Logout
+            </a>
+          </div>
+        }
 
       </div>
 
+      <button class="menu-toggle" type="button" aria-label="Toggle navigation" aria-controls="primary-nav"
+        [attr.aria-expanded]="menuOpen" (click)="toggleMenu()">
+
+        <span class="menu-bar"></span>
+        <span class="menu-bar"></span>
+        <span class="menu-bar"></span>
+
+      </button>
+
     </div>
-
-    <button class="menu-toggle" type="button" aria-label="Toggle navigation" aria-controls="primary-nav"
-      [attr.aria-expanded]="menuOpen" (click)="toggleMenu()">
-
-      <span class="menu-bar"></span>
-      <span class="menu-bar"></span>
-      <span class="menu-bar"></span>
-
-    </button>
-
-  </div>
-</header>
+  </header>

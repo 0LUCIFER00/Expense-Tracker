@@ -1,19 +1,23 @@
-<section class="chart" *ngIf="days.length">
-  <div class="chart-head">
-    <h2 class="chart-title">{{ title }}</h2>
-    <span class="chart-peak tnum" *ngIf="busiest">busiest ₹{{ busiest | number }}</span>
-  </div>
-
-  <div class="chart-plot">
-    <div class="chart-day" *ngFor="let day of days" [class.today]="day.isToday"
-      [class.empty]="!day.total"
-      [attr.title]="(day.date | date: 'd MMM') + ' · ₹' + (day.total | number)">
-      <span class="chart-bar" [style.height.%]="day.height"></span>
+@if (days.length) {
+  <section class="chart">
+    <div class="chart-head">
+      <h2 class="chart-title">{{ title }}</h2>
+      @if (busiest) {
+        <span class="chart-peak tnum">busiest ₹{{ busiest | number }}</span>
+      }
     </div>
-  </div>
-
-  <div class="chart-axis">
-    <span class="tnum">{{ days[0].date | date: 'd MMM' }}</span>
-    <span class="tnum">today</span>
-  </div>
-</section>
+    <div class="chart-plot">
+      @for (day of days; track $index) {
+        <div class="chart-day" [class.today]="day.isToday"
+          [class.empty]="!day.total"
+          [attr.title]="(day.date | date: 'd MMM') + ' · ₹' + (day.total | number)">
+          <span class="chart-bar" [style.height.%]="day.height"></span>
+        </div>
+      }
+    </div>
+    <div class="chart-axis">
+      <span class="tnum">{{ days[0].date | date: 'd MMM' }}</span>
+      <span class="tnum">today</span>
+    </div>
+  </section>
+}

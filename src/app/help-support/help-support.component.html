@@ -12,10 +12,12 @@
       Send any of these from the phone you have linked — no sign-in, no app.
     </p>
 
-    <div class="command-row" *ngFor="let command of whatsappCommands">
-      <code class="command tnum">{{ command.send }}</code>
-      <span class="command-does">{{ command.does }}</span>
-    </div>
+    @for (command of whatsappCommands; track command.send) {
+      <div class="command-row">
+        <code class="command tnum">{{ command.send }}</code>
+        <span class="command-does">{{ command.does }}</span>
+      </div>
+    }
 
     <p class="card-note">
       Naming an account (<strong>hdfc</strong>, <strong>paytm</strong>,
@@ -35,14 +37,15 @@
     </p>
 
     <ol class="split-steps">
-      <li *ngFor="let step of splitSteps">
-        <p class="step-title">{{ step.title }}</p>
-
-        <div class="command-row">
-          <code class="command tnum">{{ step.send }}</code>
-          <span class="command-does">{{ step.does }}</span>
-        </div>
-      </li>
+      @for (step of splitSteps; track step.send) {
+        <li>
+          <p class="step-title">{{ step.title }}</p>
+          <div class="command-row">
+            <code class="command tnum">{{ step.send }}</code>
+            <span class="command-does">{{ step.does }}</span>
+          </div>
+        </li>
+      }
     </ol>
 
     <p class="card-note">
@@ -61,13 +64,15 @@
     <section class="card main-column">
       <h2 class="card-title">Common questions</h2>
 
-      <details class="faq" *ngFor="let faq of faqs; let i = index" [open]="openFaq === i">
-        <summary (click)="onToggleFaq(i, $event)">
-          <span>{{ faq.question }}</span>
-          <span class="faq-marker" aria-hidden="true">{{ openFaq === i ? '−' : '+' }}</span>
-        </summary>
-        <p class="faq-answer">{{ faq.answer }}</p>
-      </details>
+      @for (faq of faqs; track faq.question; let i = $index) {
+        <details class="faq" [open]="openFaq === i">
+          <summary (click)="onToggleFaq(i, $event)">
+            <span>{{ faq.question }}</span>
+            <span class="faq-marker" aria-hidden="true">{{ openFaq === i ? '−' : '+' }}</span>
+          </summary>
+          <p class="faq-answer">{{ faq.answer }}</p>
+        </details>
+      }
     </section>
 
     <aside class="side-column">
@@ -89,10 +94,12 @@
           </span>
         </div>
 
-        <div class="status-row last" *ngIf="canSeeBalances">
-          <span class="status-label">Accounts set up</span>
-          <span class="chip tnum">{{ accountCount }}</span>
-        </div>
+        @if (canSeeBalances) {
+          <div class="status-row last">
+            <span class="status-label">Accounts set up</span>
+            <span class="chip tnum">{{ accountCount }}</span>
+          </div>
+        }
 
         <p class="card-note">Saves asking “is it connected?” before anything else</p>
       </section>

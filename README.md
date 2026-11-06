@@ -1,6 +1,6 @@
 # Expense Tracker
 
-An expense tracker with an Angular 19 front end and an Express + PostgreSQL back end.
+An expense tracker with an Angular 21 front end and an Express + PostgreSQL back end.
 All data lives in PostgreSQL (hosted on Aiven); the browser holds nothing but an
 httpOnly session cookie.
 
@@ -328,9 +328,6 @@ before that rule.
   the Aiven console and set `DATABASE_CA_CERT` to its contents (the way that works on
   Vercel), or save it to `server/certs/ca.pem`, or point `PGSSLROOTCERT` at it. The
   connection then verifies itself.
-- **Angular 19 has published advisories** that are only fixed in 21. The upgrade is a
-  major version step, so it is a deliberate piece of work rather than a patch. See
-  `npm audit --omit=dev`.
 - **Development uses the production database.** Local runs, tests against a live
   server and migrations all touch real data. A separate Aiven database for development
   would also let concurrency be tested for real rather than by reading the code.
