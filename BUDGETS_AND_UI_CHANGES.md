@@ -8,9 +8,9 @@
 > `PROJECT_OVERVIEW.md` and `RECENT_CHANGES.md`. Full details of the budget feature
 > are in `BUDGET_DESIGN.md` and `BUDGET_FEATURE_REPORT.md`.
 >
-> **Status:** on the branch `feat/budgets`, pushed to GitHub, **not merged into `main`
-> and not deployed**. The live site still runs the previous version. The database
-> change (new tables) is already applied; the live version ignores it.
+> **Status:** reviewed (`BUDGET_RELEASE_REVIEW.md`: ready to merge), **merged into
+> `main` and deployed to production** on 6 November 2026. The database change (new
+> tables) was applied before the deploy.
 
 ---
 
@@ -194,10 +194,7 @@ real rules. It includes:
 
 ## What's next
 
-- **Review** the `feat/budgets` branch on a local run (`npm run dev`).
-- **When approved,** merge it into `main`, which deploys to production automatically
-  on Vercel.
-- **After deploying, check:**
+- **Check on the live site:**
   - create a budget and see it on Home;
   - add an expense that crosses 50% and see the alert;
   - with "Budget alerts on WhatsApp" switched on, send a WhatsApp expense and look for
