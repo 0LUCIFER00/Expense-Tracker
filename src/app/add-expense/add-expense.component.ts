@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { AttachmentPickerComponent } from '../shared/attachment-picker/attachment-picker.component';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -11,7 +12,8 @@ import { BalanceService } from '../shared/balance.service';
 import { ExpenseService } from '../shared/expense.service';
 import { SettingsService } from '../shared/settings.service';
 import { BalanceAccount } from '../shared/models';
-import { parseLocalDate, today } from '../shared/date-utils';
+import { dayLabel, openDatePicker, parseLocalDate, today, yesterday } from '../shared/date-utils';
+import { categoryIcon } from '../shared/category-icons';
 import { ExpenseDatePopupComponent } from './expense-date-popup/expense-date-popup.component';
 import { RouterModule } from '@angular/router';
 import { FitsScreenDirective } from '../shared/fits-screen.directive';
@@ -31,12 +33,16 @@ import {
     CommonModule,
     RouterModule,
     FitsScreenDirective,
-    ExpenseDatePopupComponent
+    ExpenseDatePopupComponent,
+    AttachmentPickerComponent
   ],
   templateUrl: './add-expense.component.html',
-  styleUrl: './add-expense.component.css'
+  styleUrls: ['../shared/entry-form.css', '../shared/entry-aside.css', './add-expense.component.css']
 })
 export class AddExpenseComponent implements OnInit {
+  /** Receipts chosen before saving; attached once the expense exists. */
+  @ViewChild(AttachmentPickerComponent) picker?: AttachmentPickerComponent;
+
   private readonly fb = inject(FormBuilder);
   private readonly expenseService = inject(ExpenseService);
   private readonly balanceService = inject(BalanceService);
@@ -111,7 +117,100 @@ export class AddExpenseComponent implements OnInit {
     }
   }
 
-  /** The account chosen under "Debit from", or null while none is. */
+  readonly categoryIcon = categoryIcon;
+
+  /** ₹2,043, or −₹2,043 for an overdrawn balance (never ₹-2,043). */
+  rupees(value: number | null): string {
+    if (value === null) {
+      return '—';
+    }
+
+    const text = Math.abs(value).toLocaleString('en-US', { maximumFractionDigits: 2 });
+    return value < 0 ? `−₹${text}` : `₹${text}`;
+  }
+
+  /** Clicking the chosen category again clears it; a category is optional. */
+  pickCategory(name: string): void {
+    const control = this.expenseForm.get('category');
+    control?.setValue(control.value === name ? '' : name);
+  }
+
+  pickSource(id: string): void {
+    this.expenseForm.get('source')?.setValue(id);
+  }
+
+  toggleSplit(): void {
+    const control = this.expenseForm.get('split');
+    control?.setValue(!control.value);
+  }
+
+  /** The − and + beside the head count, kept within the allowed range. */
+  stepMembers(delta: number): void {
+    const control = this.expenseForm.get('members');
+    const next = Number(control?.value || this.minMembers) + delta;
+
+    control?.setValue(Math.min(this.maxMembers, Math.max(this.minMembers, next)));
+  }
+
+  get members(): number {
+    return Number(this.expenseForm.get('members')?.value) || this.minMembers;
+  }
+
+  // ---- the date: Today, Yesterday, or any other day from the calendar ----
+
+  get todayIso(): string {
+    return today();
+  }
+
+  get yesterdayIso(): string {
+    return yesterday();
+  }
+
+  get dateValue(): string {
+    return String(this.expenseForm.get('date')?.value ?? '');
+  }
+
+  /** True when the date is neither today nor yesterday, so "Pick a date" shows it. */
+  get isOtherDate(): boolean {
+    return this.dateValue !== this.todayIso && this.dateValue !== this.yesterdayIso;
+  }
+
+  pickDate(value: string): void {
+    this.expenseForm.get('date')?.setValue(value);
+  }
+
+  readonly openCalendar = openDatePicker;
+
+  get dateLabel(): string {
+    return dayLabel(this.dateValue);
+  }
+
+  get amountValue(): number {
+    const amount = Number(this.expenseForm.get('amount')?.value);
+    return Number.isFinite(amount) && amount > 0 ? amount : 0;
+  }
+
+  /** The share of the account's balance left after this, for the bar on the slip. */
+  get keepPercent(): number {
+    const account = this.selectedAccount;
+    const after = this.balanceAfter;
+
+    if (!account || after === null || !account.balance) {
+      return 100;
+    }
+
+    return Math.max(0, Math.min(100, (after / Number(account.balance)) * 100));
+  }
+
+  /** The names of the receipts waiting to be attached, for the slip. */
+  get receiptNames(): string {
+    return (this.picker?.items ?? [])
+      .filter(item => item.state !== 'error')
+      .map(item => item.name)
+      .join(', ');
+  }
+
+  /** The account chosen under "Pay from", or null while none is. */
   get selectedAccount(): BalanceAccount | null {
     const id = this.expenseForm.get('source')?.value;
 
@@ -263,7 +362,7 @@ export class AddExpenseComponent implements OnInit {
             this.toast.warning(alert.message);
           }
 
-          this.resetForm();
+          this.attachReceipts(expense.id);
         },
         error: error => {
           this.submitting = false;
@@ -272,7 +371,45 @@ export class AddExpenseComponent implements OnInit {
       });
   }
 
-  private resetForm(): void {
+  /**
+   * Sends any receipts chosen for this expense, now that it exists. The
+   * expense is saved either way; a file that fails is reported and stays
+   * listed, and can be attached later from Transactions.
+   */
+  private async attachReceipts(expenseId: string): Promise<void> {
+    const picker = this.picker;
+
+    if (!picker || picker.waiting === 0) {
+      this.submitting = false;
+      this.resetForm();
+      return;
+    }
+
+    this.submitting = true;
+    const { sent, failed } = await picker.uploadAll(expenseId);
+    this.submitting = false;
+
+    if (sent) {
+      this.toast.success(`${sent} ${sent === 1 ? 'receipt' : 'receipts'} attached.`);
+    }
+
+    if (failed) {
+      this.toast.error(
+        `${failed} ${failed === 1 ? 'file was' : 'files were'} not attached; see the list. ` +
+        'The expense is saved, and you can attach them from Transactions.'
+      );
+      this.resetForm({ keepReceipts: true });
+      return;
+    }
+
+    this.resetForm();
+  }
+
+  private resetForm({ keepReceipts = false } = {}): void {
+    if (!keepReceipts) {
+      this.picker?.clear();
+    }
+
     this.expenseForm.reset({
       source: '',
       category: '',

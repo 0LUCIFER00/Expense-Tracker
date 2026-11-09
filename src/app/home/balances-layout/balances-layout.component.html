@@ -2,15 +2,7 @@
 
   <!-- The accounts are the one list always populated, so they anchor the page. -->
   @if (data.canSeeBalances && data.accounts.length) {
-    <section class="account-strip">
-      @for (account of data.accounts; track $index) {
-        <div class="account-tile">
-          <p class="tile-name">{{ account.name }}</p>
-          <p class="tile-amount tnum">₹{{ account.balance | number }}</p>
-          <p class="tile-kind">{{ account.kind }}</p>
-        </div>
-      }
-    </section>
+    <app-account-strip [accounts]="data.accounts" />
   }
 
   <div class="panels">
@@ -90,7 +82,7 @@
         </div>
       </section>
 
-      @if (data.pending || data.offerWhatsapp) {
+      @if (data.pending || data.offerWhatsapp || data.goals) {
         <div class="et-strips">
           <!-- Only when there is something waiting; nobody needs to be told "none". -->
           @if (data.pending) {
@@ -128,6 +120,9 @@
               </div>
               <a class="secondary-action" routerLink="/settings">Connect</a>
             </section>
+          }
+          @if (data.goals) {
+            <app-goals-strip [goals]="data.goals" />
           }
         </div>
       }

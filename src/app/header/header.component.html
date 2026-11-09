@@ -8,7 +8,50 @@
       <a routerLink="/add-money" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Add Income</a>
     }
     <a routerLink="/transactions" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Transactions</a>
-    <a routerLink="/budgets" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Budgets</a>
+
+    <!--
+      Planning: Budgets, Recurring and Savings Goals (PLANNING_ITEMS). Opens on
+      hover with a mouse and on click or tap; the button and its menu share
+      this wrapper, so moving the pointer from one to the other keeps it open.
+      routerLinkActive here follows the links inside, so Planning reads as
+      the current section while any of its pages is open.
+    -->
+    <div class="nav-group" #planningEl routerLinkActive="section-active" #planningActive="routerLinkActive"
+      [class.open]="planningOpen" (mouseleave)="onPlanningLeave()">
+      <!--
+        Hover opens from the button itself, not the wrapper: after a page is
+        chosen the pointer is still inside the wrapper (over the menu that just
+        closed), so the wrapper would never see it come back to Planning.
+      -->
+      <button #planningBtn type="button" class="nav-group-btn" [class.active]="planningActive.isActive"
+        aria-controls="planning-menu" [attr.aria-expanded]="planningOpen"
+        (mouseenter)="onPlanningEnter()" (click)="togglePlanning()">
+        Planning
+        <!-- The recurring count stays on Planning, open or closed, as well as beside Recurring. -->
+        @if (attention > 0) {
+          <span class="nav-badge">
+            <span aria-hidden="true">{{ attention }}</span>
+            <span class="sr-only">, {{ attention }} recurring {{ attention === 1 ? 'entry needs' : 'entries need' }} attention</span>
+          </span>
+        }
+        <svg class="chevron" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+      </button>
+
+      <div class="nav-dropdown" id="planning-menu" role="group" aria-label="Planning">
+        @for (item of planningItems; track item.path) {
+          <a [routerLink]="item.path" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closePlanning()">
+            {{ item.label }}
+            @if (item.badge === 'attention' && attention > 0) {
+              <span class="nav-badge">
+                <span aria-hidden="true">{{ attention }}</span>
+                <span class="sr-only">, {{ attention }} {{ attention === 1 ? 'needs' : 'need' }} attention</span>
+              </span>
+            }
+          </a>
+        }
+      </div>
+    </div>
+
     @if (showBalanceManagement) {
       <a routerLink="/money" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Cash &amp; Accounts</a>
     }
@@ -39,10 +82,15 @@
 
     <div class="profile-menu">
 
-      <button class="profile-btn" type="button" aria-label="Account menu" [attr.aria-expanded]="showProfileMenu"
+      <button class="profile-btn" type="button" [attr.title]="userName || null"
+        [attr.aria-label]="userName ? 'Account menu, ' + userName : 'Account menu'" [attr.aria-expanded]="showProfileMenu"
         (click)="toggleProfileMenu()">
 
-        <span class="profile-icon">👤</span>
+        @if (initials) {
+          <span class="profile-initials" aria-hidden="true">{{ initials }}</span>
+        } @else {
+          <span class="profile-icon">👤</span>
+        }
 
       </button>
 

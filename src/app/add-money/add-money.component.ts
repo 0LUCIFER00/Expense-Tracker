@@ -13,7 +13,8 @@ import { ExpenseService } from '../shared/expense.service';
 import { IncomeService } from '../shared/income.service';
 import { SettingsService } from '../shared/settings.service';
 import { BalanceAccount, Income, SplitSummary } from '../shared/models';
-import { today } from '../shared/date-utils';
+import { dayLabel, openDatePicker, today, yesterday } from '../shared/date-utils';
+import { categoryIcon } from '../shared/category-icons';
 import { FitsScreenDirective } from '../shared/fits-screen.directive';
 import { ToastService } from '../shared/toast.service';
 
@@ -29,7 +30,7 @@ import { ToastService } from '../shared/toast.service';
   standalone: true,
   imports: [ReactiveFormsModule, CommonModule, RouterModule, FitsScreenDirective],
   templateUrl: './add-money.component.html',
-  styleUrl: './add-money.component.css'
+  styleUrls: ['../shared/entry-form.css', '../shared/entry-aside.css', './add-money.component.css']
 })
 export class AddMoneyComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
@@ -119,6 +120,84 @@ export class AddMoneyComponent implements OnInit {
         this.toast.error(error.message);
       }
     });
+  }
+
+  readonly categoryIcon = categoryIcon;
+
+  /** ₹2,043, or −₹2,043 for an overdrawn balance (never ₹-2,043). */
+  rupees(value: number | null): string {
+    if (value === null) {
+      return '—';
+    }
+
+    const text = Math.abs(value).toLocaleString('en-US', { maximumFractionDigits: 2 });
+    return value < 0 ? `−₹${text}` : `₹${text}`;
+  }
+  readonly openCalendar = openDatePicker;
+
+  /** Clicking the chosen source again clears it; a source is optional. */
+  pickCategory(name: string): void {
+    const control = this.moneyForm.get('category');
+
+    if (control?.enabled) {
+      control.setValue(control.value === name ? '' : name);
+    }
+  }
+
+  pickTarget(id: string): void {
+    this.moneyForm.get('target')?.setValue(id);
+  }
+
+  /** A split someone is paying back, or '' for ordinary income. */
+  pickSplit(id: string): void {
+    this.moneyForm.get('splitFor')?.setValue(id);
+    this.onSplitChange();
+  }
+
+  /** How much of a split has come back, as a percentage for its bar. */
+  paidPercent(split: SplitSummary): number {
+    return split.owed ? Math.min(100, (split.received / split.owed) * 100) : 0;
+  }
+
+  get todayIso(): string {
+    return today();
+  }
+
+  get yesterdayIso(): string {
+    return yesterday();
+  }
+
+  get dateValue(): string {
+    return String(this.moneyForm.get('date')?.value ?? '');
+  }
+
+  get isOtherDate(): boolean {
+    return this.dateValue !== this.todayIso && this.dateValue !== this.yesterdayIso;
+  }
+
+  pickDate(value: string): void {
+    this.moneyForm.get('date')?.setValue(value);
+  }
+
+  get dateLabel(): string {
+    return dayLabel(this.dateValue);
+  }
+
+  get amountValue(): number {
+    const amount = Number(this.moneyForm.get('amount')?.value);
+    return Number.isFinite(amount) && amount > 0 ? amount : 0;
+  }
+
+  /** The part of the new balance that was there before, for the bar on the slip. */
+  get keepPercent(): number {
+    const account = this.selectedAccount;
+    const after = this.balanceAfter;
+
+    if (!account || after === null || after <= 0) {
+      return 100;
+    }
+
+    return Math.max(0, Math.min(100, (Number(account.balance) / after) * 100));
   }
 
   /** The account chosen under "Add to", or null while none is. */

@@ -24,7 +24,16 @@ export const FLAGS = {
    * A preference rather than a permission: add a budget alert line to the
    * WhatsApp reply after an expense. Off by default; never a message of its own.
    */
-  whatsappBudgetAlerts: 'whatsapp_budget_alerts'
+  whatsappBudgetAlerts: 'whatsapp_budget_alerts',
+  /** May create, change, pause and delete recurring schedules. Seeing them needs no switch. */
+  recurringUserAccess: 'recurring_user_access',
+  /**
+   * A preference: add recurring reminder lines to WhatsApp replies. Off by
+   * default; never a message of its own.
+   */
+  whatsappRecurringReminders: 'whatsapp_recurring_reminders',
+  /** May create, change and delete savings goals and add or withdraw. Seeing them needs no switch. */
+  goalsUserAccess: 'goals_user_access'
 };
 
 export const COLUMNS = Object.values(FLAGS).join(', ');
@@ -151,7 +160,18 @@ export function permissionsFor(settings, loginType) {
     canManageBudgets: admin || Boolean(settings.budgetUserAccess),
 
     /** The account's own choice, the same whichever way it signed in. */
-    whatsappBudgetAlerts: Boolean(settings.whatsappBudgetAlerts)
+    whatsappBudgetAlerts: Boolean(settings.whatsappBudgetAlerts),
+
+    /**
+     * Schedules show amounts and account names, never balances, so only
+     * changing them is gated. Money rules still apply on top: see the route.
+     */
+    canManageRecurring: admin || Boolean(settings.recurringUserAccess),
+
+    whatsappRecurringReminders: Boolean(settings.whatsappRecurringReminders),
+
+    /** Goals only track money set aside and show no balances, so only changing them is gated. */
+    canManageGoals: admin || Boolean(settings.goalsUserAccess)
   };
 }
 

@@ -1,0 +1,39 @@
+/* A receipt opened full size over the details drawer (image or PDF). */
+
+.preview-overlay {
+  z-index: 60;
+  /* Below the sticky header, which stays on top of every overlay. */
+  padding-top: calc(54px + 0.75rem);
+}
+.confirm-overlay { z-index: 70; }
+
+.preview {
+  width: min(900px, 100%);
+  height: calc(100dvh - 54px - 1.5rem);
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  overflow: hidden;
+  background-color: var(--surface);
+}
+
+.phead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem 0.625rem 1rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.phead h3 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.pbody {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  background-color: var(--sunken);
+}
+
+.pbody img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.pbody iframe { width: 100%; height: 100%; border: 0; }

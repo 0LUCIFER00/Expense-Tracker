@@ -45,3 +45,38 @@
 :host-context([data-theme='dark']) .menu-toggle:hover {
   background: #2e3853;
 }
+
+/* The Planning dropdown on the desktop; in the hamburger panel it is part of the bar. */
+:host-context([data-theme='dark']) .nav-dropdown {
+  background: #1a2032;
+  border: 1px solid #2e3853;
+  border-top: 0;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, .5);
+}
+
+:host-context([data-theme='dark']) .nav-dropdown a {
+  color: #e7eaf3;
+}
+
+:host-context([data-theme='dark']) .nav-dropdown a:hover {
+  background: #232b45;
+}
+
+:host-context([data-theme='dark']) .nav-dropdown a.active {
+  background: #2e3853;
+  color: #fff;
+  box-shadow: inset 3px 0 0 #9db0ff;
+}
+
+:host-context([data-theme='dark']) .nav-dropdown .nav-badge {
+  background-color: #3a1f24;
+  color: #ffb4ab;
+}
+
+@media (max-width: 1040px) {
+  :host-context([data-theme='dark']) .nav-dropdown {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+}

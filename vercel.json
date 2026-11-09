@@ -4,6 +4,12 @@
   "outputDirectory": "dist/expense-tracker/browser",
   "framework": null,
   "regions": ["sin1"],
+  "git": {
+    "deploymentEnabled": { "feat/*": false }
+  },
+  "crons": [
+    { "path": "/api/recurring/cron", "schedule": "35 18 * * *" }
+  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/(.*)", "destination": "/index.html" }

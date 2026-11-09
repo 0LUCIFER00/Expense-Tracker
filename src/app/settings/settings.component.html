@@ -129,6 +129,28 @@
             </label>
           </div>
         </div>
+        <div class="settings-row budget-alerts-row">
+          <div class="setting-label">
+            <span class="setting-name">Recurring reminders on WhatsApp</span>
+            <span class="setting-note">
+              Adds a line to your next WhatsApp reply when a recurring bill is due soon
+              or couldn't be added, like
+              <span class="command tnum">🔔 Electricity bill ₹2,000 is due tomorrow.</span>
+              Never sends a message on its own.
+              @if (!isAdminSession) {
+                <strong>Changing it needs your full-access password.</strong>
+              }
+            </span>
+          </div>
+          <div class="setting-toggle">
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="whatsappRecurringReminders"
+                [disabled]="!isAdminSession" (change)="onAccessChange()">
+              <span class="slider"></span>
+              <span class="sr-only">Recurring reminders on WhatsApp</span>
+            </label>
+          </div>
+        </div>
       }
     </section>
   }
@@ -292,6 +314,40 @@
             <input type="checkbox" [(ngModel)]="budgetUserAccess" (change)="onAccessChange()">
             <span class="slider"></span>
             <span class="sr-only">Manage budgets</span>
+          </label>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="setting-label">
+          <span class="setting-name">Manage recurring</span>
+          <span class="setting-note">
+            Create, change, pause and delete recurring bills and income. Without it,
+            schedules can still be seen, not changed. Entries already added are never
+            touched either way.
+          </span>
+        </div>
+        <div class="setting-toggle">
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="recurringUserAccess" (change)="onAccessChange()">
+            <span class="slider"></span>
+            <span class="sr-only">Manage recurring</span>
+          </label>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="setting-label">
+          <span class="setting-name">Manage savings goals</span>
+          <span class="setting-note">
+            Create, change and delete savings goals, and add or withdraw money from them.
+            Without it, goals can still be seen, not changed. Goals never move money
+            between accounts either way.
+          </span>
+        </div>
+        <div class="setting-toggle">
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="goalsUserAccess" (change)="onAccessChange()">
+            <span class="slider"></span>
+            <span class="sr-only">Manage savings goals</span>
           </label>
         </div>
       </div>

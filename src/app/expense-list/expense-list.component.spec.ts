@@ -84,6 +84,23 @@ describe('ExpenseListComponent', () => {
     };
   }
 
+  describe('the default order', () => {
+    it('puts the latest entry first, money in and out together', () => {
+      load(
+        [
+          expense({ id: 'old', createdAt: '2026-10-01T09:00:00.000Z', date: '2026-10-01' }),
+          // Entered last, though dated earlier than the others.
+          expense({ id: 'newest', createdAt: '2026-11-08T18:00:00.000Z', date: '2026-09-15' })
+        ],
+        {},
+        [],
+        [income({ id: 'mid', createdAt: '2026-10-20T11:00:00.000Z' })]
+      );
+
+      expect(component.rows.map(row => row.key)).toEqual(['out:newest', 'in:mid', 'out:old']);
+    });
+  });
+
   describe('the category filter', () => {
     it('offers only the categories actually in use', () => {
       load([
@@ -127,6 +144,96 @@ describe('ExpenseListComponent', () => {
     });
   });
 
+  describe('receipts', () => {
+    it('shows a paperclip with the count on expenses that have attachments, and none otherwise', () => {
+      const fixture = load([
+        expense({ id: 'with', attachmentCount: 3 }),
+        expense({ id: 'without', attachmentCount: 0 })
+      ]);
+      const clips = (fixture.nativeElement as HTMLElement).querySelectorAll('.et-clip');
+
+      expect(clips.length).toBe(1);
+      expect(clips[0].textContent).toContain('3');
+    });
+
+    it('clicking any expense row opens its details, receipts included', () => {
+      const fixture = load([expense({ id: 'e1', description: 'Lunch' })]);
+      const row = (fixture.nativeElement as HTMLElement).querySelector('.table-row') as HTMLElement;
+
+      row.click();
+      fixture.detectChanges();
+
+      expect(component.openRow?.expense?.id).toBe('e1');
+      http.expectOne('/api/expenses/e1/attachments').flush([]);
+      fixture.detectChanges();
+
+      const drawer = (fixture.nativeElement as HTMLElement).querySelector('app-transaction-details') as HTMLElement;
+      expect(drawer.textContent).toContain('Lunch');
+      expect(drawer.textContent).toContain('Receipts & invoices');
+    });
+
+    it('opens from the keyboard too, and closes again', () => {
+      const fixture = load([expense({ id: 'e1' })]);
+      const row = (fixture.nativeElement as HTMLElement).querySelector('.table-row') as HTMLElement;
+
+      expect(row.getAttribute('role')).toBe('button');
+      expect(row.getAttribute('tabindex')).toBe('0');
+
+      row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      fixture.detectChanges();
+      http.expectOne('/api/expenses/e1/attachments').flush([]);
+      fixture.detectChanges();
+
+      expect(component.openRow?.key).toBe('out:e1');
+
+      ((fixture.nativeElement as HTMLElement).querySelector('.drawer .close') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(component.openRow).toBeNull();
+      expect((fixture.nativeElement as HTMLElement).querySelector('app-transaction-details')).toBeNull();
+    });
+
+    it('opens money in as well, with no receipts section', () => {
+      const fixture = load([], {}, [], [income({ id: 'i1', description: 'October salary' })]);
+      ((fixture.nativeElement as HTMLElement).querySelector('.table-row') as HTMLElement).click();
+      fixture.detectChanges();
+
+      const drawer = (fixture.nativeElement as HTMLElement).querySelector('app-transaction-details') as HTMLElement;
+      expect(drawer.textContent).toContain('October salary');
+      expect(drawer.textContent).toContain('+₹50,000');
+      expect(drawer.textContent).not.toContain('Receipts');
+    });
+
+    it('removes only after the drawer asks, then refunds and reloads as before', () => {
+      const fixture = load([expense({ id: 'e1', amount: 250, sourceCategory: 'Paytm' })]);
+      ((fixture.nativeElement as HTMLElement).querySelector('.table-row') as HTMLElement).click();
+      fixture.detectChanges();
+      http.expectOne('/api/expenses/e1/attachments').flush([]);
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      (el.querySelector('.foot .btn.danger') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      // Asking, not yet removed.
+      http.expectNone(req => req.method === 'DELETE');
+      expect(el.querySelector('.foot')!.textContent).toContain('Removing puts ₹250 back in Paytm.');
+
+      (el.querySelector('.foot .btn.danger-solid') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      http.expectOne(req => req.method === 'DELETE' && req.url === '/api/expenses/e1')
+        .flush({ id: 'e1', refunded: true, sourceCategory: 'Paytm' });
+      expect(component.openRow).toBeNull();
+
+      // The reload after removing.
+      http.expectOne('/api/expenses').flush([]);
+      http.expectOne('/api/incomes').flush([]);
+      http.expectOne('/api/expenses/splits').flush([]);
+      http.expectOne('/api/settings').flush(DEFAULT_SETTINGS);
+    });
+  });
+
   describe('a split expense', () => {
     const vegetables: SplitSummary = {
       id: 's1',
@@ -157,35 +264,35 @@ describe('ExpenseListComponent', () => {
       );
     }
 
-    it('opens its repayment history when the row is clicked, and closes again', () => {
+    it('shows who has paid back in the details of the split expense', () => {
       const fixture = loadWithSplit();
       const rows = fixture.nativeElement.querySelectorAll('.table-row') as NodeListOf<HTMLElement>;
 
       rows[0].click();
       fixture.detectChanges();
-
-      const history = fixture.nativeElement.querySelector('app-split-history') as HTMLElement;
-
-      expect(history).not.toBeNull();
-      expect(history.textContent).toContain('Kalai Oct Vegetables share');
-      expect(history.textContent).toContain('Kamesh Oct Vegetables share');
-      expect(history.textContent).toContain('364');
-
-      rows[0].click();
+      http.expectOne('/api/expenses/s1/attachments').flush([]);
       fixture.detectChanges();
 
-      expect(fixture.nativeElement.querySelector('app-split-history')).toBeNull();
+      const drawer = fixture.nativeElement.querySelector('app-transaction-details') as HTMLElement;
+
+      expect(drawer.textContent).toContain('Paid back');
+      expect(drawer.textContent).toContain('Kalai Oct Vegetables share');
+      expect(drawer.textContent).toContain('Kamesh Oct Vegetables share');
+      expect(drawer.textContent).toContain('₹728 of ₹1,092');
+      expect(drawer.textContent).toContain('Still to come');
     });
 
-    it('leaves an ordinary row alone', () => {
+    it('an ordinary expense has no paid-back section', () => {
       const fixture = loadWithSplit();
       const rows = fixture.nativeElement.querySelectorAll('.table-row') as NodeListOf<HTMLElement>;
 
       rows[1].click();
       fixture.detectChanges();
+      http.expectOne('/api/expenses/e2/attachments').flush([]);
+      fixture.detectChanges();
 
-      expect(component.expandedId).toBeNull();
-      expect(fixture.nativeElement.querySelector('app-split-history')).toBeNull();
+      expect(component.openRow?.expense?.id).toBe('e2');
+      expect(fixture.nativeElement.querySelector('app-transaction-details').textContent).not.toContain('Paid back');
     });
 
     it('counts only your share in the total at the top', () => {
@@ -399,7 +506,7 @@ describe('ExpenseListComponent', () => {
       expect(component.usedCategories).toEqual(['Repayment', 'Salary']);
     });
 
-    it('opens the split a repayment pays back when its row is clicked', () => {
+    it('a repayment\'s details link to the split it pays back', () => {
       const split: SplitSummary = {
         id: 's1', description: 'Vegetables', date: '2026-10-20', status: 'done',
         amount: 1455, members: 4, share: 364, personal: 363, owed: 1092,
@@ -407,7 +514,8 @@ describe('ExpenseListComponent', () => {
         repayments: [{ id: 'i2', amount: 364, description: 'Kalai share', date: '2026-10-20', account: 'HDFC Bank' }]
       };
 
-      const fixture = load(expenses, {}, [split], incomes);
+      const vegetables = expense({ id: 's1', description: 'Vegetables', amount: 1455, splitMembers: 4, personalShare: 363 });
+      const fixture = load([...expenses, vegetables], {}, [split], incomes);
       component.onTab('in');
       fixture.detectChanges();
 
@@ -417,7 +525,15 @@ describe('ExpenseListComponent', () => {
       repaymentRow.click();
       fixture.detectChanges();
 
-      expect(fixture.nativeElement.querySelector('app-split-history')?.textContent).toContain('Kalai share');
+      const link = fixture.nativeElement.querySelector('.split-link') as HTMLButtonElement;
+      expect(link.textContent).toContain('Vegetables');
+      expect(link.textContent).toContain('₹364 of ₹1,092 back');
+
+      // One click on, to the split expense itself.
+      link.click();
+      fixture.detectChanges();
+      http.expectOne('/api/expenses/s1/attachments').flush([]);
+      expect(component.openRow?.key).toBe('out:s1');
     });
   });
 

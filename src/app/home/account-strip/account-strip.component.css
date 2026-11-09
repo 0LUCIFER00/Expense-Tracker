@@ -1,0 +1,170 @@
+:host {
+  display: block;
+  /* How many fit across: six on a desktop, fewer on narrower screens. */
+  --cols: 6;
+  --gap: 0.625rem;
+}
+
+.strip {
+  position: relative;
+}
+
+/*
+ * One row that scrolls sideways. Each tile is a fixed share of the width: a
+ * sixth when there are six or more, otherwise the accounts share it evenly.
+ * The scrollbar is hidden; the arrows, the wheel and a swipe do the moving.
+ */
+.track {
+  --per: min(var(--n), var(--cols));
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - (var(--per) - 1) * var(--gap)) / var(--per));
+  gap: var(--gap);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  /* Proximity, not mandatory: a wheel step is not pulled back to a tile edge. */
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  /* Room for the tiles' shadow, which overflow would otherwise clip. */
+  padding: 2px 2px 6px;
+  margin: -2px -2px -6px;
+  scroll-padding-inline: 2px;
+}
+
+.track::-webkit-scrollbar {
+  display: none;
+}
+
+.track:focus-visible {
+  outline: 2px solid var(--focus-border);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+.tile {
+  scroll-snap-align: start;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.25rem;
+  background-color: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  padding: 0.625rem 0.875rem;
+  box-shadow: var(--shadow);
+}
+
+.top {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.name {
+  min-width: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kind {
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* Always the line below, in the middle, whatever the length of the amount. */
+.amount {
+  margin: 0;
+  text-align: center;
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * The arrows sit over the ends of the strip and only appear while the pointer
+ * is over it or a key has focus in it, and only towards where there is more.
+ */
+.arrow {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 50%;
+  background-color: var(--surface);
+  color: var(--accent-ink);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.arrow.back {
+  left: -10px;
+}
+
+.arrow.forward {
+  right: -10px;
+}
+
+.arrow svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.strip:hover .arrow,
+.strip:focus-within .arrow {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.arrow:hover {
+  background-color: var(--accent-soft);
+}
+
+.arrow:focus-visible {
+  outline: 2px solid var(--focus-border);
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  :host {
+    --cols: 3;
+  }
+}
+
+@media (max-width: 560px) {
+  :host {
+    --cols: 2;
+  }
+
+  .amount {
+    font-size: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arrow {
+    transition: none;
+  }
+}

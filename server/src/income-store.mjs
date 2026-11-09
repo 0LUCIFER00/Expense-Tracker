@@ -27,100 +27,108 @@ export const INCOME_COLUMNS = COLUMNS;
  *   `split`, the split as it stands afterwards, when this was a repayment.
  */
 export function addIncome(userId, entry) {
-  return transaction(async client => {
-    /*
-     * The split is locked before the account. removeExpense takes the expense
-     * first and the balance second; taking them in the other order here would
-     * let a repayment and a removal each hold what the other is waiting for.
-     */
-    let split = null;
+  return transaction(client => insertIncome(client, userId, entry));
+}
 
-    if (entry.splitExpenseId) {
-      split = await lockSplit(client, userId, entry.splitExpenseId);
+/**
+ * addIncome's work inside the caller's transaction, for the recurring runner,
+ * which records the occurrence in the same transaction. `recurringRunId` links
+ * the entry to that occurrence.
+ */
+export async function insertIncome(client, userId, entry) {
+  /*
+   * The split is locked before the account. removeExpense takes the expense
+   * first and the balance second; taking them in the other order here would
+   * let a repayment and a removal each hold what the other is waiting for.
+   */
+  let split = null;
 
-      if (!split) {
-        throw Object.assign(new Error('That split expense was not found.'), { status: 400 });
-      }
+  if (entry.splitExpenseId) {
+    split = await lockSplit(client, userId, entry.splitExpenseId);
 
-      if (split.remaining <= 0) {
-        throw Object.assign(
-          new Error(`${split.description} is already fully paid back.`),
-          { status: 409 }
-        );
-      }
-
-      if (Number(entry.amount) > split.remaining) {
-        throw Object.assign(
-          new Error(
-            `Only ${money(split.remaining)} is still owed on ${split.description}, ` +
-            `not ${money(entry.amount)}.`
-          ),
-          { status: 409 }
-        );
-      }
+    if (!split) {
+      throw Object.assign(new Error('That split expense was not found.'), { status: 400 });
     }
 
-    let target = null;
-
-    if (entry.targetId) {
-      // Locked for the same reason an expense locks it: two credits landing at
-      // once must not both read the same starting balance.
-      const { rows } = await client.query(
-        `select id, type, category, balance
-           from balances
-          where id = $1 and user_id = $2 and saved = true
-          for update`,
-        [entry.targetId, userId]
+    if (split.remaining <= 0) {
+      throw Object.assign(
+        new Error(`${split.description} is already fully paid back.`),
+        { status: 409 }
       );
-
-      target = rows[0] ?? null;
-
-      if (!target) {
-        throw Object.assign(new Error('Please select a valid account.'), { status: 400 });
-      }
     }
 
-    const credit = Boolean(target);
-    let balanceAfter = null;
-
-    if (credit) {
-      const { rows } = await client.query(
-        `update balances set balance = balance + $1
-          where id = $2 and user_id = $3
-          returning balance`,
-        [entry.amount, target.id, userId]
+    if (Number(entry.amount) > split.remaining) {
+      throw Object.assign(
+        new Error(
+          `Only ${money(split.remaining)} is still owed on ${split.description}, ` +
+          `not ${money(entry.amount)}.`
+        ),
+        { status: 409 }
       );
-
-      balanceAfter = rows[0]?.balance ?? null;
     }
+  }
 
+  let target = null;
+
+  if (entry.targetId) {
+    // Locked for the same reason an expense locks it: two credits landing at
+    // once must not both read the same starting balance.
     const { rows } = await client.query(
-      `insert into incomes (
-         user_id, amount, description, received_on, category,
-         target_id, target_type, target_category, balance_updated, source_channel,
-         split_expense_id
-       )
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-       returning ${COLUMNS}`,
-      [
-        userId, entry.amount, entry.description, entry.receivedOn,
-        // A repayment is not income from anywhere, so it is not filed as one.
-        split ? null : entry.category,
-        target?.id ?? null, target?.type ?? null, target?.category ?? null,
-        credit, entry.channel ?? 'web',
-        split?.id ?? null
-      ]
+      `select id, type, category, balance
+         from balances
+        where id = $1 and user_id = $2 and saved = true
+        for update`,
+      [entry.targetId, userId]
     );
 
-    // As it stands with this repayment counted, for the reply.
-    const after = split && {
-      ...split,
-      received: Math.round((split.received + Number(entry.amount)) * 100) / 100,
-      remaining: Math.max(0, Math.round((split.remaining - Number(entry.amount)) * 100) / 100)
-    };
+    target = rows[0] ?? null;
 
-    return { ...rows[0], balanceAfter, split: after };
-  });
+    if (!target) {
+      throw Object.assign(new Error('Please select a valid account.'), { status: 400 });
+    }
+  }
+
+  const credit = Boolean(target);
+  let balanceAfter = null;
+
+  if (credit) {
+    const { rows } = await client.query(
+      `update balances set balance = balance + $1
+        where id = $2 and user_id = $3
+        returning balance`,
+      [entry.amount, target.id, userId]
+    );
+
+    balanceAfter = rows[0]?.balance ?? null;
+  }
+
+  const { rows } = await client.query(
+    `insert into incomes (
+       user_id, amount, description, received_on, category,
+       target_id, target_type, target_category, balance_updated, source_channel,
+       split_expense_id, recurring_run_id
+     )
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+     returning ${COLUMNS}`,
+    [
+      userId, entry.amount, entry.description, entry.receivedOn,
+      // A repayment is not income from anywhere, so it is not filed as one.
+      split ? null : entry.category,
+      target?.id ?? null, target?.type ?? null, target?.category ?? null,
+      credit, entry.channel ?? 'web',
+      split?.id ?? null,
+      entry.recurringRunId ?? null
+    ]
+  );
+
+  // As it stands with this repayment counted, for the reply.
+  const after = split && {
+    ...split,
+    received: Math.round((split.received + Number(entry.amount)) * 100) / 100,
+    remaining: Math.max(0, Math.round((split.remaining - Number(entry.amount)) * 100) / 100)
+  };
+
+  return { ...rows[0], balanceAfter, split: after };
 }
 
 /**

@@ -114,6 +114,10 @@
           </section>
         }
 
+        @if (data.goals) {
+          <app-goals-strip [goals]="data.goals" />
+        }
+
       </div>
     </div>
 

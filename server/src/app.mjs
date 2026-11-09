@@ -8,6 +8,10 @@ import { balancesRouter } from './routes/balances.mjs';
 import { expensesRouter } from './routes/expenses.mjs';
 import { incomesRouter } from './routes/incomes.mjs';
 import { budgetsRouter } from './routes/budgets.mjs';
+import { recurringRouter } from './routes/recurring.mjs';
+import { goalsRouter } from './routes/goals.mjs';
+import { transfersRouter } from './routes/transfers.mjs';
+import { attachmentsRouter } from './routes/attachments.mjs';
 import { settingsRouter } from './routes/settings.mjs';
 import { whatsappRouter } from './routes/whatsapp.mjs';
 import { linkRouter } from './routes/link.mjs';
@@ -127,9 +131,14 @@ export function createApp() {
   });
 
   app.use('/api/auth', authRouter);
+  // Before the expenses router, so /api/expenses/:id/attachments is never taken for an expense route.
+  app.use('/api/expenses/:expenseId/attachments', attachmentsRouter);
   app.use('/api/expenses', expensesRouter);
   app.use('/api/incomes', incomesRouter);
   app.use('/api/budgets', budgetsRouter);
+  app.use('/api/recurring', recurringRouter);
+  app.use('/api/goals', goalsRouter);
+  app.use('/api/transfers', transfersRouter);
   app.use('/api/balances', balancesRouter);
   app.use('/api/settings', settingsRouter);
   // The more specific path first: /api/whatsapp would otherwise shadow it.

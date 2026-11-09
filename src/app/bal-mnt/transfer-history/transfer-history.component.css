@@ -1,0 +1,192 @@
+:host { display: block; }
+
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.history {
+  padding: 0.875rem 1.125rem;
+}
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.625rem;
+  margin-bottom: 0.625rem;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  color: var(--accent-ink);
+}
+
+.sub {
+  margin: 0.125rem 0 0;
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.filters select,
+.filters input {
+  height: 36px;
+  padding: 0 0.5rem;
+  border: 1px solid var(--field-border);
+  border-radius: 9px;
+  background-color: var(--field-bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8125rem;
+}
+
+.dash {
+  color: var(--ink-3);
+}
+
+.clear {
+  height: 36px;
+  padding: 0 0.75rem;
+  border: 0;
+  border-radius: 9px;
+  background-color: var(--sunken);
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.note {
+  margin: 0.25rem 0;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.note.err {
+  color: var(--bad-ink);
+}
+
+.rows {
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1.6fr) minmax(0, 1.2fr) 7rem;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: 40px;
+  padding: 0.25rem 0.875rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.8125rem;
+}
+
+.row.head {
+  min-height: 32px;
+  border-top: 0;
+  background-color: var(--sunken);
+  color: var(--ink-2);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.route {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.route svg {
+  fill: none;
+  stroke: var(--ink-3);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Neither a debit's red nor a credit's green: a transfer is its own thing. */
+.tag {
+  padding: 0.0625rem 0.45rem;
+  border-radius: 999px;
+  background-color: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.desc {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+
+.date {
+  color: var(--ink-2);
+}
+
+.r {
+  text-align: right;
+}
+
+.amount {
+  font-weight: 800;
+  color: var(--accent-ink);
+}
+
+.foot {
+  margin: 0.375rem 0 0;
+  font-size: 0.75rem;
+  color: var(--ink-2);
+  text-align: right;
+}
+
+/* Phone: each transfer as a small card. */
+@media (max-width: 640px) {
+  .row.head {
+    display: none;
+  }
+
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'route amount' 'date desc';
+    row-gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .date { grid-area: date; font-size: 0.75rem; }
+  .route { grid-area: route; }
+  .desc { grid-area: desc; text-align: right; font-size: 0.75rem; }
+  .amount { grid-area: amount; }
+
+  .filters {
+    width: 100%;
+  }
+
+  .filters select {
+    flex: 1 1 100%;
+  }
+
+  .filters input {
+    flex: 1 1 8rem;
+    min-width: 0;
+  }
+}

@@ -26,3 +26,39 @@ export function toIsoDate(date: Date): string {
 export function today(): string {
   return toIsoDate(new Date());
 }
+
+export function yesterday(): string {
+  const day = new Date();
+  day.setDate(day.getDate() - 1);
+  return toIsoDate(day);
+}
+
+/** "Today, 9 Nov", "Yesterday, 8 Nov" or "12 Oct 2026". */
+export function dayLabel(value: string): string {
+  if (!value) {
+    return '';
+  }
+
+  const date = parseLocalDate(value);
+  const short = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+
+  if (value === today()) {
+    return `Today, ${short}`;
+  }
+
+  if (value === yesterday()) {
+    return `Yesterday, ${short}`;
+  }
+
+  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/** Opens the browser's own calendar for a (visually hidden) date field. */
+export function openDatePicker(input: HTMLInputElement): void {
+  try {
+    input.showPicker();
+  } catch {
+    input.focus();
+    input.click();
+  }
+}

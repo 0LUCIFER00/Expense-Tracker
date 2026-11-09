@@ -1,0 +1,75 @@
+<form class="editor" (ngSubmit)="onSubmit()" novalidate>
+  <header class="ed-head">
+    <div>
+      <h2 class="ed-title" id="goal-editor-title">{{ editing ? 'Edit ' + goal!.name : 'New savings goal' }}</h2>
+      @if (editing) {
+        <p class="ed-sub">₹{{ goal!.saved | number: '1.0-2' }} saved so far. Changing the goal never changes its history.</p>
+      }
+    </div>
+    <button type="button" class="ed-close" aria-label="Close" (click)="cancel.emit()">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+    </button>
+  </header>
+
+  <div class="ed-body">
+    <div>
+      <label class="et-field-label" for="g-name">Goal name</label>
+      <input id="g-name" class="et-field" name="name" maxlength="80" autocomplete="off"
+        placeholder="Emergency fund, Goa trip, New laptop…" [(ngModel)]="name">
+    </div>
+    <div>
+      <label class="et-field-label" for="g-desc">Description <span class="opt">(optional)</span></label>
+      <input id="g-desc" class="et-field" name="description" maxlength="300" autocomplete="off" [(ngModel)]="description">
+    </div>
+
+    <div class="grid">
+      <div>
+        <label class="et-field-label" for="g-target">Target amount (₹)</label>
+        <input id="g-target" class="et-field" name="target" type="number" inputmode="decimal" min="1" step="0.01" [(ngModel)]="target">
+      </div>
+      <div>
+        <label class="et-field-label" for="g-date">Target date</label>
+        <input id="g-date" class="et-field" name="targetDate" type="date" [min]="today" [(ngModel)]="targetDate">
+      </div>
+      @if (!editing) {
+        <div>
+          <label class="et-field-label" for="g-initial">Already saved (₹) <span class="opt">(optional)</span></label>
+          <input id="g-initial" class="et-field" name="initialSaved" type="number" inputmode="decimal" min="0" step="0.01" [(ngModel)]="initialSaved">
+          <p class="hint">Recorded as the first entry in its history.</p>
+        </div>
+      }
+    </div>
+
+    <fieldset class="icons">
+      <legend class="et-field-label">Icon <span class="opt">(optional)</span></legend>
+      <div class="icon-row">
+        @for (i of icons; track i.key) {
+          <button type="button" class="icon-btn" [class.on]="icon === i.key" [attr.aria-pressed]="icon === i.key"
+            [attr.aria-label]="i.label" [title]="i.label" (click)="pickIcon(i.key)">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path [attr.d]="i.path" /></svg>
+          </button>
+        }
+      </div>
+    </fieldset>
+
+    @if (monthlyGuide !== null) {
+      <div class="guide">
+        <strong>About ₹{{ monthlyGuide | number: '1.0-2' }} a month to reach it by {{ goalDate(targetDate) }}</strong>
+        <span>₹{{ toGo | number: '1.0-2' }} to go over {{ months }} {{ months === 1 ? 'month' : 'months' }}. Worked out again each time you add or withdraw.</span>
+      </div>
+    }
+
+    <p class="note">A goal only tracks money you set aside. It never moves money between your accounts or counts as an expense.</p>
+
+    @if (error) {
+      <p class="err" role="alert">{{ error }}</p>
+    }
+  </div>
+
+  <footer class="ed-foot">
+    <button type="button" class="et-btn-ghost" [disabled]="busy" (click)="cancel.emit()">Cancel</button>
+    <button type="submit" class="et-btn-primary" [disabled]="busy">
+      {{ busy ? 'Saving…' : editing ? 'Save changes' : 'Create goal' }}
+    </button>
+  </footer>
+</form>

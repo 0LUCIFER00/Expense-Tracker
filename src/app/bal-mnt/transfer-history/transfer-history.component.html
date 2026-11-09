@@ -1,0 +1,57 @@
+<section class="history card" aria-labelledby="th-title">
+  <div class="top">
+    <div>
+      <h2 id="th-title">Transfers</h2>
+      <p class="sub">Money moved between your accounts. Not part of income, expenses or budgets.</p>
+    </div>
+
+    <div class="filters" role="group" aria-label="Filter transfers">
+      <label class="sr-only" for="th-account">Account</label>
+      <select id="th-account" name="account" [(ngModel)]="account" (ngModelChange)="load()">
+        <option value="">All accounts</option>
+        @for (a of accounts; track a.id) {
+          <option [value]="a.id">{{ a.category }}</option>
+        }
+      </select>
+      <label class="sr-only" for="th-from">From date</label>
+      <input id="th-from" name="from" type="date" [(ngModel)]="from" (ngModelChange)="load()" title="From date">
+      <span class="dash" aria-hidden="true">–</span>
+      <label class="sr-only" for="th-to">To date</label>
+      <input id="th-to" name="to" type="date" [(ngModel)]="to" (ngModelChange)="load()" title="To date">
+      @if (filtered) {
+        <button type="button" class="clear" (click)="clear()">Clear</button>
+      }
+    </div>
+  </div>
+
+  @if (error) {
+    <p class="note err">{{ error }}</p>
+  } @else if (!loading && transfers.length === 0) {
+    <p class="note">{{ filtered ? 'No transfers match these filters.' : 'No transfers yet. Use Transfer money above to move money between accounts.' }}</p>
+  } @else {
+    <div class="rows" role="table" aria-label="Transfers">
+      <div class="row head" role="row">
+        <span role="columnheader">Date</span>
+        <span role="columnheader">From → To</span>
+        <span role="columnheader">Description</span>
+        <span role="columnheader" class="r">Amount</span>
+      </div>
+      @for (t of transfers; track t.id) {
+        <div class="row" role="row">
+          <span role="cell" class="date">{{ dateLabel(t.date) }}</span>
+          <span role="cell" class="route">
+            <span class="tag">Transfer</span>
+            <strong>{{ t.fromName }}</strong>
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-label="to" role="img"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            <strong>{{ t.toName }}</strong>
+          </span>
+          <span role="cell" class="desc">{{ t.description || '—' }}</span>
+          <span role="cell" class="r amount tnum">₹{{ t.amount | number: '1.0-2' }}</span>
+        </div>
+      }
+    </div>
+    @if (transfers.length > 1) {
+      <p class="foot tnum">{{ transfers.length }} transfers · ₹{{ total | number: '1.0-2' }} moved</p>
+    }
+  }
+</section>

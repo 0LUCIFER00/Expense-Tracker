@@ -62,53 +62,9 @@
 
 /* ---- the account strip ---- */
 
-.account-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.625rem;
-}
-
-/* One line each: name and kind on the left, the amount on the right. */
-.account-tile {
-  flex: 1 1 200px;
-  min-width: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.125rem 0.5rem;
-  background-color: var(--surface);
-  border: 1px solid var(--surface-border);
-  border-radius: 12px;
-  padding: 0.75rem 1rem;
-  box-shadow: var(--shadow);
-}
-
-.tile-name {
-  margin: 0;
-  min-width: 0;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tile-amount {
-  order: 2;
-  margin: 0 0 0 auto;
-  font-size: 1.0625rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  overflow-wrap: anywhere;
-}
-
-.tile-kind {
-  order: 1;
-  margin: 0;
-  font-size: 0.6875rem;
-  color: var(--ink-3);
+/* Its own component (app-account-strip): six across, the rest a scroll away. */
+app-account-strip {
+  flex: 0 0 auto;
 }
 
 /* ---- the two panels ---- */
@@ -145,13 +101,26 @@
   padding: 1rem 1.25rem;
 }
 
-/* Stacked, one under the other, at the width of the column. */
+/*
+ * Side by side at the foot of the column (WhatsApp, Savings goals, waiting
+ * entries), wrapping to a new line only when there is not room for them.
+ * The Savings goals strip is its own component, so it takes the same sizing
+ * from the shared .et-strip rule in styles.css rather than from here.
+ */
 .main-col .et-strips {
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
 }
 
-.main-col .et-strip {
-  flex: 0 0 auto;
+/* Two to a row on a desktop: each keeps its button beside the text. */
+@media (min-width: 900px) {
+  .main-col .et-strip {
+    flex-wrap: nowrap;
+  }
+
+  .main-col .et-strip-text {
+    flex: 1 1 0;
+  }
 }
 
 .side {
@@ -410,11 +379,6 @@
     padding-bottom: 0.875rem;
   }
 
-  .account-strip {
-    flex: 0 0 auto;
-    flex-wrap: nowrap;
-  }
-
   /*
    * nowrap matters: a wrapping row sizes its line to the tallest card and
    * never shrinks it, so the cards would overflow the height they were given.
@@ -444,7 +408,6 @@
 
   .et-strips {
     flex: 0 0 auto;
-    flex-wrap: nowrap;
   }
 }
 
@@ -467,9 +430,6 @@
     padding: 0.75rem 1rem;
   }
 
-  .account-tile {
-    padding: 0.625rem 0.875rem;
-  }
 
   .figure {
     font-size: clamp(2rem, 4vw, 2.75rem);
@@ -508,9 +468,6 @@
 
 /* A full row each, so every tile stays on one line like on a wider screen. */
 @media (max-width: 480px) {
-  .account-tile {
-    flex: 1 1 100%;
-  }
 
   .primary-action,
   .secondary-action {

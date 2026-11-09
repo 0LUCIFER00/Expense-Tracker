@@ -1,4 +1,6 @@
 import { CommonModule } from '@angular/common';
+import { GoalsStripComponent } from '../goals-strip/goals-strip.component';
+import { AccountStripComponent } from '../account-strip/account-strip.component';
 import { Component, Input } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { DashboardData } from '../../shared/dashboard';
@@ -22,6 +24,8 @@ import { BudgetSummaryComponent } from '../budget-summary/budget-summary.compone
   standalone: true,
   imports: [
     CommonModule,
+    GoalsStripComponent,
+    AccountStripComponent,
     RouterModule,
     SpendChartComponent,
     SplitHistoryComponent,

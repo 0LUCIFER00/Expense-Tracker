@@ -1,0 +1,228 @@
+<!--
+  A dashboard like Budgets: on a desktop it fits the window. The title, its
+  button, the summary strip and the schedules table make the left column (the
+  table scrolls inside its card); Needs attention, Coming up and Recent runs
+  have the right column to themselves from the top.
+-->
+<div class="rec-page" appFitsScreen>
+
+  <ng-template #head>
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Recurring</h1>
+        <p class="page-sub">Bills and income that repeat. Each one is added on its date, never in advance.</p>
+      </div>
+      @if (canManage) {
+        <button type="button" class="et-btn-primary new-btn" [disabled]="busy" (click)="onNew()">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          New recurring
+        </button>
+      }
+    </div>
+  </ng-template>
+
+  @if (loading && !view) {
+    <ng-container [ngTemplateOutlet]="head" />
+    <section class="card skeleton" aria-busy="true"><span class="sk-line"></span></section>
+  } @else if (loadError && !view) {
+    <ng-container [ngTemplateOutlet]="head" />
+    <section class="card pad">
+      <p class="error-text">{{ loadError }}</p>
+      <button type="button" class="et-btn-primary" (click)="onRetryLoad()">Try again</button>
+    </section>
+  } @else if (view) {
+
+    <div class="rec-grid">
+
+    <div class="main-col">
+    <ng-container [ngTemplateOutlet]="head" />
+    <section class="card summary" aria-label="Summary">
+      <div class="stat"><span class="num tnum">{{ view.summary.active }}</span><span class="lbl">Active</span></div>
+      <div class="stat"><span class="num tnum">{{ view.summary.dueThisWeek }}</span><span class="lbl">Due in the next 7 days</span></div>
+      <div class="stat" [class.alert]="view.summary.attention > 0">
+        <span class="num tnum">{{ view.summary.attention }}</span><span class="lbl">Needs attention</span>
+      </div>
+      <div class="stat money">
+        <span class="lbl">Each month, about</span>
+        <span class="tnum"><span class="out">₹{{ view.summary.monthlyOut | number: '1.0-0' }} out</span>
+          · <span class="in">₹{{ view.summary.monthlyIn | number: '1.0-0' }} in</span></span>
+      </div>
+    </section>
+
+      <section class="card table-card" aria-labelledby="sched-h">
+        <div class="table-top">
+          <h2 id="sched-h" class="card-title">Schedules</h2>
+          <div class="tabs" role="tablist" aria-label="Show">
+            @for (t of tabs; track t.key) {
+              <button type="button" role="tab" class="tab" [class.on]="tab === t.key"
+                [attr.aria-selected]="tab === t.key" (click)="setTab(t.key)">
+                {{ t.label }} <span class="tnum">{{ counts[t.key] }}</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (view.schedules.length === 0) {
+          <div class="empty">
+            <p><strong>Nothing repeats yet.</strong></p>
+            <p>Add rent, bills, subscriptions or your salary once, and they're added on their dates from then on.</p>
+            @if (canManage) {
+              <button type="button" class="et-btn-primary" (click)="onNew()">New recurring</button>
+            }
+          </div>
+        } @else {
+          <div class="rows" role="table" aria-label="Schedules">
+            <div class="row head" role="row">
+              <span role="columnheader">Description</span>
+              <span role="columnheader">Type</span>
+              <span role="columnheader" class="r">Amount</span>
+              <span role="columnheader">Repeats</span>
+              <span role="columnheader">Next</span>
+              <span role="columnheader">Account</span>
+              <span role="columnheader">Status</span>
+              <span role="columnheader" class="r"><span class="sr-only">Actions</span></span>
+            </div>
+            @for (s of shown; track s.id) {
+              <div class="row" role="row" [class.dim]="s.status !== 'active'">
+                <span role="cell" class="cell desc">
+                  <strong>{{ s.description }}</strong>
+                  @if (s.category) { <span class="cat"> · {{ s.category }}</span> }
+                </span>
+                <span role="cell"><span class="type" [attr.data-kind]="s.kind">{{ s.kind === 'income' ? 'Credit' : 'Debit' }}</span></span>
+                <span role="cell" class="r tnum amt">₹{{ s.amount | number }}</span>
+                <span role="cell" class="cell muted">{{ repeat(s) }}</span>
+                <span role="cell" class="cell" [class.soon]="s.reminderDue">{{ nextText(s) }}</span>
+                <span role="cell" class="cell muted">{{ s.accountMissing ? 'Account deleted' : s.accountName ?? '—' }}</span>
+                <span role="cell"><span class="et-status" [attr.data-status]="statusKey(s)">{{ statusWord(s) }}</span></span>
+                <span role="cell" class="acts">
+                  @if (canManage) {
+                    <button type="button" class="ib" [disabled]="busy" [attr.aria-label]="'Edit ' + s.description" (click)="onEdit(s)">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" /></svg>
+                    </button>
+                    @if (s.status !== 'completed') {
+                      <button type="button" class="ib" [disabled]="busy"
+                        [attr.aria-label]="(s.status === 'paused' ? 'Resume ' : 'Pause ') + s.description"
+                        (click)="onTogglePause(s)">
+                        @if (s.status === 'paused') {
+                          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7V5z" /></svg>
+                        } @else {
+                          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5v14M15 5v14" /></svg>
+                        }
+                      </button>
+                    }
+                    <button type="button" class="ib danger" [disabled]="busy" [attr.aria-label]="'Delete ' + s.description" (click)="onAskDelete(s)">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" /></svg>
+                    </button>
+                  }
+                </span>
+              </div>
+            }
+          </div>
+        }
+        <p class="foot-note">Pausing or deleting a schedule never removes entries it has already added.</p>
+      </section>
+    </div>
+
+      <aside class="side-col">
+        @if (failed.length || waiting.length) {
+          <section class="card side attention" aria-labelledby="att-h">
+            <h2 id="att-h" class="card-title">Needs attention</h2>
+            <div class="side-list">
+              @for (run of failed; track run.id) {
+                <div class="att-item">
+                  <div class="line"><strong>{{ run.description }}</strong><strong class="tnum">₹{{ run.amount | number }}</strong></div>
+                  <p class="small">Due {{ dateLabel(run.dueOn, today) }} · not added: {{ run.error }}
+                    Tried {{ run.attempts }} {{ run.attempts === 1 ? 'time' : 'times' }}.</p>
+                  @if (canManage) {
+                    <div class="att-acts">
+                      <button type="button" class="et-btn-primary sm" [disabled]="busy" (click)="onRetryRun(run)">Try again</button>
+                      <button type="button" class="et-btn-ghost sm" [disabled]="busy" (click)="onSkipRun(run)">Skip this one</button>
+                    </div>
+                  }
+                </div>
+              }
+              @for (s of waiting; track s.id) {
+                <div class="att-item">
+                  <div class="line"><strong>{{ s.description }}</strong><strong class="tnum">₹{{ s.amount | number }}</strong></div>
+                  <p class="small">Due {{ dateLabel(s.nextDueOn, today) }} · being added now.</p>
+                </div>
+              }
+            </div>
+          </section>
+        }
+
+        <section class="card side" aria-labelledby="up-h">
+          <h2 id="up-h" class="card-title">Coming up · next 7 days</h2>
+          <div class="side-list">
+            @for (s of view.upcoming; track s.id) {
+              <div class="up-item">
+                <div>
+                  <div class="strong">{{ s.description }}</div>
+                  <div class="small">{{ relativeDay(s.nextDueOn!, today) === 'Today' || relativeDay(s.nextDueOn!, today) === 'Tomorrow' ? relativeDay(s.nextDueOn!, today) + ', ' : '' }}{{ dateLabel(s.nextDueOn, today) }}{{ s.accountName ? ' · ' + s.accountName : '' }}</div>
+                </div>
+                <div class="r">
+                  <div class="strong tnum" [class.in]="s.kind === 'income'">{{ s.kind === 'income' ? '+' : '' }}₹{{ s.amount | number }}</div>
+                  @if (s.remindDays !== null) { <div class="small remind" [class.due]="s.reminderDue">{{ remindLabel(s.remindDays) }}</div> }
+                </div>
+              </div>
+            } @empty {
+              <p class="small none">Nothing due in the next 7 days.</p>
+            }
+          </div>
+        </section>
+
+        <section class="card side grow" aria-labelledby="runs-h">
+          <h2 id="runs-h" class="card-title">Recent runs</h2>
+          <div class="side-list">
+            @for (run of view.recent; track run.id) {
+              <div class="run-item">
+                <span><span class="muted">{{ dateLabel(run.dueOn, today) }}</span> · {{ run.description }} <span class="tnum">₹{{ run.amount | number }}</span></span>
+                <span class="run-st" [attr.data-st]="run.status">{{ run.status === 'posted' ? 'Added' : run.status === 'failed' ? 'Not added' : 'Skipped' }}</span>
+              </div>
+            } @empty {
+              <p class="small none">Nothing has been added yet.</p>
+            }
+          </div>
+        </section>
+      </aside>
+    </div>
+  }
+
+  @if (editorOpen) {
+    <div class="et-overlay rec-overlay">
+      <div class="rec-panel" role="dialog" aria-modal="true" aria-labelledby="recurring-editor-title">
+        <app-recurring-editor
+          [schedule]="editing"
+          [today]="today"
+          [accounts]="accounts"
+          [expenseCategories]="expenseCategories"
+          [incomeCategories]="incomeCategories"
+          [history]="history"
+          [busy]="busy"
+          [canUseAccounts]="canUseAccounts"
+          [canAddIncome]="canAddIncome"
+          [canBackdate]="canBackdate"
+          (save)="onSave($event)"
+          (cancel)="onCloseEditor()"
+          (remove)="onAskDelete(editing!)" />
+      </div>
+    </div>
+  }
+
+  @if (confirmDelete) {
+    <div class="et-overlay rec-confirm">
+      <div class="et-popup" role="dialog" aria-modal="true" aria-labelledby="del-title">
+        <h3 id="del-title">Delete {{ confirmDelete.description }}?</h3>
+        <p class="et-popup-body">
+          Nothing more will be added for it. The {{ confirmDelete.postedCount }}
+          {{ confirmDelete.postedCount === 1 ? 'entry' : 'entries' }} it already added stay in
+          Transactions, and your balances don't change.
+        </p>
+        <div class="et-popup-actions">
+          <button type="button" class="et-btn-ghost" (click)="onCancelDelete()">Keep it</button>
+          <button type="button" class="et-btn-danger" (click)="onConfirmDelete()">Delete schedule</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -28,6 +28,7 @@
     "@angular/platform-browser": "^21.2.26",
     "@angular/platform-browser-dynamic": "^21.2.26",
     "@angular/router": "^21.2.26",
+    "@vercel/blob": "^2.8.2",
     "@vercel/functions": "^3.10.6",
     "bcryptjs": "^2.4.3",
     "compression": "^1.8.1",
@@ -54,5 +55,10 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~5.9.3"
+  },
+  "overrides": {
+    "@vercel/cli-config": {
+      "zod": "^4.6.7"
+    }
   }
 }

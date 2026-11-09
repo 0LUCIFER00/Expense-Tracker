@@ -1,0 +1,202 @@
+/*
+ * Beside the Add Expense and Add Income forms: the slip of what will be saved
+ * (with the balance before and after) and the small cards under it. Kept apart
+ * from entry-form.css only to stay within the per-stylesheet size budget.
+ */
+
+/* ---- the slip, and the cards beside the form ---- */
+
+.add-aside {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.slip {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+.slip-body {
+  padding: 1rem 1.25rem 0.75rem;
+  border-radius: 16px 16px 0 0;
+  background-color: var(--surface);
+}
+
+/* The torn edge: half-circles cut out of the bottom, like a till receipt. */
+.slip-edge {
+  height: 10px;
+  background-image: radial-gradient(circle at 8px 10px, transparent 6px, var(--surface) 6.5px);
+  background-size: 16px 10px;
+  background-repeat: repeat-x;
+}
+
+.slip-kicker {
+  margin: 0 0 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.slip-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.badge {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background-color: var(--pick);
+  color: #fff;
+}
+
+.slip-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--pick-ink);
+  overflow-wrap: anywhere;
+}
+
+.slip-title.empty {
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+.slip-meta {
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+
+.slip-amount {
+  margin: 0.75rem 0 0.5rem;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--pick-ink);
+}
+
+.slip-rows {
+  padding-top: 0.25rem;
+  border-top: 1.5px dashed var(--rule-strong);
+}
+
+.slip-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.3125rem 0;
+  font-size: 0.8125rem;
+}
+
+.slip-row > span {
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.slip-row > b {
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.after-box {
+  margin-top: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 12px;
+  background-color: var(--sunken);
+}
+
+.after-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--pick-ink);
+}
+
+.after-line > span {
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.after-line.short { color: var(--bad-ink); }
+
+.after-bar {
+  margin-top: 0.5rem;
+  height: 8px;
+  border-radius: 999px;
+  display: flex;
+  overflow: hidden;
+  background-color: var(--accent-soft);
+}
+
+.after-bar .keep { background-color: var(--accent); }
+.after-bar .take { background-color: var(--bad); }
+.after-bar .add { background-color: var(--good); }
+
+.side-card {
+  padding: 0.875rem 1.125rem;
+}
+
+.wa {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.wa-ic {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background-color: var(--good-soft);
+  color: var(--good-ink);
+}
+
+.wa-text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.wa-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.command {
+  display: block;
+  font-weight: 600;
+  color: var(--accent-ink);
+  overflow-wrap: anywhere;
+}
+
+.card-link {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--pick-ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.card-link:hover { text-decoration: underline; }
+
+/* On a phone the slip would be a second copy of the form; the balance after
+   moves into the bar with the buttons instead (entry-form.css). */
+@media (max-width: 640px) {
+  .slip { display: none; }
+}

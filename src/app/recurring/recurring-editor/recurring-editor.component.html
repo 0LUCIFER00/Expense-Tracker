@@ -1,0 +1,176 @@
+<form class="editor" (ngSubmit)="onSubmit()" novalidate>
+  <header class="ed-head">
+    <div>
+      <h2 class="ed-title" id="recurring-editor-title">
+        {{ editing ? 'Edit ' + schedule!.description : 'New recurring' }}
+      </h2>
+      @if (editing) {
+        <p class="ed-sub">
+          {{ schedule!.kind === 'income' ? 'Income' : 'Expense' }}
+          · {{ schedule!.postedCount }} {{ schedule!.postedCount === 1 ? 'entry' : 'entries' }} added so far
+        </p>
+      }
+    </div>
+    <button type="button" class="ed-close" aria-label="Close" (click)="cancel.emit()">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+    </button>
+  </header>
+
+  <div class="ed-body">
+    @if (!editing) {
+      <div class="kind" role="radiogroup" aria-label="Type">
+        <button type="button" role="radio" class="kind-btn" [class.on]="kind === 'expense'"
+          [attr.aria-checked]="kind === 'expense'" (click)="setKind('expense')">Expense (debit)</button>
+        <button type="button" role="radio" class="kind-btn in" [class.on]="kind === 'income'"
+          [attr.aria-checked]="kind === 'income'" [disabled]="!canAddIncome"
+          (click)="setKind('income')">Income (credit)</button>
+      </div>
+    }
+
+    <div class="grid">
+      <div>
+        <label class="et-field-label" for="rc-desc">Description</label>
+        <input id="rc-desc" class="et-field" name="description" [(ngModel)]="description"
+          maxlength="200" autocomplete="off" placeholder="Rent, Netflix, Salary…">
+      </div>
+      <div>
+        <label class="et-field-label" for="rc-amount">Amount (₹)</label>
+        <input id="rc-amount" class="et-field" name="amount" type="number" inputmode="decimal"
+          min="1" max="100000" step="0.01" [(ngModel)]="amount">
+      </div>
+      <div>
+        <label class="et-field-label" for="rc-cat">Category</label>
+        <select id="rc-cat" class="et-field" name="category" [(ngModel)]="category">
+          <option value="">No category</option>
+          @for (name of categories; track name) {
+            <option [value]="name">{{ name }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="et-field-label" for="rc-acc">{{ kind === 'income' ? 'Goes into' : 'Take it from' }}</label>
+        <select id="rc-acc" class="et-field" name="accountId" [(ngModel)]="accountId"
+          [disabled]="!canUseAccounts && kind === 'expense'">
+          @if (kind === 'expense') {
+            <option value="">No account (just list it)</option>
+          }
+          @for (account of savedAccounts; track account.id) {
+            <option [value]="account.id">{{ account.category }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="et-field-label" for="rc-rep">Repeats</label>
+        <select id="rc-rep" class="et-field" name="repeat" [(ngModel)]="repeat">
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+          <option value="custom">Custom…</option>
+        </select>
+      </div>
+      <div>
+        <label class="et-field-label" for="rc-first">{{ editing ? 'Next date' : 'Starts on' }}</label>
+        <input id="rc-first" class="et-field" name="firstDate" type="date" [(ngModel)]="firstDate"
+          [min]="canBackdate ? '' : today">
+      </div>
+    </div>
+
+    @if (repeat === 'custom') {
+      <div class="custom">
+        <label for="rc-every">Every</label>
+        <input id="rc-every" class="et-field every" name="customEvery" type="number" min="1" max="99"
+          [(ngModel)]="customEvery">
+        <select class="et-field unit" name="customUnit" aria-label="Unit" [(ngModel)]="customUnit">
+          <option value="daily">days</option>
+          <option value="weekly">weeks</option>
+          <option value="monthly">months</option>
+          <option value="yearly">years</option>
+        </select>
+      </div>
+    }
+
+    @if (preview.length) {
+      <div class="preview">
+        <span class="pv-title">Next dates</span>
+        <span class="pv-dates">
+          @for (date of preview; track date) {
+            <span class="pv-date" [class.short]="isShortMonth(date)">{{ dateLabel(date, today) }}</span>
+          }
+        </span>
+        @if (monthEndNote) {
+          <span class="pv-note">Months without that day use their last day; it goes back to the usual day when it can.</span>
+        }
+      </div>
+    }
+
+    <div class="grid">
+      <div>
+        <span class="et-field-label">Ends</span>
+        <div class="ends">
+          <label><input type="radio" name="ends" [value]="false" [(ngModel)]="endsOn"> Never</label>
+          <label><input type="radio" name="ends" [value]="true" [(ngModel)]="endsOn"> On</label>
+          <input class="et-field end-date" name="endOn" type="date" aria-label="End date"
+            [disabled]="!endsOn" [min]="firstDate" [(ngModel)]="endOn">
+        </div>
+      </div>
+      <div>
+        <label class="et-field-label" for="rc-rem">Remind me</label>
+        <select id="rc-rem" class="et-field" name="remindDays" [(ngModel)]="remindDays">
+          @for (option of remindOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    @if (editing && schedule!.status !== 'completed') {
+      <label class="active-row">
+        <span>
+          <strong>Active</strong>
+          <span class="muted">Switch off to pause. Nothing is added while paused.</span>
+        </span>
+        <input type="checkbox" role="switch" class="sw" name="active" [(ngModel)]="active">
+      </label>
+    }
+
+    <p class="note" [class.warn]="editing">
+      @if (editing) {
+        Changes apply from the next entry. Entries already added keep their amounts and dates.
+      } @else {
+        Added automatically on each date, early morning India time. If the account is short,
+        nothing is taken; it shows under Needs attention instead.
+      }
+    </p>
+
+    @if (editing && history.length) {
+      <div class="history">
+        <h3>History</h3>
+        @for (run of history.slice(0, 4); track run.id) {
+          <div class="h-row">
+            <span>{{ dateLabel(run.dueOn, today) }}</span>
+            <span class="tnum">₹{{ run.amount | number }}</span>
+            <span class="h-st" [attr.data-st]="run.status">
+              {{ run.status === 'posted' ? 'Added' : run.status === 'failed' ? 'Not added' : 'Skipped' }}
+            </span>
+          </div>
+        }
+      </div>
+    }
+
+    @if (error) {
+      <p class="err" role="alert">{{ error }}</p>
+    }
+  </div>
+
+  <footer class="ed-foot">
+    @if (editing) {
+      <button type="button" class="et-btn-danger" [disabled]="busy" (click)="remove.emit()">Delete</button>
+    }
+    <span class="spacer"></span>
+    <button type="button" class="et-btn-ghost" [disabled]="busy" (click)="cancel.emit()">Cancel</button>
+    <button type="submit" class="et-btn-primary" [disabled]="busy">
+      {{ busy ? 'Saving…' : editing ? 'Save changes' : 'Create schedule' }}
+    </button>
+  </footer>
+</form>

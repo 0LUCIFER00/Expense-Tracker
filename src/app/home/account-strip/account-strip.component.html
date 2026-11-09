@@ -1,0 +1,24 @@
+<section class="strip" aria-label="Accounts" (window:resize)="update()">
+  <div class="track" #track tabindex="0" [style.--n]="accounts.length" (scroll)="update()" (wheel)="onWheel($event)">
+    @for (account of accounts; track $index) {
+      <div class="tile">
+        <p class="top">
+          <span class="name">{{ account.name }}</span>
+          <span class="kind">{{ account.kind }}</span>
+        </p>
+        <p class="amount tnum">₹{{ account.balance | number }}</p>
+      </div>
+    }
+  </div>
+
+  @if (canBack) {
+    <button type="button" class="arrow back" aria-label="Show earlier accounts" (click)="page(-1)">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg>
+    </button>
+  }
+  @if (canForward) {
+    <button type="button" class="arrow forward" aria-label="Show more accounts" (click)="page(1)">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+    </button>
+  }
+</section>

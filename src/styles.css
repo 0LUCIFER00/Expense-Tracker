@@ -408,139 +408,151 @@ html[data-theme='dark'] {
   }
 }
 
-/* ================= Add Expense, fitted ================= */
+/* ================= Add Expense and Add Income, fitted ================= */
 /*
- * The layout half of the fit for that page, paired with the shell rules above.
- * It lives here rather than in its component stylesheet because the rules only
- * make sense together with them.
+ * The layout half of the fit for those pages, paired with the shell rules
+ * above; here because they only make sense together.
  *
- * The dashboard's two layouts carry their own; each is a component of its own,
- * so its stylesheet is already scoped to it.
- *
- * Where the window has the room, the form and the column beside it fit it: the
- * fields pair up two to a line and the spacing tightens. Below this size there
- * is genuinely not enough screen, so the page scrolls as it did.
+ * Where the window has the room, the form and the column beside it fit it.
+ * Nothing is ever cut off: if a short window still cannot hold the form, the
+ * form scrolls inside its card with the buttons at its foot, and in the
+ * column it is the Recent income list that gives way.
  */
 @media (min-width: 900px) and (min-height: 560px) {
   body.fits-screen .add-page {
     flex: 1;
     min-height: 0;
-    gap: 1rem;
-    padding: 1rem clamp(1rem, 3vw, 1.5rem) 1.25rem;
     flex-wrap: nowrap;
     align-items: stretch;
+    gap: 1rem;
+    padding: 0.875rem clamp(1rem, 3vw, 1.5rem) 1rem;
   }
 
-  body.fits-screen .form-card {
-    display: flex;
-    flex-direction: column;
+  body.fits-screen .add-page .form-card {
     min-height: 0;
-    padding: 1.125rem 1.375rem;
+    overflow-y: auto;
   }
 
-  body.fits-screen .form-head {
-    margin-bottom: 0.875rem;
-  }
-
-  body.fits-screen .form-title {
-    margin-bottom: 0.125rem;
-    font-size: 1.25rem;
-  }
-
-  body.fits-screen .form-subtitle {
-    margin-bottom: 0;
-  }
-
-  body.fits-screen .form-grid {
-    gap: 0.875rem 1.25rem;
-    margin-bottom: 1rem;
-  }
-
-  body.fits-screen .amount-input {
-    padding: 0.625rem 0;
-    font-size: 1.625rem;
-  }
-
-  body.fits-screen .amount-prefix {
-    font-size: 1.375rem;
-  }
-
-  /* The buttons sit at the foot of the card whatever the fields above need. */
-  body.fits-screen .form-actions {
+  body.fits-screen .add-page .form-actions {
     margin-top: auto;
   }
 
-  body.fits-screen .add-aside {
-    gap: 1rem;
-    min-height: 0;
-  }
-
-  body.fits-screen .add-aside .card {
-    padding: 1.125rem 1.25rem;
-  }
-
   /*
-   * Taller than the window, the column used to run on under the footer. Its
-   * other cards keep their size; the recent list gives way and scrolls inside
-   * its own card.
+   * Many accounts: the account list is the part of the form that gives way.
+   * It keeps at least one row and scrolls on its own, so the rest of the form
+   * and its buttons stay put instead of the whole card scrolling.
    */
-  body.fits-screen .add-aside > * {
+  body.fits-screen .add-page .form-card > .accounts {
+    flex: 0 1 auto;
+    min-height: calc(1.5rem + 62px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  body.fits-screen .add-page .accounts > .tiles {
+    flex: 1 1 auto;
+    min-height: 56px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    /* Scrolling comes to rest on a whole row of tiles. */
+    scroll-snap-type: y proximity;
+    /* Room for the chosen tile's border and focus ring inside the scroll box. */
+    padding: 3px;
+    margin: -3px;
+  }
+
+  body.fits-screen .add-page .accounts > .tiles > .tile {
+    scroll-snap-align: start;
+    scroll-margin-top: 3px;
+  }
+
+  body.fits-screen .add-page .add-aside {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  body.fits-screen .add-page .add-aside > * {
     flex-shrink: 0;
   }
 
-  body.fits-screen .add-aside .recent-card {
+  body.fits-screen .add-page .add-aside > .recent-card {
     flex: 0 1 auto;
-    min-height: 0;
+    min-height: 4.5rem;
     overflow-y: auto;
   }
 }
 
-/*
- * A laptop screen is shorter than the design's 900px artboard. This tier
- * spends the difference on padding and the amount field rather than dropping
- * anything from the page.
- */
+/* A laptop screen: tighter spacing and smaller controls, nothing dropped. */
 @media (min-width: 900px) and (min-height: 560px) and (max-height: 820px) {
   body.fits-screen .add-page {
     gap: 0.75rem;
     padding: 0.625rem clamp(1rem, 3vw, 1.5rem) 0.75rem;
   }
 
-  body.fits-screen .form-card {
+  body.fits-screen .add-page .form-card {
+    gap: 0.625rem;
     padding: 0.875rem 1.125rem;
   }
 
-  body.fits-screen .form-head {
-    margin-bottom: 0.625rem;
+  body.fits-screen .add-page .form-title {
+    font-size: 1.25rem;
   }
 
-  body.fits-screen .form-grid {
-    gap: 0.625rem 1rem;
-    margin-bottom: 0.75rem;
+  body.fits-screen .add-page .chip-btn {
+    height: 36px;
   }
 
-  body.fits-screen .amount-input {
-    padding: 0.4375rem 0;
-    font-size: 1.375rem;
+  body.fits-screen .add-page .chip-btn .ic {
+    width: 24px;
+    height: 24px;
   }
 
-  /* Add Expense's chips only; Transactions fits the window too now. */
-  body.fits-screen .add-page .chip {
-    min-height: 32px;
-    padding: 0 0.75rem;
+  /* Account tiles only; a split card keeps the height its bar needs. */
+  body.fits-screen .add-page .tile:not(.rep) {
+    height: 50px;
   }
 
-  body.fits-screen .btn-good,
-  body.fits-screen .btn-ghost {
+  body.fits-screen .add-page .pill {
+    height: 40px;
+  }
+
+  body.fits-screen .add-page .amount-input {
+    font-size: 1.5rem;
+  }
+
+  body.fits-screen .add-page .form-actions {
+    padding-top: 0.625rem;
+  }
+
+  body.fits-screen .add-page .btn-good,
+  body.fits-screen .add-page .btn-ghost {
     min-height: 42px;
   }
 
-  body.fits-screen .add-aside {
+  body.fits-screen .add-page .add-aside {
     gap: 0.75rem;
   }
 
-  body.fits-screen .add-aside .card {
-    padding: 0.875rem 1.125rem;
+  body.fits-screen .add-page .slip-body {
+    padding: 0.75rem 1rem 0.5rem;
+  }
+
+  body.fits-screen .add-page .slip-kicker {
+    margin-bottom: 0.375rem;
+  }
+
+  body.fits-screen .add-page .slip-amount {
+    margin: 0.375rem 0 0.25rem;
+    font-size: 1.625rem;
+  }
+
+  body.fits-screen .add-page .slip-row {
+    padding: 0.1875rem 0;
+  }
+
+  body.fits-screen .add-page .side-card {
+    padding: 0.75rem 1rem;
   }
 }
 
@@ -725,4 +737,164 @@ html[data-theme='dark'] {
     z-index: 1;
     box-shadow: 0 0 0 4px var(--surface);
   }
+}
+
+/*
+ * The Recurring page's form opens below the sticky header (which sits above
+ * every page's overlays), and under the toasts, so a refusal is still read.
+ */
+app-recurring .et-overlay {
+  padding-top: calc(54px + 0.75rem);
+}
+
+app-recurring .et-overlay > .rec-panel {
+  max-height: calc(100dvh - 54px - 1.5rem);
+}
+
+/* The form inside takes the panel's height, so its body scrolls between a fixed head and foot. */
+app-recurring .rec-panel > app-recurring-editor {
+  max-height: inherit;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+app-recurring .et-overlay.rec-confirm {
+  z-index: 60;
+}
+
+/* ================= Recurring, on a phone ================= */
+/*
+ * Each schedule's table row becomes a two-column card. Here rather than in the
+ * page's stylesheet, which is at its size budget; `app-recurring .rows > .row`
+ * outranks the page's own `.row`.
+ */
+@media (max-width: 760px) {
+  app-recurring .rows > .row.head {
+    display: none;
+  }
+
+  app-recurring .rows > .row {
+    min-width: 0;
+    height: auto;
+    padding: 0.5rem 0.875rem;
+    row-gap: 0.2rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'desc amt' 'rep next' 'acc st' 'type acts';
+  }
+
+  app-recurring .rows > .row > :nth-child(1) { grid-area: desc; }
+  app-recurring .rows > .row > :nth-child(2) { grid-area: type; }
+  app-recurring .rows > .row > :nth-child(3) { grid-area: amt; }
+  app-recurring .rows > .row > :nth-child(4) { grid-area: rep; }
+  app-recurring .rows > .row > :nth-child(5) { grid-area: next; text-align: right; }
+  app-recurring .rows > .row > :nth-child(6) { grid-area: acc; }
+  app-recurring .rows > .row > :nth-child(7) { grid-area: st; text-align: right; }
+  app-recurring .rows > .row > :nth-child(8) { grid-area: acts; }
+}
+
+/* ================= Savings goals ================= */
+/*
+ * Here rather than in the page's stylesheet, which is at its size budget. The
+ * form opens below the sticky header and under the toasts, like Recurring's,
+ * and its body scrolls between a fixed head and foot.
+ */
+app-goals .et-overlay {
+  padding-top: calc(54px + 0.75rem);
+}
+
+app-goals .et-overlay > .goals-panel {
+  max-height: calc(100dvh - 54px - 1.5rem);
+}
+
+app-goals .goals-panel > * {
+  max-height: inherit;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+app-goals .et-overlay.goals-confirm {
+  z-index: 60;
+}
+
+/*
+ * A goal's status colours: green on track (the page's default), amber when
+ * behind or past its date, blue when reached or completed, grey when paused.
+ * Always beside a word, never the only signal.
+ */
+app-goals [data-tone='warn'].ico,
+app-goals [data-tone='warn'].chip {
+  background-color: var(--warn-soft);
+  color: var(--warn-ink);
+}
+
+app-goals [data-tone='warn'].fill {
+  background-color: var(--warn-ink);
+}
+
+app-goals [data-tone='warn'].goal-note {
+  color: var(--warn-ink);
+}
+
+app-goals [data-tone='info'].chip {
+  background-color: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+app-goals [data-tone='info'].fill {
+  background-color: var(--good);
+}
+
+app-goals [data-tone='muted'].ico,
+app-goals [data-tone='muted'].chip {
+  background-color: var(--sunken);
+  color: var(--ink-2);
+}
+
+app-goals [data-tone='muted'].fill {
+  background-color: var(--ink-3);
+}
+
+@media (max-width: 760px) {
+  app-goals .card.summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  app-goals .summary > .stat:nth-child(2) {
+    border-right: 0;
+  }
+
+  app-goals .summary > .stat:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--rule);
+  }
+
+  app-goals .page-sub {
+    display: none;
+  }
+}
+
+/* ================= Transactions: receipts ================= */
+/* Here because the page's own stylesheet is at its size budget. */
+/* The paperclip beside an expense that has receipts or invoices attached. */
+app-expense-list .et-clip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 0.375rem;
+  padding: 0 0.375rem;
+  border-radius: 999px;
+  background-color: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+app-expense-list .et-clip svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }

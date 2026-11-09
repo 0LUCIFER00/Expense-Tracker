@@ -2,8 +2,9 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { BalanceAccount, BudgetMonth, Expense, SplitSummary } from '../shared/models';
+import { BalanceAccount, BudgetMonth, Expense, GoalsOverview, SplitSummary } from '../shared/models';
 import { BudgetService, currentMonthKey } from '../shared/budget.service';
+import { GoalsService } from '../shared/goals.service';
 import { CategoryTotal, ExpenseService, personalAmount } from '../shared/expense.service';
 import { BalanceService } from '../shared/balance.service';
 import { SettingsService } from '../shared/settings.service';
@@ -49,6 +50,7 @@ export class HomeComponent implements OnInit {
   private readonly settingsService = inject(SettingsService);
   private readonly whatsappService = inject(WhatsappService);
   private readonly budgetService = inject(BudgetService);
+  private readonly goalsService = inject(GoalsService);
   private readonly toast = inject(ToastService);
 
   /** Null until the first load finishes, so neither layout renders half-made. */
@@ -65,16 +67,19 @@ export class HomeComponent implements OnInit {
       // Likewise: without it the split rows just do not open.
       splits: this.expenseService.listSplits().pipe(catchError(() => of([]))),
       // And again: a budget that fails to load hides its card, nothing more.
-      budget: this.budgetService.month(currentMonthKey()).pipe(catchError(() => of(null)))
+      budget: this.budgetService.month(currentMonthKey()).pipe(catchError(() => of(null))),
+      // Savings goals for their strip; it stays out of the way if they fail.
+      goals: this.goalsService.overview().pipe(catchError(() => of(null)))
     }).subscribe({
-      next: ({ expenses, balances, whatsapp, splits, budget }) => {
+      next: ({ expenses, balances, whatsapp, splits, budget, goals }) => {
         this.data = this.summarise(
           expenses,
           // Unsaved rows are drafts on the Money Management page, not accounts.
           balances.filter(account => account.saved),
           Boolean(whatsapp?.available && !whatsapp?.connected),
           splits,
-          budget
+          budget,
+          goals
         );
       },
       error: error => {
@@ -88,7 +93,8 @@ export class HomeComponent implements OnInit {
     accounts: BalanceAccount[],
     offerWhatsapp: boolean,
     splits: SplitSummary[] = [],
-    budget: BudgetMonth | null = null
+    budget: BudgetMonth | null = null,
+    goals: GoalsOverview | null = null
   ): DashboardData {
     const now = new Date();
 
@@ -134,7 +140,8 @@ export class HomeComponent implements OnInit {
       pending: expenses.filter(expense => expense.isPendingApproval).length,
 
       offerWhatsapp,
-      budget
+      budget,
+      goals
     };
   }
 

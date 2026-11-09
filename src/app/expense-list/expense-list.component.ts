@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { TransactionDetailsComponent } from './transaction-details/transaction-details.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -10,7 +11,6 @@ import { downloadCsv } from '../shared/csv';
 import { ToastService } from '../shared/toast.service';
 import { SettingsService } from '../shared/settings.service';
 import { parseLocalDate } from '../shared/date-utils';
-import { SplitHistoryComponent } from '../shared/split-history/split-history.component';
 import { FitsScreenDirective } from '../shared/fits-screen.directive';
 
 /** Which half of the ledger is on screen. */
@@ -56,7 +56,7 @@ const TABS: TransactionTab[] = ['all', 'out', 'in'];
 @Component({
   selector: 'app-expense-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, SplitHistoryComponent, FitsScreenDirective],
+  imports: [CommonModule, FormsModule, FitsScreenDirective, TransactionDetailsComponent],
   templateUrl: './expense-list.component.html',
   styleUrl: './expense-list.component.css'
 })
@@ -95,10 +95,11 @@ export class ExpenseListComponent implements OnInit {
   /** Money people handed back for their part of a split. */
   paidBack = 0;
 
-  /** Split expenses by id, with their repayments, for the rows that expand. */
+  /** Split expenses by id, with their repayments, for the details drawer. */
   splits = new Map<string, SplitSummary>();
-  /** The row whose split history is open; one at a time. */
-  expandedId: string | null = null;
+
+  /** The row whose details drawer is open, if any. */
+  openRow: TransactionRow | null = null;
 
   loading = true;
 
@@ -217,7 +218,7 @@ export class ExpenseListComponent implements OnInit {
     }
 
     this.tab = tab;
-    this.expandedId = null;
+    this.openRow = null;
     this.collectCategories();
     this.applyFilters();
 
@@ -253,13 +254,50 @@ export class ExpenseListComponent implements OnInit {
     return id ? this.splits.get(id) ?? null : null;
   }
 
-  /** Opens a split's repayment history under its row, or closes it. */
-  onToggleSplit(row: TransactionRow): void {
-    if (!this.splitFor(row)) {
-      return;
-    }
+  /** Any row opens its details: an expense or money in alike. */
+  onOpenRow(row: TransactionRow): void {
+    this.openRow = row;
+  }
 
-    this.expandedId = this.expandedId === row.key ? null : row.key;
+  closeDetails(): void {
+    this.openRow = null;
+  }
+
+  /** From a repayment's details, the split expense it pays back. */
+  onOpenSplitExpense(id: string): void {
+    const expense = this.allExpenses.find(e => e.id === id);
+
+    if (expense) {
+      this.openRow = this.fromExpense(expense);
+    }
+  }
+
+  /** Remove, confirmed in the drawer. */
+  onRemoveOpen(): void {
+    const row = this.openRow;
+    this.openRow = null;
+
+    if (row?.expense) {
+      this.onDelete(row.expense);
+    } else if (row?.income) {
+      this.onDeleteIncome(row.income);
+    }
+  }
+
+  onApproveOpen(): void {
+    const expense = this.openRow?.expense;
+    this.openRow = null;
+
+    if (expense) {
+      this.onApprovePending(expense);
+    }
+  }
+
+  /** A receipt was added or removed in the drawer; the paperclip follows. */
+  onAttachmentCount(count: number): void {
+    if (this.openRow?.expense) {
+      this.openRow.expense.attachmentCount = count;
+    }
   }
 
   onDelete(expense: Expense): void {
@@ -418,10 +456,11 @@ export class ExpenseListComponent implements OnInit {
   }
 
   applySorting(rows: TransactionRow[]): TransactionRow[] {
-    // Default is the order the entries were created in.
+    // Default: the latest entry first. Entries are never edited after they
+    // are added, so the last one added is the last one updated.
     if (!this.sortColumn || this.sortDirection === 'default') {
       return [...rows].sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
     }
 
