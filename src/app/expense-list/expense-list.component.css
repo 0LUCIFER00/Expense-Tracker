@@ -182,7 +182,7 @@
 .table-head,
 .table-row {
   display: grid;
-  grid-template-columns: 72px 86px minmax(130px, 1fr) 126px 118px 96px 64px;
+  grid-template-columns: 72px 86px minmax(130px, 1fr) 126px 118px 96px 20px;
   gap: 0.75rem;
   align-items: center;
   min-width: 760px;
@@ -190,7 +190,7 @@
 
 .table-head.no-account,
 .table-row.no-account {
-  grid-template-columns: 72px 86px minmax(130px, 1fr) 126px 96px 64px;
+  grid-template-columns: 72px 86px minmax(130px, 1fr) 126px 96px 20px;
   min-width: 640px;
 }
 
@@ -264,9 +264,8 @@
   grid-column: 2;
 }
 
-/* The rest of a split row's look is shared with the dashboard, in styles.css. */
-/* The outline adds to the colour stripe rather than replacing it. */
-.table-row.et-splittable:hover,
+/* Every row opens its details; the outline adds to the colour stripe. */
+.table-row:hover,
 .table-row.et-open {
   box-shadow: inset 3px 0 0 var(--stripe), inset 0 0 0 1px var(--focus-border);
 }
@@ -334,42 +333,25 @@
   color: var(--good-ink);
 }
 
-/* ---- row actions ---- */
+/* ---- the arrow that says a row opens ---- */
 
-.cell-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.375rem;
-}
-
-.icon-btn {
-  width: 28px;
-  height: 28px;
+.cell-go {
   display: grid;
   place-items: center;
-  border: 0;
-  border-radius: 50%;
-  cursor: pointer;
+  color: var(--ink-3);
 }
 
-.icon-btn svg {
+.cell-go svg {
   fill: none;
-  stroke: #fff;
-  stroke-width: 2.6;
+  stroke: currentColor;
+  stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.icon-btn.remove {
-  background-color: var(--bad);
-}
-
-.icon-btn.approve {
-  background-color: var(--good);
-}
-
-.icon-btn:hover {
-  filter: brightness(1.1);
+.table-row:hover .cell-go,
+.table-row.et-open .cell-go {
+  color: var(--accent-ink);
 }
 
 /* ---- the rest ---- */
@@ -475,9 +457,7 @@
     color: var(--ink-3);
   }
 
-  .cell-actions {
-    margin-top: 0.25rem;
-    padding-top: 0.625rem;
-    border-top: 1px solid var(--rule);
+  .cell-go {
+    display: none;
   }
 }

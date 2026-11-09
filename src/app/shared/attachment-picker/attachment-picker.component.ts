@@ -48,6 +48,8 @@ export class AttachmentPickerComponent {
   /** How many more files the expense can take. */
   @Input() room = 10;
   @Input() compact = false;
+  /** One line with small thumbnails and an Attach button, for a busy form. */
+  @Input() inline = false;
 
   @Output() uploaded = new EventEmitter<Attachment>();
 
@@ -60,6 +62,46 @@ export class AttachmentPickerComponent {
 
   get waiting(): number {
     return this.items.filter(i => i.state === 'ready' || i.state === 'error').length;
+  }
+
+  /** The first file that could not be used or sent, if any. */
+  get firstError(): Pending | null {
+    return this.items.find(i => i.state === 'error') ?? null;
+  }
+
+  /** The inline line's heading: what is attached or waiting. */
+  get inlineTitle(): string {
+    const uploading = this.items.filter(i => i.state === 'uploading').length;
+    const usable = this.items.filter(i => i.state !== 'error').length;
+
+    if (uploading) {
+      return `Uploading ${uploading} of ${usable}…`;
+    }
+
+    if (!usable) {
+      return 'Attach receipt';
+    }
+
+    const noun = usable === 1 ? 'receipt' : 'receipts';
+    return this.items.every(i => i.state === 'done' || i.state === 'error')
+      ? `${usable} ${noun} attached`
+      : `${usable} ${noun} ready`;
+  }
+
+  /** The inline line's second row: the first problem, or what happens next. */
+  get inlineNote(): string {
+    const error = this.firstError;
+
+    if (error) {
+      const others = this.items.filter(i => i.state === 'error').length - 1;
+      return `${error.name}: ${error.error}${others > 0 ? ` (and ${others} more)` : ''}`;
+    }
+
+    if (!this.items.length) {
+      return 'JPG, PNG, WebP or PDF · up to 4 MB';
+    }
+
+    return this.expenseId ? 'Sent as soon as you add them' : 'Attached when you save';
   }
 
   get busy(): boolean {

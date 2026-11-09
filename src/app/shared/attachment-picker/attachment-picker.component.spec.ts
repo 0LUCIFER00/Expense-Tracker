@@ -77,6 +77,43 @@ describe('AttachmentPickerComponent', () => {
     expect(el().textContent).toContain('Attach receipt');
   });
 
+  describe('inline, as on Add Expense', () => {
+    beforeEach(() => {
+      picker.inline = true;
+      fixture.detectChanges();
+    });
+
+    it('is one line: what to attach, and an Attach button for several files', () => {
+      const input = el().querySelector('.inline-btn input[type=file]') as HTMLInputElement;
+      expect(input.multiple).toBeTrue();
+      expect(el().querySelector('.inline-text')!.textContent).toContain('Attach receipt');
+      expect(el().querySelector('.files')).toBeNull();
+    });
+
+    it('shows waiting files as thumbnails that can be taken out', async () => {
+      await picker.add([await png(20, 20, 'a.png'), pdf()]);
+      fixture.detectChanges();
+
+      expect(el().querySelectorAll('.mini').length).toBe(2);
+      expect(el().querySelector('.mini img')).not.toBeNull();
+      expect(el().querySelector('.inline-text')!.textContent).toContain('2 receipts ready');
+      expect(el().querySelector('.inline-text')!.textContent).toContain('Attached when you save');
+
+      (el().querySelector('.mini-x') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(el().querySelector('.inline-text')!.textContent).toContain('1 receipt ready');
+    });
+
+    it('says what is wrong with a file it cannot take', async () => {
+      await picker.add([new File(['GIF89a'], 'cat.gif', { type: 'image/gif' })]);
+      fixture.detectChanges();
+
+      const note = el().querySelector('.inline-text .err') as HTMLElement;
+      expect(note.textContent).toContain('cat.gif');
+      expect(note.getAttribute('role')).toBe('alert');
+    });
+  });
+
   it('holds files until the expense exists, then sends each with progress', async () => {
     await picker.add([await png(20, 20, 'a.png'), pdf()]);
     fixture.detectChanges();

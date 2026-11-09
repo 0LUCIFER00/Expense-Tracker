@@ -1,4 +1,4 @@
-import { parseLocalDate, toIsoDate, today } from './date-utils';
+import { dayLabel, parseLocalDate, toIsoDate, today, yesterday } from './date-utils';
 
 describe('date-utils', () => {
   describe('parseLocalDate', () => {
@@ -43,5 +43,18 @@ describe('date-utils', () => {
   it('today() is a well-formed date string', () => {
     expect(today()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(today()).toBe(toIsoDate(new Date()));
+  });
+
+  it('yesterday() is the day before today', () => {
+    const day = parseLocalDate(today());
+    day.setDate(day.getDate() - 1);
+    expect(yesterday()).toBe(toIsoDate(day));
+  });
+
+  it('dayLabel() names today and yesterday, and dates anything else', () => {
+    expect(dayLabel(today())).toMatch(/^Today, /);
+    expect(dayLabel(yesterday())).toMatch(/^Yesterday, /);
+    expect(dayLabel('2024-03-05')).toContain('2024');
+    expect(dayLabel('')).toBe('');
   });
 });

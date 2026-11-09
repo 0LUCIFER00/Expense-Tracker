@@ -1,185 +1,204 @@
-<div class="add-page" appFitsScreen>
+<div class="add-page money-in" appFitsScreen>
 
   <form [formGroup]="moneyForm" class="card form-card">
 
-    <div class="form-head">
-      <h1 class="form-title">Add income</h1>
-      <p class="form-subtitle">Salary, a refund, anything that came in</p>
-    </div>
+    <h1 class="form-title">Add income</h1>
 
     @if (!canUpdateBalance) {
       <p class="form-error">
-        This account may not change balances, so money cannot be added here. Sign in
+        This sign-in may not change balances, so money cannot be added here. Sign in
         with your full-access password.
       </p>
     }
 
-    <div class="form-grid">
-
-      <div class="field field-amount">
+    <div class="amount-row">
+      <div>
         <label class="field-label" for="amount">Amount</label>
-
         <div class="amount-field">
-          <span class="amount-prefix tnum" aria-hidden="true">₹</span>
+          <span class="amount-prefix" aria-hidden="true">+₹</span>
           <input id="amount" class="amount-input tnum" formControlName="amount" type="text"
-            inputmode="decimal" placeholder="0">
+            inputmode="decimal" placeholder="0" autocomplete="off">
         </div>
       </div>
 
-      <div class="field field-what">
-        <label class="field-label" for="description">Description</label>
+      <div>
+        <label class="field-label" for="description">Where did it come from?</label>
         <input id="description" class="text-field" formControlName="description" type="text"
-          placeholder="October salary, Amazon refund…">
+          placeholder="November salary, Amazon refund…" autocomplete="off">
       </div>
-
-      <!-- Side by side, the same as Category and Split on Add Expense. -->
-      <div class="field field-category">
-        <label class="field-label" for="category">Income source</label>
-
-        <select id="category" class="text-field" formControlName="category">
-          <option value="">None</option>
-          @for (name of categories; track name) {
-            <option [value]="name">{{ name }}</option>
-          }
-        </select>
-
-        @if (!selectedSplit) {
-          <p class="field-note">Optional, and separate from the expense categories.</p>
-        }
-        @if (selectedSplit) {
-          <p class="field-note">Not needed: a repayment is not income.</p>
-        }
-      </div>
-
-      <!--
-      Always shown, so the feature can be found. With nothing waiting to be
-      paid back it is disabled and says how to start one, rather than hiding.
-      -->
-      <div class="field field-split">
-        <label class="field-label" for="splitFor">Split repayment</label>
-
-        <select id="splitFor" class="text-field" formControlName="splitFor" (change)="onSplitChange()">
-          <option value="">
-            {{ openSplits.length ? 'Not a repayment' : 'Nothing to pay back yet' }}
-          </option>
-
-          @for (split of openSplits; track split.id) {
-            <option [value]="split.id">
-              {{ split.description }} — ₹{{ split.remaining | number }} owed
-            </option>
-          }
-        </select>
-
-        @if (selectedSplit; as split) {
-          <p class="field-note good">
-            ₹{{ split.received | number }} of ₹{{ split.owed | number }} back · ₹{{ split.share | number }} each
-          </p>
-        }
-
-        @if (!openSplits.length) {
-          <p class="field-note">
-            Tick <strong>Split bill</strong> on <a routerLink="/add-expense">Add Expense</a> to start one.
-          </p>
-        }
-
-        @if (openSplits.length && !selectedSplit) {
-          <p class="field-note">
-            Pick one if someone is paying you back their share.
-          </p>
-        }
-      </div>
-
-      <div class="field field-source">
-        <label class="field-label" for="target">Credit to</label>
-
-        <select id="target" class="text-field" formControlName="target">
-          <option value="">Choose an account</option>
-
-          @for (account of accounts; track account.id) {
-            <option [value]="account.id">
-              {{ account.category }}@if (account.balance !== null) {
-              — ₹{{ account.balance | number }}
-            }
-          </option>
-        }
-      </select>
-
-      <p class="field-note">
-        Money has to arrive somewhere, so this one is required — that is the
-        point of recording it here rather than editing the figure by hand.
-      </p>
     </div>
 
-    <div class="field field-date">
-      <label class="field-label" for="date">Date</label>
-      <input id="date" class="text-field" formControlName="date" type="date">
-      @if (!canBackdate) {
-        <p class="field-hint">
-          Today only on this sign-in. Other dates need
-          <strong>Change transaction dates</strong>.
+    <fieldset>
+      <legend class="field-label">
+        Income source
+        <span class="opt">{{ selectedSplit ? '(not needed: a repayment is not income)' : '(optional)' }}</span>
+      </legend>
+      <div class="chips">
+        @for (name of categories; track name) {
+          <button type="button" class="chip-btn" [class.on]="moneyForm.get('category')?.value === name"
+            [attr.aria-pressed]="moneyForm.get('category')?.value === name" [disabled]="!!selectedSplit"
+            (click)="pickCategory(name)">
+            <span class="ic"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path [attr.d]="categoryIcon(name)" /></svg></span>
+            {{ name }}
+          </button>
+        }
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend class="field-label">
+        Is someone paying back a split? <span class="opt">(their share is not income)</span>
+      </legend>
+      @if (openSplits.length) {
+        <div class="repays">
+          <button type="button" class="tile rep" [class.on]="!selectedSplit" [attr.aria-pressed]="!selectedSplit"
+            (click)="pickSplit('')">
+            <b>No, it's income</b>
+            <span>Counts in your money in</span>
+          </button>
+          @for (split of openSplits; track split.id) {
+            <button type="button" class="tile rep" [class.on]="selectedSplit?.id === split.id"
+              [attr.aria-pressed]="selectedSplit?.id === split.id" (click)="pickSplit(split.id)">
+              <b [title]="split.description">{{ split.description }}</b>
+              <span class="tnum">₹{{ split.received | number }} of ₹{{ split.owed | number }} back</span>
+              <span class="rep-bar" aria-hidden="true"><span [style.width.%]="paidPercent(split)"></span></span>
+            </button>
+          }
+        </div>
+      } @else {
+        <p class="field-note">
+          Nothing to pay back yet. Tick <strong>Split bill</strong> on
+          <a routerLink="/add-expense">Add Expense</a> to start one.
         </p>
       }
+    </fieldset>
+
+    <div class="two-col wide-first">
+      <fieldset>
+        <legend class="field-label">Add to</legend>
+        <div class="tiles">
+          @for (account of accounts; track account.id) {
+            <button type="button" class="tile" [class.on]="moneyForm.get('target')?.value === account.id"
+              [attr.aria-pressed]="moneyForm.get('target')?.value === account.id" [disabled]="!canUpdateBalance"
+              (click)="pickTarget(account.id)">
+              <b [title]="account.category">{{ account.category }}</b>
+              <span class="tnum">{{ account.balance !== null ? '₹' + (account.balance | number) : 'Balance hidden' }}</span>
+            </button>
+          }
+        </div>
+        @if (!accounts.length) {
+          <p class="field-note">Add an account on <a routerLink="/money">Cash &amp; Accounts</a> first.</p>
+        }
+      </fieldset>
+
+      <fieldset>
+        <legend class="field-label">Date</legend>
+        <div class="pills">
+          <button type="button" class="pill" [class.on]="dateValue === todayIso" [attr.aria-pressed]="dateValue === todayIso"
+            (click)="pickDate(todayIso)">Today</button>
+          <button type="button" class="pill" [class.on]="dateValue === yesterdayIso" [attr.aria-pressed]="dateValue === yesterdayIso"
+            [disabled]="!canBackdate" (click)="pickDate(yesterdayIso)">Yesterday</button>
+          <button type="button" class="pill" [class.on]="isOtherDate" [attr.aria-pressed]="isOtherDate"
+            [disabled]="!canBackdate" (click)="openCalendar(dateInput)">
+            <svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" /></svg>
+            {{ isOtherDate && dateValue ? (dateValue | date: 'd MMM y') : 'Pick a date' }}
+          </button>
+          <input #dateInput id="date" class="sr-only" type="date" formControlName="date" aria-label="Date" tabindex="-1">
+        </div>
+        @if (!canBackdate) {
+          <p class="field-note">Today only on this sign-in. Other dates need <strong>Change transaction dates</strong>.</p>
+        }
+      </fieldset>
     </div>
 
-  </div>
-
-  <div class="form-actions">
-    <button type="button" class="btn-good" [disabled]="isInvalid || submitting || !canUpdateBalance"
-      (click)="onSubmit()">
-      {{ submitting ? 'Saving…' : 'Add income' }}
-    </button>
-  </div>
-</form>
-
-<aside class="add-aside">
-
-  @if (selectedAccount && canSeeBalances) {
-    <section class="card">
-      <h2 class="card-title">Balance after</h2>
-      <div class="after-row">
-        <span class="after-label">{{ selectedAccount.category }} now</span>
-        <span class="after-value tnum">₹{{ selectedAccount.balance | number }}</span>
-      </div>
-      <div class="after-row last">
-        <span class="after-label">will be</span>
-        <span class="after-value tnum">
-          {{ balanceAfter === null ? '—' : '₹' + (balanceAfter | number) }}
-        </span>
-      </div>
-    </section>
-  }
-
-  <section class="card">
-    <h2 class="card-title">Add via WhatsApp</h2>
-    <p class="aside-body">The same over WhatsApp, no sign-in. A leading + is what makes it money in:</p>
-
-    <p class="command tnum">{{ sampleCommand }}</p>
-
-    <a class="card-link" routerLink="/help_support">All the commands</a>
-  </section>
-
-  @if (recent.length) {
-    <section class="card recent-card">
-      <h2 class="card-title">Recent income</h2>
-      @for (item of recent; track item.id) {
-        <div class="recent-row">
-          <span class="recent-date tnum">{{ item.date | date: 'd MMM' }}</span>
-          <span class="recent-what">
-            {{ item.description }}
-            @if (item.targetCategory) {
-              <span class="recent-meta"> · {{ item.targetCategory }}</span>
-            }
-            @if (item.splitDescription) {
-              <span class="recent-meta"> · repayment for {{ item.splitDescription }}</span>
-            }
-          </span>
-          <span class="recent-amount tnum">+₹{{ item.amount | number }}</span>
-        </div>
+    <div class="form-actions">
+      @if (selectedAccount && canSeeBalances && balanceAfter !== null) {
+        <p class="phone-after tnum"><span>{{ selectedAccount.category }} after</span><b>₹{{ balanceAfter | number }}</b></p>
       }
-      <a class="card-link" routerLink="/transactions" [queryParams]="{ tab: 'in' }">See all credits</a>
-    </section>
-  }
 
-</aside>
+      <button type="button" class="btn-good" [disabled]="isInvalid || submitting || !canUpdateBalance"
+        (click)="onSubmit()">
+        @if (submitting) {
+          Saving…
+        } @else if (selectedAccount && amountValue) {
+          {{ selectedSplit ? 'Record ₹' + (amountValue | number) + ' paid back' : 'Add ₹' + (amountValue | number) + ' to ' + selectedAccount.category }}
+        } @else {
+          {{ selectedSplit ? 'Record repayment' : 'Add income' }}
+        }
+      </button>
+    </div>
+  </form>
+
+  <aside class="add-aside">
+
+    <section class="slip" aria-label="What will be saved">
+      <div class="slip-body">
+        <p class="slip-kicker">What will be saved</p>
+
+        <div class="slip-head">
+          <span class="badge">
+            <svg class="i" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path [attr.d]="categoryIcon(selectedSplit ? 'Repayment' : moneyForm.get('category')?.value)" /></svg>
+          </span>
+          <div>
+            <div class="slip-title" [class.empty]="!moneyForm.get('description')?.value">
+              {{ moneyForm.get('description')?.value || 'Where did it come from?' }}
+            </div>
+            <div class="slip-meta">
+              {{ selectedSplit ? 'Repayment' : moneyForm.get('category')?.value || 'No source' }} · {{ dateLabel }}
+            </div>
+          </div>
+        </div>
+
+        <div class="slip-amount tnum">+₹{{ amountValue | number }}</div>
+
+        <div class="slip-rows">
+          <div class="slip-row"><span>Add to</span><b>{{ selectedAccount?.category || 'Choose an account' }}</b></div>
+          @if (selectedSplit; as split) {
+            <div class="slip-row"><span>Pays back {{ split.description }}</span><b class="tnum">₹{{ split.remaining | number }} still owed</b></div>
+          }
+        </div>
+
+        @if (selectedAccount && canSeeBalances && balanceAfter !== null) {
+          <div class="after-box">
+            <div class="after-line tnum">
+              <span>{{ selectedAccount.category }} after</span>
+              ₹{{ selectedAccount.balance | number }} → ₹{{ balanceAfter | number }}
+            </div>
+            <div class="after-bar" aria-hidden="true">
+              <span class="keep" [style.width.%]="keepPercent"></span>
+              <span class="add" [style.width.%]="100 - keepPercent"></span>
+            </div>
+          </div>
+        }
+      </div>
+      <div class="slip-edge" aria-hidden="true"></div>
+    </section>
+
+    @if (recent.length) {
+      <section class="card side-card">
+        <h2 class="side-title">Recent income</h2>
+        @for (item of recent; track item.id) {
+          <div class="recent-row">
+            <span class="recent-date tnum">{{ item.date | date: 'd MMM' }}</span>
+            <span class="recent-what" [title]="item.description">{{ item.description }}</span>
+            <b class="recent-amount tnum">+₹{{ item.amount | number }}</b>
+          </div>
+        }
+        <a class="card-link" routerLink="/transactions" [queryParams]="{ tab: 'in' }">See all money in</a>
+      </section>
+    }
+
+    <section class="card side-card wa">
+      <span class="wa-ic" aria-hidden="true">
+        <svg class="i" viewBox="0 0 24 24" width="18" height="18"><path d="M4 20l1.5-4A8 8 0 1 1 8 18.5L4 20z" /></svg>
+      </span>
+      <p class="wa-text">
+        Or send it on WhatsApp
+        <span class="command tnum">{{ sampleCommand }}</span>
+      </p>
+      <a class="card-link" routerLink="/help_support">All commands</a>
+    </section>
+
+  </aside>
 
 </div>

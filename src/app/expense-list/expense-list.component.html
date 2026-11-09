@@ -99,22 +99,18 @@
         <span class="sortable" role="columnheader" (click)="onSort('status')">
           Status{{ getSortIcon('status') }}
         </span>
-        <span class="action-head">Action</span>
+        <span class="action-head" aria-hidden="true"></span>
       </div>
 
       <!-- Tracked by key, so a reload after a change reuses the rows it can. -->
       @for (row of rows; track row.key) {
-        <!--
-        A row tied to a split opens its repayment history: the split expense
-        itself, or a repayment against one. An ordinary row does nothing.
-        -->
-        <div class="table-row" [class.no-account]="!canViewSourceDetails"
+        <!-- Every row opens its details: amount, account, split, receipts, remove. -->
+        <div class="table-row et-splittable" [class.no-account]="!canViewSourceDetails"
           [class.row-out]="row.kind === 'out'" [class.row-in]="row.kind === 'in'"
-          [class.et-splittable]="splitFor(row)" [class.et-open]="expandedId === row.key"
-          [attr.role]="splitFor(row) ? 'button' : null"
-          [attr.tabindex]="splitFor(row) ? 0 : null"
-          [attr.aria-expanded]="splitFor(row) ? expandedId === row.key : null"
-          (click)="onToggleSplit(row)" (keydown.enter)="onToggleSplit(row)">
+          [class.et-open]="openRow?.key === row.key"
+          role="button" tabindex="0" [attr.aria-label]="'Details of ' + row.description"
+          (click)="onOpenRow(row)" (keydown.enter)="onOpenRow(row)"
+          (keydown.space)="$event.preventDefault(); onOpenRow(row)">
           <span class="cell-date tnum" data-label="Date">{{ row.date | date:'d MMM' }}</span>
           <span class="cell-amount tnum" data-label="Amount" [class.in]="row.kind === 'in'">
             {{ row.kind === 'in' ? '+' : '' }}₹{{ row.amount | number }}
@@ -129,14 +125,10 @@
             @if (row.expense?.splitMembers) {
               <span class="et-split-tag">
                 Split {{ row.expense?.splitMembers }} · yours ₹{{ row.expense?.personalShare | number }}
-                <span class="et-split-caret" aria-hidden="true">▾</span>
               </span>
             }
             @if (row.income?.splitDescription) {
-              <span class="et-split-tag">
-                Repayment for {{ row.income?.splitDescription }}
-                <span class="et-split-caret" aria-hidden="true">▾</span>
-              </span>
+              <span class="et-split-tag">Repayment for {{ row.income?.splitDescription }}</span>
             }
           </span>
           <span class="cell-category" [attr.data-label]="row.kind === 'in' ? 'Source' : 'Category'">
@@ -150,55 +142,16 @@
           <span class="cell-status" data-label="Status">
             <span class="chip" [attr.data-status]="row.status.toLowerCase()">{{ row.status }}</span>
           </span>
-          <span class="cell-actions">
-            @if (row.expense; as e) {
-              <button type="button" class="icon-btn receipts"
-                [attr.aria-label]="'Details and receipts for ' + e.description" title="Details & receipts"
-                (click)="$event.stopPropagation(); onOpenDetails(e)">
-                <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
-                  <path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h5" />
-                </svg>
-              </button>
-              @if (e.isPendingApproval && canApprovePending) {
-                <button type="button" class="icon-btn approve"
-                  aria-label="Approve this expense" (click)="$event.stopPropagation(); onApprovePending(e)">
-                  <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
-                    <path d="m5 12.5 4.5 4.5L19 7" />
-                  </svg>
-                </button>
-              }
-              @if (canRemoveExpenses) {
-                <button type="button" class="icon-btn remove"
-                  aria-label="Remove this expense" (click)="$event.stopPropagation(); onDelete(e)">
-                  <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
-                    <path d="M6 6l12 12M18 6 6 18" />
-                  </svg>
-                </button>
-              }
-            }
-            @if (row.income && canRemoveExpenses) {
-              <button type="button" class="icon-btn remove"
-                aria-label="Remove this income" (click)="$event.stopPropagation(); onDeleteIncome(row.income)">
-                <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
-                  <path d="M6 6l12 12M18 6 6 18" />
-                </svg>
-              </button>
-            }
+          <span class="cell-go" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" /></svg>
           </span>
         </div>
-        @if (expandedId === row.key && splitFor(row); as split) {
-          <app-split-history [split]="split">
-          </app-split-history>
-        }
       }
 
     </div>
 
-    @if (rows.length && canRemoveExpenses) {
-      <p class="table-note">
-        Removing an entry puts the money back the way it was — you are told which
-        account it went to.
-      </p>
+    @if (rows.length) {
+      <p class="table-note">Click any entry for its details and receipts{{ canRemoveExpenses ? ', or to remove it' : '' }}.</p>
     }
 
     @if (rows.length === 0) {
@@ -211,10 +164,12 @@
   </div>
 
 
-  <!-- An expense's details and its receipts, opened from the row's receipts button. -->
-  @if (detailsFor; as d) {
-    <app-expense-details [expense]="d" [canViewSource]="canViewSourceDetails" [canRemove]="canRemoveExpenses"
-      (closed)="detailsFor = null" (countChange)="d.attachmentCount = $event" />
+  <!-- The details of the row clicked: a drawer on a wide screen, a sheet on a phone. -->
+  @if (openRow; as r) {
+    <app-transaction-details [expense]="r.expense ?? null" [income]="r.income ?? null" [split]="splitFor(r)"
+      [canViewSource]="canViewSourceDetails" [canRemove]="canRemoveExpenses" [canApprove]="canApprovePending"
+      (closed)="closeDetails()" (countChange)="onAttachmentCount($event)" (remove)="onRemoveOpen()"
+      (approve)="onApproveOpen()" (openSplit)="onOpenSplitExpense($event)" />
   }
 
 </div>

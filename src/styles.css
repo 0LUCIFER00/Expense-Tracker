@@ -864,10 +864,6 @@ app-goals [data-tone='muted'].fill {
 
 /* ================= Transactions: receipts ================= */
 /* Here because the page's own stylesheet is at its size budget. */
-app-expense-list .icon-btn.receipts {
-  background-color: var(--accent);
-}
-
 /* The paperclip beside an expense that has receipts or invoices attached. */
 app-expense-list .et-clip {
   display: inline-flex;

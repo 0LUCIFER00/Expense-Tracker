@@ -1,0 +1,422 @@
+/*
+ * Add Expense and Add Income: one look for both, the form on the left and a
+ * live slip of what will be saved on the right. Each page sets --pick to its
+ * own colour (navy for money out, green for money in); everything else comes
+ * from the theme tokens in styles.css, so both themes work.
+ */
+
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  color: var(--ink);
+}
+
+.add-page {
+  --pick: var(--accent);
+  --pick-soft: var(--accent-soft);
+  --pick-ink: var(--accent-ink);
+
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 1.125rem clamp(0.75rem, 3vw, 1.5rem) 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+
+.add-page.money-in {
+  --pick: var(--good);
+  --pick-soft: var(--good-soft);
+  --pick-ink: var(--good-ink);
+}
+
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+
+.form-card {
+  flex: 999 1 600px;
+  min-width: 0;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: var(--pick-ink);
+}
+
+.form-error {
+  margin: 0;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--bad);
+  border-radius: 10px;
+  background-color: var(--bad-soft);
+  color: var(--bad-ink);
+  font-size: 0.8125rem;
+}
+
+fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.field-label {
+  display: block;
+  margin: 0 0 0.375rem;
+  padding: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.opt {
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.field-note {
+  margin: 0.375rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+.field-note.good { color: var(--good-ink); }
+.field-note.bad { color: var(--bad-ink); }
+
+/* ---- amount and description ---- */
+
+.amount-row,
+.two-col {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 1.25rem;
+  align-items: end;
+}
+
+.two-col.wide-first {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  align-items: start;
+}
+
+.amount-field {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 2px solid var(--pick);
+}
+
+.amount-field:focus-within {
+  box-shadow: 0 2px 0 0 var(--pick);
+}
+
+.amount-prefix {
+  font-size: 1.625rem;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+
+.amount-input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 2.375rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--pick-ink);
+}
+
+.text-field {
+  width: 100%;
+  height: 42px;
+  box-sizing: border-box;
+  padding: 0 0.75rem;
+  border: 1px solid var(--field-border);
+  border-radius: 10px;
+  background-color: var(--field-bg);
+  font: inherit;
+  font-size: 0.9375rem;
+  color: var(--ink);
+}
+
+.text-field:focus {
+  outline: none;
+  border-color: var(--focus-border);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+/* ---- buttons you pick from: categories, accounts, dates ---- */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip-btn,
+.tile,
+.pill {
+  border: 1px solid var(--field-border);
+  background-color: var(--field-bg);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.chip-btn {
+  height: 40px;
+  padding: 0 0.75rem 0 0.375rem;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ic {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background-color: var(--sunken);
+  color: var(--pick-ink);
+}
+
+svg.i {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tiles {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(104px, 1fr);
+  gap: 0.5rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.tile {
+  min-width: 0;
+  height: 56px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  text-align: left;
+}
+
+.tile b {
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tile span {
+  font-size: 0.75rem;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tile.none {
+  border-style: dashed;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pill {
+  height: 40px;
+  padding: 0 0.875rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.chip-btn:hover:not(:disabled),
+.tile:hover:not(:disabled),
+.pill:hover:not(:disabled) {
+  border-color: var(--pick);
+}
+
+.chip-btn.on,
+.tile.on {
+  border: 2px solid var(--pick);
+  background-color: var(--pick-soft);
+  color: var(--pick-ink);
+}
+
+.chip-btn.on .ic {
+  background-color: var(--pick);
+  color: #fff;
+}
+
+.pill.on {
+  border-color: var(--pick);
+  background-color: var(--pick);
+  color: #fff;
+}
+
+.chip-btn:disabled,
+.tile:disabled,
+.pill:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chip-btn:focus-visible,
+.tile:focus-visible,
+.pill:focus-visible,
+.switch:focus-visible,
+.step:focus-visible {
+  outline: 2px solid var(--focus-border);
+  outline-offset: 2px;
+}
+
+/* ---- the two buttons ---- */
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.625rem;
+  padding-top: 0.875rem;
+  border-top: 1px solid var(--rule);
+}
+
+.phone-after {
+  display: none;
+}
+
+.btn-good,
+.btn-ghost {
+  min-height: 44px;
+  padding: 0 1.25rem;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-good {
+  border: 0;
+  background-color: var(--good);
+  color: #fff;
+}
+
+.btn-ghost {
+  border: 1px solid var(--field-border);
+  background-color: var(--surface);
+  color: var(--accent-ink);
+}
+
+.btn-good:disabled,
+.btn-ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-good:hover:not(:disabled) { filter: brightness(1.08); }
+.btn-ghost:hover:not(:disabled) { background-color: var(--accent-soft); }
+
+/* ---- phone ---- */
+@media (max-width: 640px) {
+  .form-card {
+    padding: 1rem;
+  }
+
+  .amount-row,
+  .two-col,
+  .two-col.wide-first {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  /* One swipeable line instead of a block of buttons. */
+  .chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 -1rem;
+    padding: 0 1rem 2px;
+    scrollbar-width: none;
+  }
+
+  .chip-btn {
+    flex: none;
+    height: 44px;
+  }
+
+  .tiles {
+    margin: 0 -1rem;
+    padding: 0 1rem;
+    scrollbar-width: none;
+  }
+
+  .pill { height: 44px; }
+
+  .form-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin: 0 -1rem -1rem;
+    padding: 0.75rem 1rem 1rem;
+    border-radius: 0 0 16px 16px;
+    background-color: var(--surface);
+    box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.06);
+  }
+
+  .phone-after {
+    display: flex;
+    flex: 1 1 100%;
+    justify-content: space-between;
+    font-size: 0.8125rem;
+    color: var(--ink-3);
+  }
+
+  .phone-after b { color: var(--pick-ink); }
+
+  .btn-good,
+  .btn-ghost {
+    flex: 1 1 140px;
+    min-height: 48px;
+  }
+}
