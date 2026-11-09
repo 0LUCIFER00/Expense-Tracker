@@ -166,8 +166,16 @@
 .wa-text {
   flex: 1;
   min-width: 0;
+  margin: 0;
   font-size: 0.8125rem;
   font-weight: 700;
+}
+
+.wa-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
 .command {

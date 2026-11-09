@@ -123,6 +123,16 @@ export class AddMoneyComponent implements OnInit {
   }
 
   readonly categoryIcon = categoryIcon;
+
+  /** ₹2,043, or −₹2,043 for an overdrawn balance (never ₹-2,043). */
+  rupees(value: number | null): string {
+    if (value === null) {
+      return '—';
+    }
+
+    const text = Math.abs(value).toLocaleString('en-US', { maximumFractionDigits: 2 });
+    return value < 0 ? `−₹${text}` : `₹${text}`;
+  }
   readonly openCalendar = openDatePicker;
 
   /** Clicking the chosen source again clears it; a source is optional. */
