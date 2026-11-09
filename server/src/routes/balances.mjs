@@ -3,6 +3,8 @@ import { query } from '../db.mjs';
 import { requireAuth } from '../auth.mjs';
 import { asyncRoute, badRequest, notFound, parseText } from '../http.mjs';
 import { effectivePermissions } from '../settings-store.mjs';
+import { accountUsage } from '../transfer-store.mjs';
+import { isUuid } from '../transfers.mjs';
 
 export const balancesRouter = Router();
 
@@ -137,18 +139,60 @@ balancesRouter.put('/:id', asyncRoute(async (req, res) => {
   res.json(toApi(rows[0], true));
 }));
 
+/**
+ * Whether an account can be deleted, and if not, why: what it still holds and
+ * what records point at it. The page shows this before asking to confirm.
+ */
+balancesRouter.get('/:id/usage', asyncRoute(async (req, res) => {
+  if (!await requireBalanceAccess(req, res)) {
+    return;
+  }
+
+  if (!isUuid(req.params.id)) {
+    return notFound(res, 'Balance account not found');
+  }
+
+  const usage = await accountUsage(req.session.userId, req.params.id);
+  return usage ? res.json(usage) : notFound(res, 'Balance account not found');
+}));
+
+/**
+ * Deletes an account only when nothing would be lost: it holds nothing and no
+ * expense, income, transfer or live recurring schedule points at it. Anything
+ * else is refused with the reasons, so financial history is never silently
+ * cut loose from its account.
+ */
 balancesRouter.delete('/:id', asyncRoute(async (req, res) => {
   if (!await requireBalanceAccess(req, res)) {
     return;
   }
 
+  if (!isUuid(req.params.id)) {
+    return notFound(res, 'Balance account not found');
+  }
+
+  const usage = await accountUsage(req.session.userId, req.params.id);
+
+  if (!usage) {
+    return notFound(res, 'Balance account not found');
+  }
+
+  if (!usage.deletable) {
+    return res.status(409).json({
+      error: `${usage.name} can't be deleted. ${usage.reasons.join(' ')}`,
+      reasons: usage.reasons
+    });
+  }
+
+  // The balance is checked again in the delete itself, in case money arrived
+  // between the check above and now.
   const { rowCount } = await query(
-    'delete from balances where id = $1 and user_id = $2',
+    'delete from balances where id = $1 and user_id = $2 and balance = 0',
     [req.params.id, req.session.userId]
   );
 
   if (rowCount === 0) {
-    return notFound(res, 'Balance account not found');
+    return res.status(409).json({ error: 'That account changed meanwhile. Please try again.' });
   }
 
   res.status(204).end();

@@ -447,3 +447,50 @@ export interface GoalDraft {
   targetDate: string;
   initialSaved?: number | null;
 }
+
+/* ---------------- Account transfers ---------------- */
+
+/** Money moved between two of the user's own accounts. Neither income nor an expense. */
+export interface AccountTransfer {
+  id: string;
+  fromAccountId: string;
+  toAccountId: string;
+  fromType: string;
+  fromName: string;
+  toType: string;
+  toName: string;
+  amount: number;
+  date: string;
+  description: string | null;
+  createdAt: string;
+}
+
+export interface TransferInput {
+  fromAccountId: string;
+  toAccountId: string;
+  amount: number;
+  date: string;
+  description: string | null;
+  requestId: string;
+  tzOffset: number;
+}
+
+export interface TransferResult {
+  transfer: AccountTransfer;
+  fromBalance: number;
+  toBalance: number;
+  /** True when this request had already been processed; nothing moved this time. */
+  duplicate: boolean;
+}
+
+/** What deleting an account would affect, and whether it is allowed. */
+export interface AccountUsage {
+  name: string;
+  balance: number;
+  expenses: number;
+  incomes: number;
+  transfers: number;
+  schedules: number;
+  deletable: boolean;
+  reasons: string[];
+}

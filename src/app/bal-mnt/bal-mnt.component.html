@@ -1,114 +1,165 @@
 <div class="body">
 
-  <div class="header-row">
-    <h2 class="header">Cash &amp; Accounts</h2>
+  <div class="page-head">
+    <h1 class="title">Cash &amp; Accounts</h1>
+    @if (accounts.length) {
+      <p class="total tnum">₹{{ total | number: '1.0-2' }} <span>across {{ accounts.length }} {{ accounts.length === 1 ? 'account' : 'accounts' }}</span></p>
+    }
   </div>
 
-  <p class="page-hint">
-    The accounts your money sits in. A row counts once you save it with the
-    tick. To put money in, use <a routerLink="/add-money">Add Income</a> rather
-    than editing the figure here — that way there is a record of where it
-    came from.
-  </p>
-
   @if (readOnly) {
-    <p class="page-hint read-only-note">
-      These figures are view-only on this sign-in. Changing them needs
-      <strong>Debit from an account</strong>, or your full-access password.
+    <p class="hint read-only">
+      These figures are view-only on this sign-in. Moving money or adding and removing
+      accounts needs <strong>Debit from an account</strong>, or your full-access password.
     </p>
   }
 
-  <!-- One switch for every field and button in the rows. -->
-  <fieldset class="balance-fieldset" [disabled]="readOnly">
-    <div class="balance-container">
+  <!-- The accounts first; Transfer money under them, then the transfer history. -->
+  <section class="accounts" aria-labelledby="acc-title">
+    <h2 id="acc-title" class="section-title">Accounts</h2>
 
-      @for (item of balances; track item; let i = $index) {
-        <div class="balance-row">
-          <div class="balance-field">
-            <label>Account type</label>
-            <select [(ngModel)]="item.type" (ngModelChange)="onTypeChange(item); onBalanceRowChange(item)">
-              <option value="Hand Cash">Cash in hand</option>
-              <option value="Wallet">Wallet</option>
-              <option value="Bank Account">Bank Account</option>
-            </select>
-          </div>
-          <div class="balance-field">
-            <label>
-              {{
-              item.type === 'Hand Cash'
-              ? 'Cash Type'
-              : item.type === 'Wallet'
-              ? 'Wallet Name'
-              : 'Bank Name'
-              }}
-            </label>
-            <select [(ngModel)]="item.category" (change)="onCategoryChange(item)">
-              <option value="">Select</option>
-              @for (option of getOptions(item.type); track option) {
-                <option [value]="option">
-                  {{ option }}
-                </option>
+    @if (loading) {
+      <p class="hint">Loading…</p>
+    } @else {
+      <div class="grid">
+        @for (a of accounts; track a.id) {
+          <div class="acct" [attr.data-kind]="kind(a.type)">
+            <span class="icon" aria-hidden="true">
+              @switch (kind(a.type)) {
+                @case ('wallet') { <svg viewBox="0 0 24 24"><path d="M4 7h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a1 1 0 0 1-1-1V7zM4 7l11-3v3M16 13.5h.01" /></svg> }
+                @case ('cash') { <svg viewBox="0 0 24 24"><path d="M3 7h18v10H3zM12 14.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM6 10v.01M18 14v.01" /></svg> }
+                @default { <svg viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18" /></svg> }
               }
-              <option value="other">
-                + Add New
-              </option>
-            </select>
-          </div>
-          <div class="balance-field">
-            <label>Current balance</label>
-            <input type="number" [(ngModel)]="item.balance" (input)="onBalanceRowChange(item)"
-              placeholder="Enter balance">
+            </span>
+            <div class="info">
+              <p class="name">{{ a.category }}</p>
+              <p class="type">{{ typeLabel(a.type) }}</p>
             </div>
-            <div class="balance-actions">
-              @if (i === balances.length - 1) {
-                <button type="button" class="add-balance-btn"
-                  [disabled]="item.busy" (click)="addRow()">
-                  +
-                </button>
-              }
-              @if (balances.length > 1) {
-                <button type="button" class="delete-balance-btn"
-                  [disabled]="item.busy" (click)="removeRow(i)">
-                  ×
-                </button>
-              }
-              <button type="button" class="save-balance-btn"
-                [disabled]="item.saved || item.busy || !isRowComplete(item)"
-                (click)="saveBalanceRow(item)">
-                ✓
+            <p class="amount tnum">{{ a.balance === null ? '—' : '₹' + (a.balance | number: '1.0-2') }}</p>
+            @if (!readOnly) {
+              <button type="button" class="x" [attr.aria-label]="'Delete ' + a.category" title="Delete account"
+                (click)="askRemove(a)">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" /></svg>
               </button>
-            </div>
+            }
           </div>
         }
 
+        @if (!readOnly) {
+          @if (adding) {
+            <form class="acct add-form" (ngSubmit)="saveNew()" novalidate>
+              <div class="f">
+                <label for="n-type">Account type</label>
+                <select id="n-type" name="type" [(ngModel)]="newType" (ngModelChange)="onTypeChange()">
+                  <option value="Bank Account">Bank Account</option>
+                  <option value="Wallet">Wallet</option>
+                  <option value="Hand Cash">Cash in hand</option>
+                </select>
+              </div>
+              <div class="f">
+                <label for="n-name">{{ nameLabel(newType) }}</label>
+                <select id="n-name" name="category" [(ngModel)]="newCategory" (change)="onCategoryChange()">
+                  <option value="">Select</option>
+                  @for (option of getOptions(newType); track option) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                  <option value="other">+ Add new</option>
+                </select>
+              </div>
+              <div class="f">
+                <label for="n-bal">Opening balance (₹)</label>
+                <input id="n-bal" name="balance" type="number" min="0" step="0.01" inputmode="decimal"
+                  placeholder="0" [(ngModel)]="newBalance">
+              </div>
+              <div class="add-actions">
+                @if (accounts.length) {
+                  <button type="button" class="et-btn-ghost sm" (click)="cancelAdding()">Cancel</button>
+                }
+                <button type="submit" class="et-btn-primary sm" [disabled]="saving || !canSaveNew">
+                  {{ saving ? 'Adding…' : 'Add account' }}
+                </button>
+              </div>
+            </form>
+          } @else {
+            <button type="button" class="acct add-tile" (click)="startAdding()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+              Add account
+            </button>
+          }
+        }
       </div>
-    </fieldset>
 
-  </div>
+      <p class="hint small">
+        To put money in, use <a routerLink="/add-money">Add Income</a>; to move it between accounts,
+        use Transfer money. Every change keeps a record of why.
+      </p>
+    }
+  </section>
 
-  <!-- Add New Option Popup -->
-  @if (popupVisible) {
-    <div class="custom-popup-overlay">
-      <div class="custom-popup">
-        <h3>
-          Add New
-          {{
-          selectedItem?.type === 'Hand Cash'
-          ? 'Cash Type'
-          : selectedItem?.type === 'Wallet'
-          ? 'Wallet'
-          : 'Bank'
-          }}
-        </h3>
-        <input type="text" [(ngModel)]="popupValue" placeholder="Enter value">
-        <div class="popup-actions">
-          <button type="button" class="popup-cancel-btn" (click)="popupVisible = false">
-            Cancel
-          </button>
-          <button type="button" class="popup-save-btn" (click)="saveNewOption()">
-            Add
-          </button>
-        </div>
+  <!-- Transfer money, once there are two accounts to move between. -->
+  @if (!loading && !readOnly) {
+    @if (accounts.length >= 2) {
+      <app-transfer-form [accounts]="accounts" [canBackdate]="canBackdate" (transferred)="onTransferred($event)" />
+    } @else if (accounts.length === 1) {
+      <p class="hint">Add a second account to move money between them.</p>
+    }
+  }
+
+  @if (!loading && accounts.length) {
+    <app-transfer-history [accounts]="accounts" [refresh]="refresh" />
+  }
+</div>
+
+<!-- New bank, wallet or cash name. -->
+@if (popupVisible) {
+  <div class="et-overlay">
+    <div class="et-popup" role="dialog" aria-modal="true" aria-labelledby="new-name-title">
+      <h3 id="new-name-title">Add new {{ nameLabel(newType).toLowerCase() }}</h3>
+      <input class="et-field" type="text" [(ngModel)]="popupValue" placeholder="Name" maxlength="60" aria-label="Name">
+      <div class="et-popup-actions">
+        <button type="button" class="et-btn-ghost" (click)="popupVisible = false">Cancel</button>
+        <button type="button" class="et-btn-primary" (click)="saveNewOption()">Add</button>
       </div>
     </div>
-  }
+  </div>
+}
+
+<!-- Delete: checked with the server first, so a blocked delete says why. -->
+@if (confirmTarget; as a) {
+  <div class="et-overlay">
+    <div class="et-popup" role="dialog" aria-modal="true" aria-labelledby="del-title">
+      <h3 id="del-title">Delete {{ a.category }}?</h3>
+
+      @if (usageError) {
+        <p class="et-popup-body err">{{ usageError }}</p>
+      } @else if (!usage) {
+        <p class="et-popup-body">Checking this account…</p>
+      } @else if (usage.deletable) {
+        <p class="et-popup-body">
+          It holds nothing and has no history, so nothing is lost. This can't be undone.
+        </p>
+      } @else {
+        <div class="et-popup-body">
+          <p class="blocked">{{ a.category }} can't be deleted:</p>
+          <ul class="reasons">
+            @for (r of usage.reasons; track r) {
+              <li>{{ r }}</li>
+            }
+          </ul>
+          <p>Accounts with money or history stay, so your records always say where money came from and went.</p>
+        </div>
+      }
+
+      <div class="et-popup-actions">
+        <button type="button" class="et-btn-ghost" (click)="cancelRemove()">
+          {{ usage?.deletable ? 'Keep it' : 'Close' }}
+        </button>
+        @if (usage?.deletable && !usageError) {
+          <button type="button" class="et-btn-danger" [disabled]="deleting" (click)="confirmRemove()">
+            {{ deleting ? 'Deleting…' : 'Delete account' }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,176 @@
+:host { display: block; }
+
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.transfer {
+  padding: 0.875rem 1.125rem 1rem;
+  border-top: 3px solid var(--accent);
+}
+
+.head h2 {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  color: var(--accent-ink);
+}
+
+.head p {
+  margin: 0.125rem 0 0.75rem;
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+
+/* One line on a laptop: from ⇄ to, amount, date, description, button. */
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) auto minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 0.95fr) minmax(0, 1.3fr) auto;
+  align-items: end;
+  gap: 0.625rem;
+}
+
+.field {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.opt {
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+select,
+input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 40px;
+  padding: 0 0.625rem;
+  border: 1px solid var(--field-border);
+  border-radius: 10px;
+  background-color: var(--field-bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+select:focus,
+input:focus {
+  outline: none;
+  border-color: var(--focus-border);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+input:disabled {
+  background-color: var(--sunken);
+  color: var(--ink-2);
+}
+
+.amount-row {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.swap,
+.all {
+  flex-shrink: 0;
+  height: 40px;
+  border: 1px solid var(--field-border);
+  border-radius: 10px;
+  background-color: var(--surface);
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.swap {
+  width: 40px;
+  display: grid;
+  place-items: center;
+}
+
+.swap svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.all {
+  padding: 0 0.625rem;
+}
+
+.swap:hover,
+.all:hover {
+  border-color: var(--focus-border);
+  background-color: var(--accent-soft);
+}
+
+.go {
+  min-height: 40px;
+  height: 40px;
+  padding: 0 1.25rem;
+}
+
+.msg {
+  margin: 0.625rem 0 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.msg.ok {
+  background-color: var(--good-soft);
+  color: var(--good-ink);
+}
+
+.msg.err {
+  background-color: var(--bad-soft);
+  color: var(--bad-ink);
+}
+
+/* Tablet: two rows. */
+@media (max-width: 1080px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .wide {
+    grid-column: span 2;
+  }
+}
+
+/* Phone: one field per line, swap between from and to. */
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wide {
+    grid-column: auto;
+  }
+
+  .swap {
+    justify-self: center;
+    rotate: 90deg;
+  }
+
+  .go {
+    min-height: 44px;
+  }
+}

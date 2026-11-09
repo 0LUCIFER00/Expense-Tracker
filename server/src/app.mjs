@@ -10,6 +10,7 @@ import { incomesRouter } from './routes/incomes.mjs';
 import { budgetsRouter } from './routes/budgets.mjs';
 import { recurringRouter } from './routes/recurring.mjs';
 import { goalsRouter } from './routes/goals.mjs';
+import { transfersRouter } from './routes/transfers.mjs';
 import { settingsRouter } from './routes/settings.mjs';
 import { whatsappRouter } from './routes/whatsapp.mjs';
 import { linkRouter } from './routes/link.mjs';
@@ -134,6 +135,7 @@ export function createApp() {
   app.use('/api/budgets', budgetsRouter);
   app.use('/api/recurring', recurringRouter);
   app.use('/api/goals', goalsRouter);
+  app.use('/api/transfers', transfersRouter);
   app.use('/api/balances', balancesRouter);
   app.use('/api/settings', settingsRouter);
   // The more specific path first: /api/whatsapp would otherwise shadow it.

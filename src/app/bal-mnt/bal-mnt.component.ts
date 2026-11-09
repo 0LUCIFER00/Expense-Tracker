@@ -1,29 +1,29 @@
-
+import { DecimalPipe } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { BalanceService } from '../shared/balance.service';
-import { BalanceAccount } from '../shared/models';
+import { AccountUsage, BalanceAccount, TransferResult } from '../shared/models';
 import { SettingsService } from '../shared/settings.service';
 import { ToastService } from '../shared/toast.service';
+import { TransferFormComponent } from './transfer-form/transfer-form.component';
+import { TransferHistoryComponent } from './transfer-history/transfer-history.component';
+
+type AccountType = 'Hand Cash' | 'Wallet' | 'Bank Account';
 
 /**
- * A row on screen. `id` is null until the row has been saved to the server,
- * which is what decides between a create and an update.
+ * Cash & Accounts: the accounts as cards at the top, Transfer money under
+ * them, and the transfer history below.
+ *
+ * Accounts are added here and removed here, never edited: a figure is changed
+ * by recording what happened (an expense, income or a transfer), so there is
+ * always a record of why. Removing an account is refused, with the reasons,
+ * while it holds money or has history.
  */
-interface BalanceRow {
-  id: string | null;
-  type: string;
-  category: string;
-  balance: number | null;
-  saved: boolean;
-  busy: boolean;
-}
-
 @Component({
   selector: 'app-bal-mnt',
   standalone: true,
-  imports: [FormsModule, RouterModule],
+  imports: [FormsModule, RouterModule, DecimalPipe, TransferFormComponent, TransferHistoryComponent],
   templateUrl: './bal-mnt.component.html',
   styleUrl: './bal-mnt.component.css'
 })
@@ -40,26 +40,45 @@ export class BalMntComponent implements OnInit {
     return !this.settingsService.canManageBalances;
   }
 
-  popupVisible = false;
-  popupValue = '';
-  selectedItem: BalanceRow | null = null;
+  get canBackdate(): boolean {
+    return this.settingsService.canBackdate;
+  }
 
-  balances: BalanceRow[] = [this.createBalanceRow()];
-
+  accounts: BalanceAccount[] = [];
   loading = true;
 
+  /** Bumped after a transfer so the history reloads. */
+  refresh = 0;
+
+  /* ---- adding an account ---- */
+  adding = false;
+  newType: AccountType = 'Bank Account';
+  newCategory = '';
+  newBalance: number | null = null;
+  saving = false;
+
+  popupVisible = false;
+  popupValue = '';
+
+  readonly typeLabels: Record<AccountType, string> = {
+    'Hand Cash': 'Cash in hand',
+    Wallet: 'Wallet',
+    'Bank Account': 'Bank Account'
+  };
+
   handCashOptions = ['Personal', 'General'];
-
   walletOptions = ['Google Pay', 'PhonePe', 'Paytm', 'Amazon Pay'];
+  bankOptions = ['State Bank of India', 'Indian Bank', 'Canara Bank', 'HDFC Bank', 'ICICI Bank', 'Axis Bank'];
 
-  bankOptions = [
-    'State Bank of India',
-    'Indian Bank',
-    'Canara Bank',
-    'HDFC Bank',
-    'ICICI Bank',
-    'Axis Bank'
-  ];
+  /* ---- removing an account ---- */
+  confirmTarget: BalanceAccount | null = null;
+  usage: AccountUsage | null = null;
+  usageError = '';
+  deleting = false;
+
+  get total(): number {
+    return this.accounts.reduce((sum, a) => sum + Math.round(Number(a.balance ?? 0) * 100), 0) / 100;
+  }
 
   ngOnInit(): void {
     this.load();
@@ -68,11 +87,9 @@ export class BalMntComponent implements OnInit {
   private load(): void {
     this.balanceService.list().subscribe({
       next: accounts => {
-        this.balances = accounts.length
-          ? accounts.map(account => this.toRow(account))
-          : [this.createBalanceRow()];
-
-        this.rememberCustomOptions(accounts);
+        this.accounts = accounts.filter(a => a.saved);
+        this.rememberCustomOptions(this.accounts);
+        this.adding = this.accounts.length === 0 && !this.readOnly;
         this.loading = false;
       },
       error: error => {
@@ -82,7 +99,7 @@ export class BalMntComponent implements OnInit {
     });
   }
 
-  /** Keeps a saved category selectable even if it was added on another device. */
+  /** Keeps a name added on another device selectable here. */
   private rememberCustomOptions(accounts: BalanceAccount[]): void {
     for (const account of accounts) {
       const options = this.getOptions(account.type);
@@ -93,161 +110,160 @@ export class BalMntComponent implements OnInit {
     }
   }
 
-  private toRow(account: BalanceAccount): BalanceRow {
-    return {
-      id: account.id,
-      type: account.type,
-      category: account.category,
-      balance: account.balance,
-      saved: true,
-      busy: false
-    };
-  }
-
-  createBalanceRow(): BalanceRow {
-    return {
-      id: null,
-      type: 'Hand Cash',
-      category: '',
-      balance: null,
-      saved: false,
-      busy: false
-    };
-  }
-
-  addRow(): void {
-    this.balances.push(this.createBalanceRow());
-  }
-
   getOptions(type: string): string[] {
     switch (type) {
-      case 'Hand Cash':
-        return this.handCashOptions;
-
-      case 'Wallet':
-        return this.walletOptions;
-
-      case 'Bank Account':
-        return this.bankOptions;
-
-      default:
-        return [];
+      case 'Hand Cash': return this.handCashOptions;
+      case 'Wallet': return this.walletOptions;
+      case 'Bank Account': return this.bankOptions;
+      default: return [];
     }
   }
 
-  openAddOptionPopup(item: BalanceRow): void {
-    this.selectedItem = item;
-    this.popupValue = '';
-    this.popupVisible = true;
+  typeLabel(type: string): string {
+    return (this.typeLabels as Record<string, string>)[type] ?? type;
+  }
+
+  nameLabel(type: string): string {
+    return type === 'Hand Cash' ? 'Cash type' : type === 'Wallet' ? 'Wallet name' : 'Bank name';
+  }
+
+  /** Bank, wallet or cash, for the card's icon. */
+  kind(type: string): 'bank' | 'wallet' | 'cash' {
+    return type === 'Wallet' ? 'wallet' : type === 'Hand Cash' ? 'cash' : 'bank';
+  }
+
+  /* ---- transfers ---- */
+
+  /** Shows the new balances straight away and reloads the history. */
+  onTransferred(result: TransferResult): void {
+    const balances: Record<string, number> = {
+      [result.transfer.fromAccountId]: result.fromBalance,
+      [result.transfer.toAccountId]: result.toBalance
+    };
+
+    this.accounts = this.accounts.map(a => a.id in balances ? { ...a, balance: balances[a.id] } : a);
+    this.refresh += 1;
+  }
+
+  /* ---- adding ---- */
+
+  startAdding(): void {
+    this.adding = true;
+    this.newType = 'Bank Account';
+    this.newCategory = '';
+    this.newBalance = null;
+  }
+
+  cancelAdding(): void {
+    this.adding = false;
+  }
+
+  onTypeChange(): void {
+    this.newCategory = '';
+  }
+
+  onCategoryChange(): void {
+    if (this.newCategory === 'other') {
+      this.newCategory = '';
+      this.popupValue = '';
+      this.popupVisible = true;
+    }
   }
 
   saveNewOption(): void {
     const value = this.popupValue.trim();
 
-    if (!value || !this.selectedItem) {
+    if (!value) {
       return;
     }
 
-    const options = this.getOptions(this.selectedItem.type);
+    const options = this.getOptions(this.newType);
 
     if (!options.includes(value)) {
       options.push(value);
     }
 
-    this.selectedItem.category = value;
-    this.selectedItem.saved = false;
-
+    this.newCategory = value;
     this.popupVisible = false;
-    this.popupValue = '';
   }
 
-  onTypeChange(item: BalanceRow): void {
-    item.category = '';
+  get canSaveNew(): boolean {
+    const balance = Number(this.newBalance ?? 0);
+    return Boolean(this.newCategory) && balance >= 0 && Number.isFinite(balance);
   }
 
-  onCategoryChange(item: BalanceRow): void {
-    if (item.category === 'other') {
-      item.category = '';
-      this.openAddOptionPopup(item);
-    }
-  }
-
-  onBalanceRowChange(item: BalanceRow): void {
-    item.saved = false;
-  }
-
-  isRowComplete(item: BalanceRow): boolean {
-    return Boolean(
-      item.type &&
-      item.category &&
-      item.balance !== null &&
-      String(item.balance) !== '' &&
-      Number(item.balance) > 0
-    );
-  }
-
-  saveBalanceRow(item: BalanceRow): void {
-    if (!this.isRowComplete(item)) {
-      this.toast.error('Please fill all fields');
+  saveNew(): void {
+    if (!this.canSaveNew) {
+      this.toast.error('Choose a name, and an opening balance of zero or more.');
       return;
     }
 
-    const payload = {
-      type: item.type,
-      category: item.category,
-      balance: Number(item.balance)
-    };
+    this.saving = true;
 
-    item.busy = true;
-
-    const request = item.id
-      ? this.balanceService.update(item.id, payload)
-      : this.balanceService.create(payload);
-
-    request.subscribe({
-      next: saved => {
-        item.id = saved.id;
-        item.balance = saved.balance;
-        item.saved = true;
-        item.busy = false;
-        this.toast.success('Account saved.');
+    this.balanceService.create({
+      type: this.newType,
+      category: this.newCategory,
+      balance: Number(this.newBalance ?? 0)
+    }).subscribe({
+      next: account => {
+        this.saving = false;
+        this.adding = false;
+        this.accounts = [...this.accounts, account];
+        this.toast.success(`${account.category} added.`);
       },
       error: error => {
-        item.busy = false;
+        this.saving = false;
         this.toast.error(error.message);
       }
     });
   }
 
-  removeRow(index: number): void {
-    const item = this.balances[index];
+  /* ---- removing ---- */
 
-    const dropLocally = () => {
-      this.balances.splice(index, 1);
+  /** Asks the server first whether it can go, so the dialog can say why not. */
+  askRemove(account: BalanceAccount): void {
+    this.confirmTarget = account;
+    this.usage = null;
+    this.usageError = '';
 
-      if (this.balances.length === 0) {
-        this.balances.push(this.createBalanceRow());
+    this.balanceService.usage(account.id).subscribe({
+      next: usage => {
+        if (this.confirmTarget?.id === account.id) {
+          this.usage = usage;
+        }
+      },
+      error: error => {
+        this.usageError = error.message;
       }
-    };
+    });
+  }
 
-    // A row that was never saved only exists on screen.
-    if (!item.id) {
-      dropLocally();
+  cancelRemove(): void {
+    this.confirmTarget = null;
+    this.usage = null;
+  }
+
+  confirmRemove(): void {
+    const account = this.confirmTarget;
+
+    if (!account || !this.usage?.deletable) {
       return;
     }
 
-    item.busy = true;
+    this.deleting = true;
 
-    this.balanceService.remove(item.id).subscribe({
+    this.balanceService.remove(account.id).subscribe({
       next: () => {
-        dropLocally();
-        this.toast.success('Account deleted.');
+        this.deleting = false;
+        this.confirmTarget = null;
+        this.accounts = this.accounts.filter(a => a.id !== account.id);
+        this.toast.success(`${account.category} deleted.`);
       },
       error: error => {
-        item.busy = false;
-        this.toast.error(error.message);
+        this.deleting = false;
+        // Something changed since the check (money arrived, say): show why.
+        this.usageError = error.message;
       }
     });
   }
-
 }
