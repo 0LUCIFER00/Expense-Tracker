@@ -418,10 +418,11 @@ export class ExpenseListComponent implements OnInit {
   }
 
   applySorting(rows: TransactionRow[]): TransactionRow[] {
-    // Default is the order the entries were created in.
+    // Default: the latest entry first. Entries are never edited after they
+    // are added, so the last one added is the last one updated.
     if (!this.sortColumn || this.sortDirection === 'default') {
       return [...rows].sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
     }
 

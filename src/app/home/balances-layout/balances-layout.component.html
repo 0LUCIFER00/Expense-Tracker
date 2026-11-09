@@ -2,15 +2,7 @@
 
   <!-- The accounts are the one list always populated, so they anchor the page. -->
   @if (data.canSeeBalances && data.accounts.length) {
-    <section class="account-strip">
-      @for (account of data.accounts; track $index) {
-        <div class="account-tile">
-          <p class="tile-name">{{ account.name }}</p>
-          <p class="tile-amount tnum">₹{{ account.balance | number }}</p>
-          <p class="tile-kind">{{ account.kind }}</p>
-        </div>
-      }
-    </section>
+    <app-account-strip [accounts]="data.accounts" />
   }
 
   <div class="panels">

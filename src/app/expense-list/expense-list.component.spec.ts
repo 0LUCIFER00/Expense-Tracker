@@ -84,6 +84,23 @@ describe('ExpenseListComponent', () => {
     };
   }
 
+  describe('the default order', () => {
+    it('puts the latest entry first, money in and out together', () => {
+      load(
+        [
+          expense({ id: 'old', createdAt: '2026-10-01T09:00:00.000Z', date: '2026-10-01' }),
+          // Entered last, though dated earlier than the others.
+          expense({ id: 'newest', createdAt: '2026-11-08T18:00:00.000Z', date: '2026-09-15' })
+        ],
+        {},
+        [],
+        [income({ id: 'mid', createdAt: '2026-10-20T11:00:00.000Z' })]
+      );
+
+      expect(component.rows.map(row => row.key)).toEqual(['out:newest', 'in:mid', 'out:old']);
+    });
+  });
+
   describe('the category filter', () => {
     it('offers only the categories actually in use', () => {
       load([
