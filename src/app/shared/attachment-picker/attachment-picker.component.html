@@ -1,0 +1,46 @@
+<div class="picker" [class.compact]="compact">
+  <label class="drop" [class.over]="dragging" (dragover)="onDragOver($event)" (dragleave)="onDragLeave()" (drop)="onDrop($event)">
+    <input #file type="file" class="sr-only" multiple [accept]="accept" (change)="onChoose(file)">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M21 11.5 12.6 19.9a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8" /></svg>
+    <span class="drop-text">
+      <strong>Attach receipt</strong>
+      <span>Drop files here or click to choose · JPG, PNG, WebP or PDF · up to 4 MB each</span>
+    </span>
+  </label>
+
+  @if (notice) {
+    <p class="notice" role="status">{{ notice }}</p>
+  }
+
+  @if (items.length) {
+    <ul class="files" aria-label="Attachments">
+      @for (item of items; track item.key) {
+        <li class="file" [attr.data-state]="item.state">
+          @if (item.preview) {
+            <img class="thumb" [src]="item.preview" alt="">
+          } @else {
+            <span class="thumb doc" aria-hidden="true">{{ item.type === 'application/pdf' ? 'PDF' : '?' }}</span>
+          }
+          <span class="meta">
+            <span class="name" [title]="item.name">{{ item.name }}</span>
+            @switch (item.state) {
+              @case ('uploading') {
+                <span class="bar" role="progressbar" [attr.aria-valuenow]="item.progress" aria-valuemin="0" aria-valuemax="100" [attr.aria-label]="'Uploading ' + item.name">
+                  <span class="fill" [style.width.%]="item.progress"></span>
+                </span>
+              }
+              @case ('error') { <span class="err" role="alert">{{ item.error }}</span> }
+              @case ('done') { <span class="ok">Attached · {{ sizeLabel(item.size) }}</span> }
+              @default { <span class="size">{{ sizeLabel(item.size) }}{{ expenseId ? '' : ' · attached when you save' }}</span> }
+            }
+          </span>
+          @if (item.state !== 'uploading' && item.state !== 'done') {
+            <button type="button" class="x" [attr.aria-label]="'Remove ' + item.name" (click)="remove(item)">
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" /></svg>
+            </button>
+          }
+        </li>
+      }
+    </ul>
+  }
+</div>

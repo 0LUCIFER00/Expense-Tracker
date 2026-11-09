@@ -1,0 +1,171 @@
+:host { display: block; }
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.drop {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.875rem;
+  border: 1.5px dashed var(--rule-strong);
+  border-radius: 10px;
+  background-color: var(--sunken);
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+
+.drop:hover,
+.drop.over {
+  border-color: var(--focus-border);
+  background-color: var(--accent-soft);
+}
+
+.drop:focus-within {
+  outline: 2px solid var(--focus-border);
+  outline-offset: 2px;
+}
+
+.drop svg,
+.x svg {
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.drop-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 0.8125rem;
+}
+
+.drop-text span {
+  font-size: 0.72rem;
+  color: var(--ink-2);
+}
+
+.compact .drop {
+  padding: 0.5rem 0.75rem;
+}
+
+.notice {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--warn-ink);
+}
+
+.files {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.file {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 9px;
+  background-color: var(--surface);
+}
+
+.file[data-state='error'] {
+  border-color: var(--bad);
+  background-color: var(--bad-soft);
+}
+
+.thumb {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  background-color: var(--sunken);
+}
+
+.thumb.doc {
+  display: grid;
+  place-items: center;
+  background-color: var(--bad-soft);
+  color: var(--bad-ink);
+  font-size: 0.625rem;
+  font-weight: 800;
+}
+
+.meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.78rem;
+}
+
+.name {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.size {
+  color: var(--ink-2);
+  font-size: 0.72rem;
+}
+
+.ok {
+  color: var(--good-ink);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.err {
+  color: var(--bad-ink);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.bar {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background-color: var(--rule);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  background-color: var(--accent);
+  transition: width 0.15s ease;
+}
+
+.x {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-3);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.x:hover {
+  background-color: var(--bad-soft);
+  color: var(--bad-ink);
+}

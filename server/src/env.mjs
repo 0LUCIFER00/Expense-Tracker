@@ -10,6 +10,13 @@ const envPath = join(projectRoot, '.env');
 
 dotenv.config({ path: envPath });
 
+// Values `vercel env pull` writes (BLOB_READ_WRITE_TOKEN for receipt storage).
+// Never overrides .env, and absent on Vercel itself, where the platform sets them.
+// Not under `node --test`, so the tests never reach real storage from this machine.
+if (!process.env['NODE_TEST_CONTEXT']) {
+  dotenv.config({ path: join(projectRoot, '.env.local') });
+}
+
 /**
  * The connection string. `aiven_url` is what the project's .env already uses;
  * DATABASE_URL is accepted too so deployments can use the conventional name.

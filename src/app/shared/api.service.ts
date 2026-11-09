@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpEvent } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, Subject, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -37,6 +37,22 @@ export class ApiService {
 
     return toApiError(response);
   };
+
+  /**
+   * Sends a file's bytes as the body, reporting upload progress as it goes.
+   * The events include HttpEventType.UploadProgress and, at the end, the
+   * Response; failures arrive as the usual { status, message }.
+   */
+  upload<T>(path: string, body: Blob, headers: Record<string, string>): Observable<HttpEvent<T>> {
+    return this.http
+      .post<T>(this.base + path, body, {
+        withCredentials: true,
+        reportProgress: true,
+        observe: 'events',
+        headers: { 'Content-Type': 'application/octet-stream', ...headers }
+      })
+      .pipe(catchError(this.handle(path)));
+  }
 
   get<T>(path: string): Observable<T> {
     return this.http

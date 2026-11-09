@@ -144,6 +144,32 @@ describe('ExpenseListComponent', () => {
     });
   });
 
+  describe('receipts', () => {
+    it('shows a paperclip with the count on expenses that have attachments, and none otherwise', () => {
+      const fixture = load([
+        expense({ id: 'with', attachmentCount: 3 }),
+        expense({ id: 'without', attachmentCount: 0 })
+      ]);
+      const clips = (fixture.nativeElement as HTMLElement).querySelectorAll('.et-clip');
+
+      expect(clips.length).toBe(1);
+      expect(clips[0].textContent).toContain('3');
+    });
+
+    it('the receipts button opens that expense\'s details', () => {
+      const fixture = load([expense({ id: 'e1', description: 'Lunch' })]);
+      const button = (fixture.nativeElement as HTMLElement).querySelector('.icon-btn.receipts') as HTMLButtonElement;
+
+      button.click();
+      fixture.detectChanges();
+
+      expect(component.detailsFor?.id).toBe('e1');
+      http.expectOne('/api/expenses/e1/attachments').flush([]);
+      fixture.detectChanges();
+      expect((fixture.nativeElement as HTMLElement).querySelector('app-expense-details')).not.toBeNull();
+    });
+  });
+
   describe('a split expense', () => {
     const vegetables: SplitSummary = {
       id: 's1',

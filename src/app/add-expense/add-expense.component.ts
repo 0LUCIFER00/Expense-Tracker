@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { AttachmentPickerComponent } from '../shared/attachment-picker/attachment-picker.component';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -31,12 +32,16 @@ import {
     CommonModule,
     RouterModule,
     FitsScreenDirective,
-    ExpenseDatePopupComponent
+    ExpenseDatePopupComponent,
+    AttachmentPickerComponent
   ],
   templateUrl: './add-expense.component.html',
   styleUrl: './add-expense.component.css'
 })
 export class AddExpenseComponent implements OnInit {
+  /** Receipts chosen before saving; attached once the expense exists. */
+  @ViewChild(AttachmentPickerComponent) picker?: AttachmentPickerComponent;
+
   private readonly fb = inject(FormBuilder);
   private readonly expenseService = inject(ExpenseService);
   private readonly balanceService = inject(BalanceService);
@@ -263,7 +268,7 @@ export class AddExpenseComponent implements OnInit {
             this.toast.warning(alert.message);
           }
 
-          this.resetForm();
+          this.attachReceipts(expense.id);
         },
         error: error => {
           this.submitting = false;
@@ -272,7 +277,45 @@ export class AddExpenseComponent implements OnInit {
       });
   }
 
-  private resetForm(): void {
+  /**
+   * Sends any receipts chosen for this expense, now that it exists. The
+   * expense is saved either way; a file that fails is reported and stays
+   * listed, and can be attached later from Transactions.
+   */
+  private async attachReceipts(expenseId: string): Promise<void> {
+    const picker = this.picker;
+
+    if (!picker || picker.waiting === 0) {
+      this.submitting = false;
+      this.resetForm();
+      return;
+    }
+
+    this.submitting = true;
+    const { sent, failed } = await picker.uploadAll(expenseId);
+    this.submitting = false;
+
+    if (sent) {
+      this.toast.success(`${sent} ${sent === 1 ? 'receipt' : 'receipts'} attached.`);
+    }
+
+    if (failed) {
+      this.toast.error(
+        `${failed} ${failed === 1 ? 'file was' : 'files were'} not attached; see the list. ` +
+        'The expense is saved, and you can attach them from Transactions.'
+      );
+      this.resetForm({ keepReceipts: true });
+      return;
+    }
+
+    this.resetForm();
+  }
+
+  private resetForm({ keepReceipts = false } = {}): void {
+    if (!keepReceipts) {
+      this.picker?.clear();
+    }
+
     this.expenseForm.reset({
       source: '',
       category: '',

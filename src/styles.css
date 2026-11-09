@@ -861,3 +861,32 @@ app-goals [data-tone='muted'].fill {
     display: none;
   }
 }
+
+/* ================= Transactions: receipts ================= */
+/* Here because the page's own stylesheet is at its size budget. */
+app-expense-list .icon-btn.receipts {
+  background-color: var(--accent);
+}
+
+/* The paperclip beside an expense that has receipts or invoices attached. */
+app-expense-list .et-clip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 0.375rem;
+  padding: 0 0.375rem;
+  border-radius: 999px;
+  background-color: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+app-expense-list .et-clip svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

@@ -121,6 +121,11 @@
           </span>
           <span class="cell-what" data-label="Description">
             {{ row.description }}
+            @if (row.expense?.attachmentCount) {
+              <span class="et-clip" [attr.aria-label]="row.expense?.attachmentCount + ' attached'" [title]="row.expense?.attachmentCount + ' attached'">
+                <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M21 11.5 12.6 19.9a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8" /></svg>{{ row.expense?.attachmentCount }}
+              </span>
+            }
             @if (row.expense?.splitMembers) {
               <span class="et-split-tag">
                 Split {{ row.expense?.splitMembers }} · yours ₹{{ row.expense?.personalShare | number }}
@@ -147,6 +152,13 @@
           </span>
           <span class="cell-actions">
             @if (row.expense; as e) {
+              <button type="button" class="icon-btn receipts"
+                [attr.aria-label]="'Details and receipts for ' + e.description" title="Details & receipts"
+                (click)="$event.stopPropagation(); onOpenDetails(e)">
+                <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
+                  <path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h5" />
+                </svg>
+              </button>
               @if (e.isPendingApproval && canApprovePending) {
                 <button type="button" class="icon-btn approve"
                   aria-label="Approve this expense" (click)="$event.stopPropagation(); onApprovePending(e)">
@@ -197,5 +209,12 @@
     }
 
   </div>
+
+
+  <!-- An expense's details and its receipts, opened from the row's receipts button. -->
+  @if (detailsFor; as d) {
+    <app-expense-details [expense]="d" [canViewSource]="canViewSourceDetails" [canRemove]="canRemoveExpenses"
+      (closed)="detailsFor = null" (countChange)="d.attachmentCount = $event" />
+  }
 
 </div>

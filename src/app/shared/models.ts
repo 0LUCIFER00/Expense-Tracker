@@ -65,6 +65,8 @@ export interface Expense {
   personalShare?: number | null;
   /** Paid back so far by the others. */
   splitReceived?: number;
+  /** Receipts and invoices attached; only the list says how many. */
+  attachmentCount?: number;
 }
 
 /** What the add-expense form sends. The server decides the resulting status. */

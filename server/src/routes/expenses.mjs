@@ -12,6 +12,9 @@ import {
 } from '../http.mjs';
 import { effectivePermissions } from '../settings-store.mjs';
 import { insertExpense, removeExpense } from '../expense-store.mjs';
+import { afterResponse } from '../after-response.mjs';
+import { sweepCleanup } from '../attachment-store.mjs';
+import { isConfigured as attachmentStorageReady } from '../attachment-storage.mjs';
 import { checkBudgetAlertsSafely } from '../budget-store.mjs';
 
 /** Thresholds just crossed, as the page shows them: the sentence and its weight. */
@@ -75,7 +78,9 @@ function toApi(row, { canViewSource }) {
     personalShare: row.personal_share,
     // Paid back so far. Only the list query works it out; anywhere else a new
     // or just-approved entry has had nothing paid back against it yet.
-    splitReceived: Number(row.split_received ?? 0)
+    splitReceived: Number(row.split_received ?? 0),
+    // Receipts and invoices attached; only the list query counts them.
+    attachmentCount: Number(row.attachment_count ?? 0)
   };
 }
 
@@ -93,7 +98,10 @@ expensesRouter.get('/', asyncRoute(async (req, res) => {
     `select ${SELECT_COLUMNS},
             (select coalesce(sum(i.amount), 0)
                from incomes i
-              where i.split_expense_id = expenses.id) as split_received
+              where i.split_expense_id = expenses.id) as split_received,
+            (select count(*)::int
+               from receipt_attachments a
+              where a.expense_id = expenses.id) as attachment_count
        from expenses
       where user_id = $1
       order by created_at`,
@@ -282,6 +290,12 @@ expensesRouter.delete('/:id', asyncRoute(async (req, res) => {
 
   if (!removed) {
     return notFound(res, 'Expense not found');
+  }
+
+  // Its receipts went with it (the rows by cascade, each file queued by
+  // trigger); delete those files from storage once this has been answered.
+  if (attachmentStorageReady()) {
+    afterResponse(sweepCleanup({ limit: 20 }));
   }
 
   res.json({

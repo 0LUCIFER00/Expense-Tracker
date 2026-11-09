@@ -4,6 +4,8 @@ import { requireAuth } from '../auth.mjs';
 import { asyncRoute, badRequest, notFound, todayInIndia } from '../http.mjs';
 import { effectivePermissions } from '../settings-store.mjs';
 import { checkBudgetAlertsSafely } from '../budget-store.mjs';
+import { sweepCleanup } from '../attachment-store.mjs';
+import { isConfigured as attachmentStorageReady } from '../attachment-storage.mjs';
 import {
   daysBetween,
   inReminderWindow,
@@ -60,7 +62,13 @@ recurringRouter.get('/cron', asyncRoute(async (req, res) => {
 
   const count = status => results.filter(r => r.status === status).length;
 
-  console.log(`[recurring] ${today}: ${count('posted')} added, ${count('failed')} failed`);
+  // Daily housekeeping on the same run: receipt files whose rows are gone
+  // (removed, or deleted with their expense or account) and any earlier
+  // storage deletion that failed.
+  const files = attachmentStorageReady() ? await sweepCleanup({ limit: 500 }) : { removed: 0, failed: 0 };
+
+  console.log(`[recurring] ${today}: ${count('posted')} added, ${count('failed')} failed; ` +
+    `receipt files removed ${files.removed}, still queued ${files.failed}`);
   res.json({ today, added: count('posted'), failed: count('failed') });
 }));
 

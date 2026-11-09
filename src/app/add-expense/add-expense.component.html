@@ -115,6 +115,9 @@
 
   </div>
 
+  <!-- Receipts wait here and are attached once the expense has been saved. -->
+  <app-attachment-picker class="receipts" [compact]="true" />
+
   <div class="form-actions">
     @if (expenseAccess) {
       <button type="button" class="btn-good"

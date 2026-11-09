@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ExpenseDetailsComponent } from './expense-details/expense-details.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -56,7 +57,7 @@ const TABS: TransactionTab[] = ['all', 'out', 'in'];
 @Component({
   selector: 'app-expense-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, SplitHistoryComponent, FitsScreenDirective],
+  imports: [CommonModule, FormsModule, SplitHistoryComponent, FitsScreenDirective, ExpenseDetailsComponent],
   templateUrl: './expense-list.component.html',
   styleUrl: './expense-list.component.css'
 })
@@ -99,6 +100,9 @@ export class ExpenseListComponent implements OnInit {
   splits = new Map<string, SplitSummary>();
   /** The row whose split history is open; one at a time. */
   expandedId: string | null = null;
+
+  /** The expense whose details and receipts are open, if any. */
+  detailsFor: Expense | null = null;
 
   loading = true;
 
@@ -254,6 +258,10 @@ export class ExpenseListComponent implements OnInit {
   }
 
   /** Opens a split's repayment history under its row, or closes it. */
+  onOpenDetails(expense: Expense): void {
+    this.detailsFor = expense;
+  }
+
   onToggleSplit(row: TransactionRow): void {
     if (!this.splitFor(row)) {
       return;
