@@ -47,7 +47,8 @@
   align-items: stretch;
 }
 
-.nav-links a {
+.nav-links > a,
+.nav-group-btn {
   position: relative;
   display: flex;
   align-items: center;
@@ -60,12 +61,16 @@
   transition: opacity .15s ease;
 }
 
-.nav-links a:hover,
-.nav-links a.active {
+.nav-links > a:hover,
+.nav-links > a.active,
+.nav-group-btn:hover,
+.nav-group.open > .nav-group-btn,
+.nav-group-btn.active {
   opacity: 1;
 }
 
-.nav-links a.active::after {
+.nav-links > a.active::after,
+.nav-group-btn.active::after {
   content: "";
   position: absolute;
   left: 8px;
@@ -94,14 +99,116 @@
 }
 
 /* A clear ring for the keyboard; none for a mouse click. */
-.nav-links a:focus {
+.nav-links a:focus,
+.nav-group-btn:focus {
   outline: none;
 }
 
-.nav-links a:focus-visible {
+.nav-links > a:focus-visible,
+.nav-group-btn:focus-visible {
   outline: 2px solid #fff;
   outline-offset: -4px;
   border-radius: 8px;
+}
+
+/* ---- Planning: a menu group with a dropdown ---- */
+
+.nav-group {
+  position: relative;
+  display: flex;
+}
+
+.nav-group-btn {
+  gap: 4px;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.chevron {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform .15s ease;
+}
+
+.nav-group.open .chevron {
+  transform: rotate(180deg);
+}
+
+/*
+ * Hangs from the bottom of the header, under Planning. Always in the page so
+ * it can fade; hidden (and out of the tab order) until open.
+ */
+.nav-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  padding: 6px;
+  background: #fff;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, .16);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity .14s ease, transform .14s ease, visibility 0s linear .14s;
+}
+
+.nav-group.open .nav-dropdown {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  transition-delay: 0s;
+}
+
+.nav-dropdown a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #333;
+  text-decoration: none;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.nav-dropdown a:hover {
+  background: #f5f7fb;
+}
+
+.nav-dropdown a.active {
+  background: #e6eaff;
+  color: #1c2978;
+  font-weight: 800;
+  box-shadow: inset 3px 0 0 #2a3f9d;
+}
+
+.nav-dropdown a:focus-visible {
+  outline: 2px solid #7cbbff;
+  outline-offset: -2px;
+}
+
+/* Inside the white menu the count keeps its red, on a soft red ground. */
+.nav-dropdown .nav-badge {
+  margin-left: 0;
+  background-color: #fbe9e7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-dropdown,
+  .chevron {
+    transition: none;
+  }
 }
 
 .header-actions {
@@ -177,18 +284,6 @@
   background: #f5f7fb;
 }
 
-/* The page you are on, when it lives in this menu (Savings Goals). */
-.profile-dropdown a.active {
-  background: #e6eaff;
-  color: #1c2978;
-  font-weight: 700;
-}
-
-:host-context([data-theme='dark']) .profile-dropdown a.active {
-  background: #2e3853;
-  color: #fff;
-}
-
 .profile-dropdown hr {
   margin: 0;
   border: none;
@@ -232,10 +327,12 @@
 }
 
 /*
- * Phone / tablet: links collapse into a dropdown panel. Nine menu items need
- * about 1080px on one line, so below 1100px they fold away instead of wrapping.
+ * Phone / tablet: links collapse into a dropdown panel. The logo, five links,
+ * Planning with its count and the buttons need about 1010px on one line, so
+ * below 1040px they fold away instead of wrapping. (HOVER_QUERY in
+ * header.component.ts uses the same width.)
  */
-@media (max-width: 1100px) {
+@media (max-width: 1040px) {
   .menu-toggle {
     display: flex;
   }
@@ -263,30 +360,85 @@
     display: flex;
   }
 
-  .nav-links a {
+  .nav-links > a,
+  .nav-group-btn {
     padding: 13px 16px;
     opacity: 1;
   }
 
-  .nav-links a:not(:last-child) {
+  .nav-links > a:not(:last-child),
+  .nav-group {
     border-bottom: 1px solid rgba(255, 255, 255, .18);
   }
 
-  .nav-links a:hover {
+  .nav-links > a:hover,
+  .nav-links > a.active,
+  .nav-group-btn:hover {
     background: rgba(255, 255, 255, .15);
   }
 
-  .nav-links a.active {
-    background: rgba(255, 255, 255, .15);
-  }
-
-  .nav-links a.active::after {
+  .nav-links > a.active::after,
+  .nav-group-btn.active::after {
     left: 0;
     right: auto;
     top: 0;
     width: 3px;
     height: auto;
     border-radius: 0;
+  }
+
+  /* Planning becomes a row that opens its pages beneath it, indented. */
+  .nav-group {
+    flex-direction: column;
+  }
+
+  .nav-group-btn {
+    width: 100%;
+    text-align: left;
+  }
+
+  .nav-group-btn .chevron {
+    margin-left: auto;
+  }
+
+  .nav-dropdown {
+    position: static;
+    display: none;
+    min-width: 0;
+    padding: 0 0 6px;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .nav-group.open .nav-dropdown {
+    display: flex;
+  }
+
+  .nav-dropdown a {
+    padding: 11px 16px 11px 32px;
+    border-radius: 0;
+    color: #fff;
+    font-weight: 500;
+  }
+
+  .nav-dropdown a:hover,
+  .nav-dropdown a.active {
+    background: rgba(255, 255, 255, .15);
+    color: #fff;
+  }
+
+  .nav-dropdown a.active {
+    font-weight: 700;
+    box-shadow: inset 3px 0 0 #fff;
+  }
+
+  .nav-dropdown .nav-badge {
+    background-color: #fff;
   }
 }
 

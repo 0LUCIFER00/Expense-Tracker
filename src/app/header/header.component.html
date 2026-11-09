@@ -8,13 +8,50 @@
       <a routerLink="/add-money" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Add Income</a>
     }
     <a routerLink="/transactions" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Transactions</a>
-    <a routerLink="/budgets" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Budgets</a>
-    <a routerLink="/recurring" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">
-      Recurring
-      @if (attention > 0) {
-        <span class="nav-badge" [attr.aria-label]="attention + ' need attention'">{{ attention }}</span>
-      }
-    </a>
+
+    <!--
+      Planning: Budgets, Recurring and Savings Goals (PLANNING_ITEMS). Opens on
+      hover with a mouse and on click or tap; the button and its menu share
+      this wrapper, so moving the pointer from one to the other keeps it open.
+      routerLinkActive here follows the links inside, so Planning reads as
+      the current section while any of its pages is open.
+    -->
+    <div class="nav-group" #planningEl routerLinkActive="section-active" #planningActive="routerLinkActive"
+      [class.open]="planningOpen" (mouseleave)="onPlanningLeave()">
+      <!--
+        Hover opens from the button itself, not the wrapper: after a page is
+        chosen the pointer is still inside the wrapper (over the menu that just
+        closed), so the wrapper would never see it come back to Planning.
+      -->
+      <button #planningBtn type="button" class="nav-group-btn" [class.active]="planningActive.isActive"
+        aria-controls="planning-menu" [attr.aria-expanded]="planningOpen"
+        (mouseenter)="onPlanningEnter()" (click)="togglePlanning()">
+        Planning
+        <!-- The recurring count stays on Planning, open or closed, as well as beside Recurring. -->
+        @if (attention > 0) {
+          <span class="nav-badge">
+            <span aria-hidden="true">{{ attention }}</span>
+            <span class="sr-only">, {{ attention }} recurring {{ attention === 1 ? 'entry needs' : 'entries need' }} attention</span>
+          </span>
+        }
+        <svg class="chevron" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+      </button>
+
+      <div class="nav-dropdown" id="planning-menu" role="group" aria-label="Planning">
+        @for (item of planningItems; track item.path) {
+          <a [routerLink]="item.path" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closePlanning()">
+            {{ item.label }}
+            @if (item.badge === 'attention' && attention > 0) {
+              <span class="nav-badge">
+                <span aria-hidden="true">{{ attention }}</span>
+                <span class="sr-only">, {{ attention }} {{ attention === 1 ? 'needs' : 'need' }} attention</span>
+              </span>
+            }
+          </a>
+        }
+      </div>
+    </div>
+
     @if (showBalanceManagement) {
       <a routerLink="/money" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Cash &amp; Accounts</a>
     }
@@ -61,9 +98,6 @@
         <div class="profile-dropdown" #profileMenu>
           <a routerLink="/profile" (click)="closeProfileMenu()">
             👤 My Profile
-          </a>
-          <a routerLink="/goals" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeProfileMenu()">
-            💰 Savings Goals
           </a>
           <a routerLink="/settings" (click)="closeProfileMenu()">
             ⚙️ Settings
