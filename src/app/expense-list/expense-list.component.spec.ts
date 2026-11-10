@@ -610,6 +610,34 @@ describe('ExpenseListComponent', () => {
       expect(el.querySelector('.list-title')!.textContent).toContain('Debit');
     });
 
+    it('resets the tab and every filter from the button beside Show', () => {
+      const fixture = load([
+        expense({ id: 'e1', date: '2026-10-20', category: 'Food & Drink', amount: 100 }),
+        expense({ id: 'e2', date: '2025-03-02', category: 'Travel', amount: 50 })
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+      const reset = () => el.querySelector<HTMLButtonElement>('.panel-head .reset-btn')!;
+
+      expect(reset().disabled).toBeTrue();
+
+      component.onTab('out');
+      component.onFilterYear({ target: { value: '2026' } } as unknown as Event);
+      component.onFilterCategory({ target: { value: 'Food & Drink' } } as unknown as Event);
+      fixture.detectChanges();
+      expect(component.rows.length).toBe(1);
+      expect(reset().disabled).toBeFalse();
+
+      reset().click();
+      fixture.detectChanges();
+
+      expect(component.tab).toBe('all');
+      expect(component.selectedYear).toBe(0);
+      expect(component.selectedCategory).toBe('');
+      expect(component.rows.length).toBe(2);
+      expect(el.querySelector<HTMLSelectElement>('#yearFilter')!.value).toBe('0');
+      expect(reset().disabled).toBeTrue();
+    });
+
     it('dims the totals the tab showing leaves out', () => {
       const fixture = load([expense()]);
       const el = fixture.nativeElement as HTMLElement;

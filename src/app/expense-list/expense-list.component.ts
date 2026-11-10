@@ -369,6 +369,26 @@ export class ExpenseListComponent implements OnInit {
     this.applyFilters();
   }
 
+  /** True when anything differs from the full list: a tab, year, month or category. */
+  get hasFilters(): boolean {
+    return this.tab !== 'all' || this.selectedYear !== 0 || this.selectedMonth !== 0 || !!this.selectedCategory;
+  }
+
+  /** Back to everything: All, every year, month and category. */
+  resetFilters(): void {
+    this.selectedYear = 0;
+    this.selectedMonth = 0;
+    this.selectedCategory = '';
+
+    if (this.tab !== 'all') {
+      // Also clears the tab from the address and re-lists the categories.
+      this.onTab('all');
+    } else {
+      this.collectCategories();
+      this.applyFilters();
+    }
+  }
+
   /** True when a date falls inside the chosen year and month. */
   private inPeriod(date: string): boolean {
     const parsed = parseLocalDate(date);

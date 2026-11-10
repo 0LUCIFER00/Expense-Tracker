@@ -32,7 +32,16 @@
     </section>
 
     <section class="panel-block filter-bar" aria-labelledby="show-title">
-      <h2 id="show-title" class="panel-title">Show</h2>
+      <!-- The heading's row also holds Reset, at its right end, above Credit. -->
+      <div class="panel-head">
+        <h2 id="show-title" class="panel-title">Show</h2>
+        <button type="button" class="reset-btn" [disabled]="!hasFilters" (click)="resetFilters()"
+          aria-label="Reset filters" title="Reset filters">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 2.6-6.4M3 4v5h5" />
+          </svg>
+        </button>
+      </div>
 
       <!-- Which half of the ledger. Debit is the old View Expenses page. -->
       <div class="tab-bar" role="tablist" aria-label="Transactions">
@@ -51,7 +60,7 @@
           <label for="yearFilter">Year</label>
           <select id="yearFilter" (change)="onFilterYear($event)">
             @for (y of years; track y.value) {
-              <option [value]="y.value">{{ y.value === 0 ? 'All years' : y.label }}</option>
+              <option [value]="y.value" [selected]="y.value === selectedYear">{{ y.value === 0 ? 'All years' : y.label }}</option>
             }
           </select>
         </div>
@@ -60,7 +69,7 @@
           <label for="monthFilter">Month</label>
           <select id="monthFilter" (change)="onFilterMonth($event)">
             @for (m of months; track m.value) {
-              <option [value]="m.value">{{ m.value === 0 ? 'All months' : m.label }}</option>
+              <option [value]="m.value" [selected]="m.value === selectedMonth">{{ m.value === 0 ? 'All months' : m.label }}</option>
             }
           </select>
         </div>
@@ -70,7 +79,7 @@
         <div class="filter">
           <label for="categoryFilter">Category</label>
           <select id="categoryFilter" (change)="onFilterCategory($event)">
-            <option value="">All categories</option>
+            <option value="" [selected]="!selectedCategory">All categories</option>
             @for (name of usedCategories; track name) {
               <option [value]="name"
               [selected]="name === selectedCategory">{{ name }}</option>

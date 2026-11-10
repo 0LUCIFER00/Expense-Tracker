@@ -27,6 +27,8 @@
 .tx-layout > .card {
   flex: 1 1 0;
   min-width: 0;
+  /* A short foot: the note under the table needs little room. */
+  padding-bottom: 0.625rem;
 }
 
 .panel-block {
@@ -38,6 +40,50 @@
 .panel-block + .panel-block {
   padding-top: 0.875rem;
   border-top: 1px solid var(--rule);
+}
+
+/* A heading with a small button at its right end. */
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.reset-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--field-border);
+  border-radius: 8px;
+  background-color: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.reset-btn svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.reset-btn:hover:not(:disabled) {
+  border-color: var(--focus-border);
+  color: var(--accent-ink);
+}
+
+.reset-btn:focus-visible {
+  outline: 2px solid var(--focus-border);
+  outline-offset: 2px;
+}
+
+.reset-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .panel-title {
@@ -142,7 +188,7 @@
 }
 
 .list-title {
-  margin: 0 0 0.875rem;
+  margin: 0 0 0.75rem;
   font-size: 1.125rem;
   font-weight: 800;
 }
@@ -177,7 +223,7 @@
     gap: 0.625rem;
   }
 
-  .tx-panel .filter-bar > .panel-title,
+  .tx-panel .filter-bar > .panel-head,
   .tx-panel .filter-bar > .tab-bar {
     grid-column: 1 / -1;
   }

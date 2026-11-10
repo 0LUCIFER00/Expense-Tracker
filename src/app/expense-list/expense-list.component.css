@@ -318,7 +318,7 @@
 /* ---- the rest ---- */
 
 .table-note {
-  margin: 0.5rem 0 0;
+  margin: 0.375rem 0 0;
   font-size: 0.6875rem;
   color: var(--ink-3);
   line-height: 1.5;
