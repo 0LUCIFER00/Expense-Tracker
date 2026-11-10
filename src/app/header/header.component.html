@@ -99,6 +99,11 @@
           <a routerLink="/profile" (click)="closeProfileMenu()">
             👤 My Profile
           </a>
+          @if (showBalanceManagement) {
+            <a routerLink="/loans" (click)="closeProfileMenu()">
+              🤝 Lending &amp; Borrowing
+            </a>
+          }
           <a routerLink="/settings" (click)="closeProfileMenu()">
             ⚙️ Settings
           </a>

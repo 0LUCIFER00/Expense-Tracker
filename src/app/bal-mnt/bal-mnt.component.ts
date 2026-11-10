@@ -1,7 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { BalanceService } from '../shared/balance.service';
 import { AccountUsage, BalanceAccount, TransferResult } from '../shared/models';
 import { SettingsService } from '../shared/settings.service';
@@ -31,6 +31,13 @@ export class BalMntComponent implements OnInit {
   private readonly balanceService = inject(BalanceService);
   private readonly toast = inject(ToastService);
   private readonly settingsService = inject(SettingsService);
+  private readonly route = inject(ActivatedRoute);
+
+  /**
+   * The account a link asked for (?account=<id>), from a lending record for
+   * one: outlined and scrolled to once the accounts arrive.
+   */
+  focusId: string | null = null;
 
   /**
    * Seeing balances without "Debit from an account": the figures are shown but
@@ -81,7 +88,18 @@ export class BalMntComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.focusId = this.route.snapshot.queryParamMap.get('account');
     this.load();
+  }
+
+  /** Brings the asked-for account into view, after it has rendered. */
+  private scrollToFocus(): void {
+    if (!this.focusId || !this.accounts.some(a => a.id === this.focusId)) {
+      this.focusId = null;
+      return;
+    }
+
+    setTimeout(() => document.getElementById(`acct-${this.focusId}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
   }
 
   private load(): void {
@@ -91,6 +109,7 @@ export class BalMntComponent implements OnInit {
         this.rememberCustomOptions(this.accounts);
         this.adding = this.accounts.length === 0 && !this.readOnly;
         this.loading = false;
+        this.scrollToFocus();
       },
       error: error => {
         this.toast.error(error.message);

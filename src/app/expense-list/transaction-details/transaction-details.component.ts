@@ -1,4 +1,5 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import {
   AfterViewInit,
   Component,
@@ -36,7 +37,7 @@ const MAX = 10;
 @Component({
   selector: 'app-transaction-details',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, AttachmentPickerComponent],
+  imports: [DatePipe, DecimalPipe, RouterLink, AttachmentPickerComponent],
   templateUrl: './transaction-details.component.html',
   styleUrls: ['./transaction-details.component.css', './transaction-preview.css']
 })
@@ -52,6 +53,19 @@ export class TransactionDetailsComponent implements OnChanges, AfterViewInit {
   @Input() canViewSource = true;
   @Input() canRemove = false;
   @Input() canApprove = false;
+
+  /**
+   * Interest filed by a repayment in Lending & Borrowing. It is undone by
+   * reversing that repayment there, so it is never removed here on its own.
+   */
+  get fromLoan(): boolean {
+    return Boolean(this.expense?.loanRepaymentId || this.income?.loanRepaymentId);
+  }
+
+  /** Remove is offered only where removing on its own keeps the books right. */
+  get removable(): boolean {
+    return this.canRemove && !this.fromLoan;
+  }
 
   @Output() closed = new EventEmitter<void>();
   /** The number of attachments now, so the list's paperclip can follow. */

@@ -74,6 +74,9 @@ export async function listDeleted(userId, { kind = null, search = '' } = {}) {
             (select count(*)::int from receipt_attachments a where a.expense_id = e.id) as attachments
        from expenses e
       where e.user_id = $1 and e.deleted_at is not null
+        -- Interest undone by reversing a loan repayment is not the person's
+        -- to restore here: the repayment's own record keeps it.
+        and e.loan_repayment_id is null
      union all
      select 'income', i.id, i.description, i.amount, i.received_on, i.category,
             i.target_category, 'done',
@@ -84,6 +87,7 @@ export async function listDeleted(userId, { kind = null, search = '' } = {}) {
             0
        from incomes i
       where i.user_id = $1 and i.deleted_at is not null
+        and i.loan_repayment_id is null
       order by deleted_at desc`,
     [userId]
   );
@@ -151,7 +155,7 @@ export function restoreExpense(userId, expenseId, { canSeeBalances = false } = {
       `select id, amount, description, spent_on, status, source_id, source_category,
               deleted_at, delete_reversed
          from expenses
-        where id = $1 and user_id = $2
+        where id = $1 and user_id = $2 and loan_repayment_id is null
         for update`,
       [expenseId, userId]
     );
@@ -223,7 +227,7 @@ export function restoreIncome(userId, incomeId, { canSeeBalances = false } = {})
       `select id, amount, description, received_on, target_id, target_category,
               split_expense_id, deleted_at, delete_reversed
          from incomes
-        where id = $1 and user_id = $2
+        where id = $1 and user_id = $2 and loan_repayment_id is null
         for update`,
       [incomeId, userId]
     );
@@ -308,14 +312,14 @@ async function purge(client, kind, where, params, reason) {
  */
 export function purgeEntry(userId, kind, id) {
   return transaction(async client => {
-    const count = await purge(client, kind, 'id = $1 and user_id = $2', [id, userId], 'user');
+    const count = await purge(client, kind, 'id = $1 and user_id = $2 and loan_repayment_id is null', [id, userId], 'user');
 
     if (count) {
       return { purged: 1 };
     }
 
     const { rows } = await client.query(
-      `select 1 from ${KINDS[kind].table} where id = $1 and user_id = $2`,
+      `select 1 from ${KINDS[kind].table} where id = $1 and user_id = $2 and loan_repayment_id is null`,
       [id, userId]
     );
 
@@ -328,8 +332,8 @@ export function purgeEntry(userId, kind, id) {
 /** Deletes everything in the account's Recently deleted for good. */
 export function emptyBin(userId) {
   return transaction(async client => {
-    const expenses = await purge(client, 'expense', 'user_id = $1', [userId], 'empty');
-    const incomes = await purge(client, 'income', 'user_id = $1', [userId], 'empty');
+    const expenses = await purge(client, 'expense', 'user_id = $1 and loan_repayment_id is null', [userId], 'empty');
+    const incomes = await purge(client, 'income', 'user_id = $1 and loan_repayment_id is null', [userId], 'empty');
 
     return { purged: expenses + incomes, expenses, incomes };
   });

@@ -1,0 +1,79 @@
+<form class="editor" (ngSubmit)="onSubmit()" novalidate>
+  <header class="ed-head">
+    <div>
+      <h2 class="ed-title" id="repayment-title">{{ lent ? 'Money back from ' : 'Pay back ' }}{{ loan.personName }}</h2>
+      <p class="ed-sub">₹{{ loan.principal | number: '1.0-2' }} {{ lent ? 'given' : 'received' }} on {{ loanDate(loan.date) }} · {{ loan.interest.label }}</p>
+    </div>
+    <button type="button" class="ed-close" aria-label="Close" (click)="cancel.emit()">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+    </button>
+  </header>
+
+  <div class="ed-body">
+    <div class="owed" aria-live="polite">
+      @if (quote) {
+        <div><span>Principal owed</span><strong class="tnum">₹{{ quote.principalDue | number: '1.0-2' }}</strong></div>
+        <div><span>Interest due</span><strong class="tnum">₹{{ quote.interestDue | number: '1.0-2' }}</strong></div>
+        <div class="total"><span>Owed on {{ loanDate(quote.date) }}</span><strong class="tnum">₹{{ quote.totalDue | number: '1.0-2' }}</strong></div>
+      } @else {
+        <p class="hint">Working out what is owed…</p>
+      }
+    </div>
+
+    <div>
+      <label class="et-field-label" for="r-amount">{{ lent ? 'Amount received (₹)' : 'Amount paid back (₹)' }}</label>
+      <input id="r-amount" class="et-field amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01"
+        [(ngModel)]="amount">
+      @if (quote && quote.totalDue > 0) {
+        <div class="chips">
+          <button type="button" class="chip" (click)="amount = quote.totalDue">Everything: ₹{{ fmt(quote.totalDue) }}</button>
+          @if (quote.interestDue > 0) {
+            <button type="button" class="chip" (click)="amount = quote.interestDue">Interest only: ₹{{ fmt(quote.interestDue) }}</button>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="grid">
+      <div>
+        <label class="et-field-label" for="r-account">{{ lent ? 'Received into' : 'Paid from' }}</label>
+        <select id="r-account" class="et-field" name="accountId" [(ngModel)]="accountId">
+          @for (a of accounts; track a.id) {
+            <option [value]="a.id">{{ accountLabel(a) }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="et-field-label" for="r-date">Payment date</label>
+        <input id="r-date" class="et-field" name="date" type="date" [min]="minDate" [max]="today" [disabled]="!canBackdate"
+          [ngModel]="date" (ngModelChange)="onDate($event)">
+      </div>
+    </div>
+
+    <div>
+      <label class="et-field-label" for="r-note">Note <span class="opt">(optional)</span></label>
+      <input id="r-note" class="et-field" name="note" maxlength="200" autocomplete="off" [(ngModel)]="note">
+    </div>
+
+    @if (split) {
+      <div class="after" [class.out]="!lent">
+        <strong>₹{{ split.principal | number: '1.0-2' }} principal + ₹{{ split.interest | number: '1.0-2' }} interest</strong>
+        <span>
+          {{ lent ? 'Into ' : 'Out of ' }}{{ account?.category }}.
+          Principal is not {{ lent ? 'income' : 'spending' }}@if (split.interest > 0) {; the interest is recorded as {{ lent ? 'Interest income' : 'an expense' }}}.
+        </span>
+      </div>
+    }
+
+    @if (error || serverError) {
+      <p class="err" role="alert">{{ error || serverError }}</p>
+    }
+  </div>
+
+  <footer class="ed-foot">
+    <button type="button" class="et-btn-ghost" [disabled]="busy" (click)="cancel.emit()">Cancel</button>
+    <button type="submit" class="et-btn-primary" [disabled]="busy || accounts.length === 0">
+      {{ busy ? 'Saving…' : lent ? 'Record money back' : 'Record payment' }}
+    </button>
+  </footer>
+</form>

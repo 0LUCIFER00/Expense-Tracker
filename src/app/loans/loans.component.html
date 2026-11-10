@@ -1,0 +1,302 @@
+<!--
+  Like Savings goals: on a desktop the page fits the window. Totals and the
+  list make the left column (the list scrolls inside its card); the chosen
+  record, with its repayments, has the right.
+-->
+<div class="loans-page" appFitsScreen>
+
+  <ng-template #head>
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Lending &amp; Borrowing</h1>
+        <p class="page-sub">Money you've lent or borrowed. It moves your accounts but isn't spending or income; only interest is.</p>
+      </div>
+      @if (canManage) {
+        <div class="head-actions">
+          <button type="button" class="et-btn-primary new-btn" [disabled]="busy" (click)="onNew('lent')">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
+            Money given
+          </button>
+          <button type="button" class="et-btn-ghost new-btn" [disabled]="busy" (click)="onNew('borrowed')">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6" /></svg>
+            Money received
+          </button>
+        </div>
+      }
+    </div>
+  </ng-template>
+
+  @if (loading && !view) {
+    <ng-container [ngTemplateOutlet]="head" />
+    <section class="card skeleton" aria-busy="true"></section>
+  } @else if (loadError && !view) {
+    <ng-container [ngTemplateOutlet]="head" />
+    <section class="card pad">
+      <p class="error-text">{{ loadError }}</p>
+      <button type="button" class="et-btn-primary" (click)="load()">Try again</button>
+    </section>
+  } @else if (view) {
+    <div class="loans-grid">
+      <div class="main-col">
+        <ng-container [ngTemplateOutlet]="head" />
+
+        <section class="card summary" aria-label="Totals">
+          <div class="stat"><span class="lbl">Money lent</span><span class="val tnum">₹{{ view.summary.totalLent | number: '1.0-2' }}</span></div>
+          <div class="stat"><span class="lbl">Money borrowed</span><span class="val tnum">₹{{ view.summary.totalBorrowed | number: '1.0-2' }}</span></div>
+          <div class="stat in">
+            <span class="lbl">To receive</span>
+            <span class="val tnum">₹{{ view.summary.toReceive | number: '1.0-2' }}</span>
+            @if (view.summary.interestExpected > 0) { <span class="sub tnum">incl. ₹{{ view.summary.interestExpected | number: '1.0-2' }} interest</span> }
+          </div>
+          <div class="stat out">
+            <span class="lbl">Left to pay</span>
+            <span class="val tnum">₹{{ view.summary.toPay | number: '1.0-2' }}</span>
+            @if (view.summary.interestOwed > 0) { <span class="sub tnum">incl. ₹{{ view.summary.interestOwed | number: '1.0-2' }} interest</span> }
+          </div>
+          <div class="stat">
+            <span class="lbl">Interest received</span>
+            <span class="val tnum">₹{{ view.summary.interestReceived | number: '1.0-2' }}</span>
+            <span class="sub">counted as income</span>
+          </div>
+          <div class="stat">
+            <span class="lbl">Interest paid</span>
+            <span class="val tnum">₹{{ view.summary.interestPaid | number: '1.0-2' }}</span>
+            <span class="sub">counted as expenses</span>
+          </div>
+        </section>
+
+        <section class="card list-card" aria-labelledby="loans-h">
+          <div class="list-top">
+            <h2 id="loans-h" class="card-title">Records</h2>
+            <div class="tabs" role="tablist" aria-label="Show">
+              <button type="button" role="tab" class="tab" [class.on]="tab === 'lent'" [attr.aria-selected]="tab === 'lent'"
+                (click)="setTab('lent')">Money given <span class="tnum">{{ count('lent') }}</span></button>
+              <button type="button" role="tab" class="tab" [class.on]="tab === 'borrowed'" [attr.aria-selected]="tab === 'borrowed'"
+                (click)="setTab('borrowed')">Money received <span class="tnum">{{ count('borrowed') }}</span></button>
+              <button type="button" role="tab" class="tab" [class.on]="tab === 'history'" [attr.aria-selected]="tab === 'history'"
+                (click)="setTab('history')">Repayment history <span class="tnum">{{ count('history') }}</span></button>
+            </div>
+          </div>
+
+          <div class="filters" role="search" aria-label="Filter records">
+            <input class="et-field f-person" type="search" placeholder="Person" aria-label="Person" [(ngModel)]="filters.person">
+            <select class="et-field" aria-label="Status" [(ngModel)]="filters.status">
+              @for (s of statuses; track s.value) { <option [value]="s.value">{{ s.label }}</option> }
+            </select>
+            <select class="et-field" aria-label="Account" [(ngModel)]="filters.account">
+              <option value="">Any account</option>
+              @for (a of accountOptions; track a.id) { <option [value]="a.id">{{ a.name }}</option> }
+            </select>
+            <input class="et-field" type="date" aria-label="From" [max]="filters.to || today" [(ngModel)]="filters.from">
+            <input class="et-field" type="date" aria-label="To" [min]="filters.from" [(ngModel)]="filters.to">
+            @if (filtered) {
+              <button type="button" class="link" (click)="clearFilters()">Clear</button>
+            }
+          </div>
+
+          @if (tab === 'history') {
+            <div class="rows">
+              @for (r of history; track r.id) {
+                <button type="button" class="h-item" [class.reversed]="r.reversed" (click)="openLoanOf(r)">
+                  <span class="h-main">
+                    <span class="name">{{ r.personName }}
+                      <span class="dir">{{ r.direction === 'lent' ? 'paid you back' : 'you paid back' }}</span>
+                    </span>
+                    <span class="meta">{{ loanDate(r.date) }} · {{ r.accountName }}{{ r.note ? ' · ' + r.note : '' }}</span>
+                  </span>
+                  <span class="h-amt">
+                    <strong class="tnum" [class.in]="r.direction === 'lent'" [class.out]="r.direction === 'borrowed'">
+                      {{ r.direction === 'lent' ? '+' : '−' }}₹{{ r.amount | number: '1.0-2' }}
+                    </strong>
+                    <span class="meta tnum">₹{{ r.principal | number: '1.0-2' }} principal · ₹{{ r.interest | number: '1.0-2' }} interest</span>
+                    @if (r.reversed) { <span class="chip" data-tone="muted">{{ r.reversedReason === 'cancelled' ? 'Cancelled' : 'Reversed' }}</span> }
+                  </span>
+                </button>
+              } @empty {
+                <p class="none">{{ view.repayments.length ? 'No repayments match these filters.' : 'No repayments recorded yet.' }}</p>
+              }
+            </div>
+          } @else {
+            <div class="rows">
+              @for (l of shown; track l.id) {
+                <button type="button" class="item" [class.sel]="l.id === selectedId" [attr.aria-pressed]="l.id === selectedId"
+                  (click)="select(l)">
+                  <span class="avatar" aria-hidden="true">{{ initials(l.personName) }}</span>
+                  <span class="i-main">
+                    <span class="name">{{ l.personName }}</span>
+                    <span class="meta">{{ l.accountName }} · {{ loanDate(l.date) }}{{ l.dueDate ? ' · due ' + loanDate(l.dueDate) : '' }}</span>
+                    <span class="bar"><span class="fill" [attr.data-tone]="tone(l.status)" [style.width.%]="repaidPercent(l)"></span></span>
+                  </span>
+                  <span class="i-side">
+                    <span class="chip" [attr.data-tone]="tone(l.status)">{{ statusLabels[l.status] }}</span>
+                    <strong class="tnum">₹{{ (l.status === 'cancelled' ? l.principal : l.outstanding) | number: '1.0-2' }}</strong>
+                    <span class="meta">{{ l.status === 'cancelled' ? 'cancelled' : l.status === 'completed' ? 'settled' : (l.direction === 'lent' ? 'owed to you' : 'you owe') }}</span>
+                  </span>
+                </button>
+              } @empty {
+                @if (count(tab) === 0) {
+                  <div class="empty">
+                    <p><strong>{{ tab === 'lent' ? 'No money given yet.' : 'No money received yet.' }}</strong></p>
+                    <p>{{ tab === 'lent' ? 'Record money you lend someone and track what comes back.' : 'Record money you borrow and track what you pay back.' }}</p>
+                    @if (canManage) {
+                      <button type="button" class="et-btn-primary" (click)="onNew(tab === 'lent' ? 'lent' : 'borrowed')">
+                        {{ tab === 'lent' ? 'Record money given' : 'Record money received' }}
+                      </button>
+                    }
+                  </div>
+                } @else {
+                  <p class="none">No records match these filters.</p>
+                }
+              }
+            </div>
+          }
+        </section>
+      </div>
+
+      <aside class="card detail" #detail aria-labelledby="detail-h">
+        @if (selected; as l) {
+          <div class="d-head">
+            <span class="avatar big" aria-hidden="true">{{ initials(l.personName) }}</span>
+            <div class="d-title">
+              <h2 id="detail-h">{{ l.personName }}</h2>
+              <p>{{ l.contact || (l.direction === 'lent' ? 'Money you gave' : 'Money you received') }}</p>
+            </div>
+            <span class="chip" [attr.data-tone]="tone(l.status)">{{ statusLabels[l.status] }}</span>
+            @if (canManage && l.status !== 'cancelled') {
+              <button type="button" class="ib" [disabled]="busy" [attr.aria-label]="'Change ' + l.personName" (click)="onEdit(l)">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" /></svg>
+              </button>
+            }
+          </div>
+
+          @if (l.status === 'cancelled') {
+            <p class="banner">Cancelled{{ l.cancelReason ? ': ' + l.cancelReason : '' }}. Every balance change it made was reversed; its history stays below.</p>
+          } @else {
+            <div class="owed-big">
+              <span class="lbl">{{ l.direction === 'lent' ? 'Owed to you' : 'You owe' }}</span>
+              <span class="tnum fig">₹{{ l.outstanding | number: '1.0-2' }}</span>
+              <span class="small tnum">₹{{ l.principalOutstanding | number: '1.0-2' }} principal + ₹{{ l.interestOutstanding | number: '1.0-2' }} interest</span>
+            </div>
+          }
+
+          <dl class="facts">
+            <div><dt>Principal</dt><dd class="tnum">₹{{ l.principal | number: '1.0-2' }}</dd></div>
+            <div><dt>Repaid</dt><dd class="tnum">₹{{ l.totalRepaid | number: '1.0-2' }}</dd></div>
+            <div class="wide">
+              <dt>{{ l.direction === 'lent' ? 'Given from' : 'Received into' }}</dt>
+              <dd>{{ l.accountName }} <span class="small">{{ l.accountType }}</span>
+                <a class="link sm" routerLink="/money" [queryParams]="{ account: l.accountId }">Open account</a>
+              </dd>
+            </div>
+            <div><dt>{{ l.direction === 'lent' ? 'Given on' : 'Received on' }}</dt><dd>{{ loanDate(l.date) }}</dd></div>
+            <div [class.warn]="l.status === 'overdue'"><dt>Expected back</dt><dd>{{ l.dueDate ? loanDate(l.dueDate) : 'No date set' }}</dd></div>
+            <div class="wide">
+              <dt>Interest</dt>
+              <dd>{{ l.interest.label }}
+                @if (l.interest.type === 'simple') {
+                  <span class="small tnum">Built up ₹{{ l.interestAccrued | number: '1.0-2' }} · {{ l.direction === 'lent' ? 'received' : 'paid' }} ₹{{ l.interestPaid | number: '1.0-2' }}
+                    @if (l.outstandingAtDue !== null) { · ₹{{ l.outstandingAtDue | number: '1.0-2' }} owed by {{ loanDate(l.dueDate) }} if nothing more is paid }
+                  </span>
+                }
+              </dd>
+            </div>
+          </dl>
+
+          @if (l.notes) { <p class="notes">{{ l.notes }}</p> }
+
+          @if (canManage && l.status !== 'cancelled') {
+            <div class="d-actions">
+              @if (l.status !== 'completed') {
+                <button type="button" class="et-btn-primary sm" [disabled]="busy" (click)="onOpenRepay(l)">
+                  {{ l.direction === 'lent' ? 'Record money back' : 'Record a payment' }}
+                </button>
+              }
+              <button type="button" class="link danger" [disabled]="busy" (click)="onAskCancel(l)">Cancel record</button>
+            </div>
+          }
+
+          <div class="history">
+            <h3>Repayments</h3>
+            <div class="h-list">
+              @for (r of repaymentsFor(l); track r.id) {
+                <div class="h-row" [class.reversed]="r.reversed">
+                  <div>
+                    <div class="strong">{{ loanDate(r.date) }} · {{ r.accountName }}</div>
+                    <div class="small tnum">₹{{ r.principal | number: '1.0-2' }} principal · ₹{{ r.interest | number: '1.0-2' }} interest{{ r.note ? ' · ' + r.note : '' }}</div>
+                  </div>
+                  <div class="r">
+                    <div class="strong tnum">₹{{ r.amount | number: '1.0-2' }}</div>
+                    @if (r.reversed) {
+                      <span class="small">{{ r.reversedReason === 'cancelled' ? 'Cancelled' : 'Reversed' }}</span>
+                    } @else if (canManage && latestActive(l)?.id === r.id) {
+                      <button type="button" class="link sm" [disabled]="busy" (click)="onAskReverse(l, r)">Reverse</button>
+                    }
+                  </div>
+                </div>
+              } @empty {
+                <p class="small">Nothing repaid yet.</p>
+              }
+            </div>
+          </div>
+        } @else {
+          <p class="small pick">{{ tab === 'history' ? 'Choose a repayment to see its record.' : 'Choose a record to see its details and repayments.' }}</p>
+        }
+      </aside>
+    </div>
+  }
+
+  @if (editorOpen) {
+    <div class="et-overlay loans-overlay">
+      <div class="loans-panel" role="dialog" aria-modal="true" aria-labelledby="loan-editor-title">
+        <app-loan-editor [loan]="editing" [direction]="editorDirection" [accounts]="accounts" [today]="today"
+          [canBackdate]="canBackdate" [busy]="busy" [serverError]="editorError" (save)="onSaveLoan($event)" (cancel)="onCloseEditor()" />
+      </div>
+    </div>
+  }
+
+  @if (repayFor) {
+    <div class="et-overlay loans-overlay">
+      <div class="loans-panel" role="dialog" aria-modal="true" aria-labelledby="repayment-title">
+        <app-repayment-form [loan]="repayFor" [accounts]="accounts" [today]="today" [canBackdate]="canBackdate" [busy]="busy"
+          [quote]="quote" [serverError]="repayError" (dateChange)="onQuoteDate($event)" (save)="onSaveRepay($event)" (cancel)="onCloseRepay()" />
+      </div>
+    </div>
+  }
+
+  @if (confirmReverse; as c) {
+    <div class="et-overlay loans-confirm">
+      <div class="et-popup" role="dialog" aria-modal="true" aria-labelledby="rev-title">
+        <h3 id="rev-title">Reverse this repayment?</h3>
+        <p class="et-popup-body">
+          ₹{{ fmt(c.repayment.amount) }} on {{ loanDate(c.repayment.date) }}
+          {{ c.loan.direction === 'lent' ? 'comes back out of' : 'goes back into' }} {{ c.repayment.accountName }}
+          @if (c.repayment.interest > 0) {, and its ₹{{ fmt(c.repayment.interest) }} of interest leaves your {{ c.loan.direction === 'lent' ? 'income' : 'expenses' }}}.
+          The repayment stays in the history, marked reversed.
+        </p>
+        <div class="et-popup-actions">
+          <button type="button" class="et-btn-ghost" [disabled]="busy" (click)="confirmReverse = null">Keep it</button>
+          <button type="button" class="et-btn-danger" [disabled]="busy" (click)="onConfirmReverse()">Reverse repayment</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (confirmCancel; as l) {
+    <div class="et-overlay loans-confirm">
+      <div class="et-popup" role="dialog" aria-modal="true" aria-labelledby="cancel-title">
+        <h3 id="cancel-title">Cancel {{ l.personName }}'s record?</h3>
+        <p class="et-popup-body">
+          The ₹{{ fmt(l.principal) }} {{ l.direction === 'lent' ? 'goes back into' : 'comes back out of' }} {{ l.accountName }}@if (l.repaymentCount > 0) {,
+          and its {{ l.repaymentCount }} {{ l.repaymentCount === 1 ? 'repayment is' : 'repayments are' }} reversed in their own accounts}.
+          Nothing is deleted: the record and its history stay, marked cancelled. This can't be undone.
+        </p>
+        <label class="et-field-label" for="cancel-reason">Reason <span class="opt">(optional)</span></label>
+        <input id="cancel-reason" class="et-field" maxlength="200" autocomplete="off" [(ngModel)]="cancelReason">
+        <div class="et-popup-actions">
+          <button type="button" class="et-btn-ghost" [disabled]="busy" (click)="confirmCancel = null">Keep it</button>
+          <button type="button" class="et-btn-danger" [disabled]="busy" (click)="onConfirmCancel()">Cancel record</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

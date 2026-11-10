@@ -229,6 +229,25 @@ describe('HeaderComponent — Planning menu', () => {
     expect(recurring.querySelector('.nav-badge')!.textContent).toContain('2');
   });
 
+  it('lists Lending & Borrowing directly above Settings, for a sign-in that may see balances', () => {
+    header.showBalanceManagement = true;
+    click(el().querySelector('.profile-btn') as HTMLElement);
+    const items = Array.from(el().querySelectorAll('.profile-dropdown a')).map(a => a.textContent!.replace(/\s+/g, ' ').trim());
+    const lending = items.findIndex(i => i.includes('Lending & Borrowing'));
+
+    expect(lending).toBeGreaterThan(-1);
+    expect(items[lending + 1]).toContain('Settings');
+    expect(el().querySelector('.profile-dropdown a[href="/loans"]')).not.toBeNull();
+    expect(Array.from(el().querySelectorAll('.nav-links a')).some(a => a.textContent!.includes('Lending'))).toBeFalse();
+  });
+
+  it('leaves Lending & Borrowing out where balances are hidden', () => {
+    header.showBalanceManagement = false;
+    click(el().querySelector('.profile-btn') as HTMLElement);
+
+    expect(el().querySelector('.profile-dropdown a[href="/loans"]')).toBeNull();
+  });
+
   it('no longer lists Savings Goals in the account menu', () => {
     click(el().querySelector('.profile-btn') as HTMLElement);
     const items = Array.from(el().querySelectorAll('.profile-dropdown a')).map(a => a.textContent!.trim());

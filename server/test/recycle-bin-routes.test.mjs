@@ -126,7 +126,7 @@ function ledger({ flags = {}, expenses = [], incomes = [], balances = null } = {
   });
 
   // ---- restoring
-  db.on(/delete_reversed\s+from expenses\s+where id = \$1 and user_id = \$2\s+for update/, ([id, user]) => {
+  db.on(/delete_reversed\s+from expenses\s+where id = \$1 and user_id = \$2 and loan_repayment_id is null\s+for update/, ([id, user]) => {
     const e = mine(state.expenses, id, user);
     return e ? [{ ...e }] : [];
   });
@@ -144,7 +144,7 @@ function ledger({ flags = {}, expenses = [], incomes = [], balances = null } = {
     const e = mine(state.expenses, id, user);
     return e ? [{ description: e.description, deleted_at: e.deleted_at }] : [];
   });
-  db.on(/delete_reversed\s+from incomes\s+where id = \$1 and user_id = \$2\s+for update/, ([id, user]) => {
+  db.on(/delete_reversed\s+from incomes\s+where id = \$1 and user_id = \$2 and loan_repayment_id is null\s+for update/, ([id, user]) => {
     const i = mine(state.incomes, id, user);
     return i ? [{ ...i }] : [];
   });

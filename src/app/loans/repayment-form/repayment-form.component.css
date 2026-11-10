@@ -1,0 +1,17 @@
+/* What is owed, and the quick amounts. The form's frame is the editor's stylesheet. */
+
+.owed { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+.owed > div { display: flex; flex-direction: column; gap: 1px; padding: 0.45rem 0.625rem; border-radius: 10px; background-color: var(--sunken); }
+.owed span { font-size: 0.6875rem; font-weight: 600; color: var(--ink-2); }
+.owed strong { font-size: 0.9375rem; font-weight: 800; }
+.owed .total { background-color: var(--accent-soft); }
+.owed .total strong { color: var(--accent-ink); }
+.owed .hint { grid-column: 1 / -1; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-top: 0.5rem; }
+.chip { min-height: 32px; padding: 0 0.75rem; border-radius: 999px; border: 1px solid var(--field-border); background-color: var(--surface); color: var(--accent-ink); font: inherit; font-size: 0.78rem; font-weight: 700; cursor: pointer; }
+.chip:hover { border-color: var(--focus-border); }
+
+@media (max-width: 560px) {
+  .owed { grid-template-columns: minmax(0, 1fr); }
+}

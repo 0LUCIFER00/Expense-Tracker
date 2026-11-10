@@ -83,7 +83,10 @@ function toApi(row, { canViewSource }) {
     attachmentCount: Number(row.attachment_count ?? 0),
     // Set when the entry came from an imported file: its name, and the Notes
     // and Payment Method cells, which have no field of their own.
-    imported: row.import_info ?? null
+    imported: row.import_info ?? null,
+    // Set when this is interest paid on a debt, filed by Lending & Borrowing;
+    // it is undone by reversing that repayment, not removed here.
+    loanRepaymentId: row.loan_repayment_id ?? null
   };
 }
 
@@ -91,7 +94,7 @@ const SELECT_COLUMNS = `
   id, amount, description, spent_on, category,
   source_id, source_type, source_category,
   expense_access, update_permission, balance_updated, status, remarks, created_at,
-  split_members, split_share, personal_share
+  split_members, split_share, personal_share, loan_repayment_id
 `;
 
 expensesRouter.get('/', asyncRoute(async (req, res) => {
@@ -295,10 +298,21 @@ expensesRouter.delete('/:id', asyncRoute(async (req, res) => {
   // Shared with WhatsApp's "undo": removing an entry that debited an account
   // puts the money back, so the balances keep matching the list.
   // Into Recently deleted, not gone: restorable for 30 days.
-  const removed = await removeExpense(req.session.userId, {
-    expenseId: req.params.id,
-    via: req.session.loginType === 'admin' ? 'admin' : 'user'
-  });
+  let removed;
+
+  try {
+    removed = await removeExpense(req.session.userId, {
+      expenseId: req.params.id,
+      via: req.session.loginType === 'admin' ? 'admin' : 'user'
+    });
+  } catch (error) {
+    // Interest filed by Lending & Borrowing is undone there, not here.
+    if (error.status) {
+      return res.status(error.status).json({ error: error.message });
+    }
+
+    throw error;
+  }
 
   if (!removed) {
     return notFound(res, 'Expense not found');

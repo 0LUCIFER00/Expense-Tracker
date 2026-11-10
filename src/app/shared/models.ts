@@ -69,6 +69,8 @@ export interface Expense {
   attachmentCount?: number;
   /** Set when it came from an imported file. */
   imported?: ImportedFrom | null;
+  /** Set when this is interest paid on a debt, filed by Lending & Borrowing. */
+  loanRepaymentId?: string | null;
 }
 
 /** Where an imported entry came from, with the cells the app has no field for. */
@@ -192,6 +194,8 @@ export interface Income {
   splitDescription?: string | null;
   /** Set when it came from an imported file. */
   imported?: ImportedFrom | null;
+  /** Set when this is interest received on a loan, filed by Lending & Borrowing. */
+  loanRepaymentId?: string | null;
 }
 
 /** What the Add Money form sends. */
@@ -504,6 +508,8 @@ export interface AccountUsage {
   incomes: number;
   transfers: number;
   schedules: number;
+  /** Lending and borrowing records, and their repayments, that used it. */
+  loans?: number;
   deletable: boolean;
   reasons: string[];
 }
@@ -550,4 +556,123 @@ export interface RestoredEntry {
   account: string | null;
   balanceAfter: number | null;
   budgetAlerts: BudgetAlert[];
+}
+
+/* ---------------------------------------------------------------- lending & borrowing */
+
+export type LoanDirection = 'lent' | 'borrowed';
+export type LoanStatus = 'active' | 'partial' | 'completed' | 'overdue' | 'cancelled';
+export type InterestPeriod = 'month' | 'year';
+
+export interface LoanInterest {
+  type: 'none' | 'simple';
+  /** A percentage, such as 1.5; null without interest. */
+  rate: number | null;
+  period: InterestPeriod | null;
+  label: string;
+}
+
+/** A record of money given or received, with every figure worked out by the API as of today. */
+export interface Loan {
+  id: string;
+  direction: LoanDirection;
+  personName: string;
+  contact: string | null;
+  principal: number;
+  date: string;
+  dueDate: string | null;
+  accountId: string;
+  accountType: string;
+  accountName: string;
+  interest: LoanInterest;
+  notes: string | null;
+  status: LoanStatus;
+  cancelledAt: string | null;
+  cancelReason: string | null;
+  principalRepaid: number;
+  interestAccrued: number;
+  interestPaid: number;
+  totalRepaid: number;
+  principalOutstanding: number;
+  interestOutstanding: number;
+  outstanding: number;
+  /** What would be owed on the expected date if nothing more were paid; null without one. */
+  outstandingAtDue: number | null;
+  repaymentCount: number;
+  lastPaidOn: string | null;
+  /** The amount, date and interest can change only until a repayment is recorded. */
+  termsEditable: boolean;
+  createdAt: string;
+}
+
+export interface LoanRepayment {
+  id: string;
+  loanId: string;
+  direction: LoanDirection | null;
+  personName: string | null;
+  amount: number;
+  principal: number;
+  interest: number;
+  date: string;
+  accountId: string;
+  accountType: string;
+  accountName: string;
+  note: string | null;
+  reversed: boolean;
+  reversedAt: string | null;
+  reversedReason: 'reversed' | 'cancelled' | null;
+  createdAt: string;
+}
+
+export interface LoansSummary {
+  totalLent: number;
+  totalBorrowed: number;
+  toReceive: number;
+  toPay: number;
+  interestReceived: number;
+  interestPaid: number;
+  interestExpected: number;
+  interestOwed: number;
+  overdue: number;
+  open: number;
+}
+
+export interface LoansOverview {
+  today: string;
+  canManage: boolean;
+  canBackdate: boolean;
+  loans: Loan[];
+  repayments: LoanRepayment[];
+  summary: LoansSummary;
+}
+
+/** What the editor sends, to record or change a record. */
+export interface LoanDraft {
+  direction: LoanDirection;
+  personName: string;
+  contact: string | null;
+  amount: number;
+  date: string;
+  accountId: string;
+  dueDate: string | null;
+  interest: { type: 'none' } | { type: 'simple'; rate: number; period: InterestPeriod };
+  notes: string | null;
+  requestId?: string;
+}
+
+export interface RepaymentDraft {
+  amount: number;
+  accountId: string;
+  date: string;
+  note: string | null;
+  requestId: string;
+}
+
+/** What is owed on a date: interest due first, then principal. */
+export interface LoanQuote {
+  date: string;
+  principalDue: number;
+  interestDue: number;
+  totalDue: number;
+  lastPaidOn: string | null;
 }

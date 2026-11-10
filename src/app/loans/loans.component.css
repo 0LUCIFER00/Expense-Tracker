@@ -1,0 +1,92 @@
+/* The page frame, the totals and the list. The chosen record is in loans-detail.css. */
+
+:host { display: block; color: var(--ink); }
+
+.loans-page { max-width: 1280px; margin: 0 auto; padding: clamp(1rem, 3vw, 1.5rem) clamp(1rem, 3vw, 1.5rem) 2rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.page-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.page-title { margin: 0; font-size: 1.375rem; font-weight: 800; }
+.page-sub { margin: 0.125rem 0 0; font-size: 0.8125rem; color: var(--ink-2); }
+.head-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.new-btn { gap: 0.5rem; min-height: 38px; }
+.new-btn svg, .ib svg { fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+
+.card { background-color: var(--surface); border: 1px solid var(--surface-border); border-radius: 14px; box-shadow: var(--shadow); }
+.pad { padding: 1rem; }
+.skeleton { height: 8rem; }
+.error-text { color: var(--bad-ink); }
+.card-title { margin: 0; font-size: 0.9375rem; font-weight: 800; color: var(--accent-ink); }
+
+.loans-grid { display: grid; gap: 0.75rem; }
+.main-col { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
+
+.summary { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); overflow: hidden; }
+.stat { display: flex; flex-direction: column; min-width: 0; padding: 0.5rem 0.875rem; border-right: 1px solid var(--rule); }
+.stat:last-child { border-right: 0; }
+.lbl { font-size: 0.75rem; font-weight: 600; color: var(--ink-2); }
+.val { font-size: 1.125rem; font-weight: 800; color: var(--accent-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat.in .val { color: var(--good-ink); }
+.stat.out .val { color: var(--bad-ink); }
+.sub { font-size: 0.6875rem; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.list-card { display: flex; flex-direction: column; overflow: hidden; }
+.list-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.5rem 0.875rem; }
+.tabs { display: flex; flex-wrap: wrap; gap: 3px; padding: 3px; border-radius: 10px; background-color: var(--sunken); }
+.tab { border: 0; background: transparent; font: inherit; font-size: 0.8rem; font-weight: 700; color: var(--ink-2); padding: 0.3rem 0.65rem; border-radius: 8px; cursor: pointer; }
+.tab.on { background-color: var(--accent); color: #fff; }
+
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 0 0.875rem 0.625rem; }
+.filters .et-field { width: auto; min-width: 0; height: 36px; padding: 0.35rem 0.6rem; font-size: 0.8125rem; }
+.filters .f-person { flex: 1 1 9rem; }
+
+.rows { display: flex; flex-direction: column; gap: 0.5rem; padding: 0 0.875rem 0.875rem; }
+.item, .h-item { width: 100%; display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; text-align: left; font: inherit; color: inherit; cursor: pointer; background-color: var(--surface); border: 1px solid var(--rule-strong); border-radius: 12px; }
+.item:hover, .h-item:hover { border-color: var(--focus-border); }
+.item:focus-visible, .h-item:focus-visible { outline: 2px solid var(--focus-border); outline-offset: 2px; }
+.item.sel { border: 2px solid var(--accent); padding: calc(0.6rem - 1px) calc(0.75rem - 1px); }
+
+.i-main, .h-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.i-side, .h-amt { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+.i-side strong, .h-amt strong { font-size: 0.9375rem; font-weight: 800; }
+.name { font-size: 0.875rem; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dir { font-weight: 600; font-size: 0.75rem; color: var(--ink-2); }
+.meta { font-size: 0.72rem; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.in { color: var(--good-ink); }
+.out { color: var(--bad-ink); }
+.h-item.reversed { opacity: 0.65; }
+.h-item.reversed strong { text-decoration: line-through; }
+
+.bar { display: block; width: 100%; max-width: 16rem; height: 6px; margin-top: 3px; border-radius: 999px; background-color: var(--rule); overflow: hidden; }
+.fill { display: block; height: 100%; border-radius: 999px; background-color: var(--accent); }
+
+.empty { padding: 1.5rem 1rem; text-align: center; font-size: 0.875rem; color: var(--ink-2); }
+.none { margin: 0; padding: 1rem 0.25rem; font-size: 0.8125rem; color: var(--ink-2); }
+
+.loans-panel { width: 100%; max-width: 560px; display: flex; flex-direction: column; background-color: var(--surface); border-radius: 14px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25); overflow: hidden; }
+
+@media (max-width: 1180px) {
+  .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .stat:nth-child(3) { border-right: 0; }
+  .stat:nth-child(-n + 3) { border-bottom: 1px solid var(--rule); }
+}
+
+@media (max-width: 560px) {
+  .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat { border-right: 0; border-bottom: 1px solid var(--rule); }
+  .stat:nth-child(odd) { border-right: 1px solid var(--rule); }
+  .filters .et-field { flex: 1 1 45%; }
+  .head-actions, .head-actions > * { flex: 1; }
+}
+
+@media (min-width: 1000px) {
+  .loans-grid { grid-template-columns: minmax(0, 1fr) 22rem; align-items: start; }
+}
+
+/* Desktop: fit the window; the list and the repayments scroll inside their cards. */
+@media (min-width: 1000px) and (min-height: 560px) {
+  :host { display: flex; flex-direction: column; min-height: 0; }
+  .loans-page { flex: 1; min-height: 0; width: 100%; box-sizing: border-box; padding-top: 0.75rem; padding-bottom: 0.75rem; }
+  .loans-grid { flex: 1; min-height: 0; align-items: stretch; }
+  .main-col, .list-card { min-height: 0; }
+  .list-card { flex: 1 1 auto; }
+  .rows { min-height: 0; overflow-y: auto; }
+}

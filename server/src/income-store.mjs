@@ -4,7 +4,7 @@ import { lockSplit } from './split-store.mjs';
 const COLUMNS = `
   id, amount, description, received_on, category,
   target_id, target_type, target_category, balance_updated, source_channel, created_at,
-  split_expense_id
+  split_expense_id, loan_repayment_id
 `;
 
 const money = value => `₹${Number(value).toLocaleString('en-IN')}`;
@@ -108,9 +108,9 @@ export async function insertIncome(client, userId, entry) {
     `insert into incomes (
        user_id, amount, description, received_on, category,
        target_id, target_type, target_category, balance_updated, source_channel,
-       split_expense_id, recurring_run_id
+       split_expense_id, recurring_run_id, loan_repayment_id
      )
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
      returning ${COLUMNS}`,
     [
       userId, entry.amount, entry.description, entry.receivedOn,
@@ -119,7 +119,9 @@ export async function insertIncome(client, userId, entry) {
       target?.id ?? null, target?.type ?? null, target?.category ?? null,
       credit, entry.channel ?? 'web',
       split?.id ?? null,
-      entry.recurringRunId ?? null
+      entry.recurringRunId ?? null,
+      // Interest received on a loan: the repayment it came with.
+      entry.loanRepaymentId ?? null
     ]
   );
 
@@ -178,6 +180,14 @@ export function removeIncome(userId, { incomeId = null, lastFromChannel = null, 
 
     if (!income) {
       return null;
+    }
+
+    // Interest received on a loan is undone by reversing its repayment.
+    if (income.loan_repayment_id) {
+      throw Object.assign(
+        new Error('This interest was recorded with a repayment in Lending & Borrowing. Reverse that repayment there instead.'),
+        { status: 409 }
+      );
     }
 
     let reversed = false;

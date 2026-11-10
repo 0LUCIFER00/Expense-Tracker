@@ -2,8 +2,16 @@ import { transaction } from './db.mjs';
 
 const COLUMNS = `
   id, amount, description, spent_on, source_id, source_category,
-  balance_updated, status, source_channel
+  balance_updated, status, source_channel, loan_repayment_id
 `;
+
+/**
+ * Interest paid on a debt is an expense filed by Lending & Borrowing. Removing
+ * it on its own would leave the debt and the account disagreeing, so it is
+ * undone by reversing the repayment there instead.
+ */
+export const LOAN_LINKED_MESSAGE =
+  'This interest was recorded with a repayment in Lending & Borrowing. Reverse that repayment there instead.';
 
 /**
  * Records an expense inside the caller's transaction, debiting the account
@@ -15,7 +23,8 @@ const COLUMNS = `
  * nothing has been written when it does.
  *
  * @param entry { amount, description, date, category, sourceId, updateBalance,
- *   canBackdate, status, members, split, remarks?, recurringRunId? }
+ *   canBackdate, status, members, split, remarks?, recurringRunId?,
+ *   loanRepaymentId? } — the last links interest paid on a debt to its repayment
  * @param returning the columns to hand back
  */
 export async function insertExpense(client, userId, entry, returning = 'id, spent_on, status') {
@@ -65,16 +74,17 @@ export async function insertExpense(client, userId, entry, returning = 'id, spen
        user_id, amount, description, spent_on, category,
        source_id, source_type, source_category,
        expense_access, update_permission, balance_updated, status, remarks,
-       split_members, split_share, personal_share, recurring_run_id
+       split_members, split_share, personal_share, recurring_run_id, loan_repayment_id
      )
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
      returning ${returning}`,
     [
       userId, amount, entry.description, entry.date, entry.category,
       source?.id ?? null, source?.type ?? null, source?.category ?? null,
       updateBalance, entry.canBackdate, debit, status, remarks,
       entry.members ?? null, entry.split?.share ?? null, entry.split?.personal ?? null,
-      entry.recurringRunId ?? null
+      entry.recurringRunId ?? null,
+      entry.loanRepaymentId ?? null
     ]
   );
 
@@ -129,6 +139,10 @@ export function removeExpense(userId, { expenseId = null, lastFromChannel = null
 
     if (!expense) {
       return null;
+    }
+
+    if (expense.loan_repayment_id) {
+      throw Object.assign(new Error(LOAN_LINKED_MESSAGE), { status: 409 });
     }
 
     let refunded = false;

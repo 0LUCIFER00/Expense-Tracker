@@ -155,7 +155,9 @@ export async function accountUsage(userId, accountId) {
             (select count(*)::int from account_transfers t
               where t.from_account_id = b.id or t.to_account_id = b.id) as transfers,
             (select count(*)::int from recurring_schedules r
-              where r.account_id = b.id and r.status <> 'completed') as schedules
+              where r.account_id = b.id and r.status <> 'completed') as schedules,
+            (select count(*)::int from loans l where l.account_id = b.id)
+              + (select count(*)::int from loan_repayments p where p.account_id = b.id) as loans
        from balances b
       where b.id = $1 and b.user_id = $2`,
     [accountId, userId]
@@ -175,7 +177,8 @@ export async function accountUsage(userId, accountId) {
   const history = [
     [usage.expenses, 'expense', 'expenses'],
     [usage.incomes, 'income entry', 'income entries'],
-    [usage.transfers, 'transfer', 'transfers']
+    [usage.transfers, 'transfer', 'transfers'],
+    [usage.loans, 'lending or borrowing record', 'lending and borrowing records']
   ].filter(([count]) => count > 0).map(([count, one, many]) => `${count} ${count === 1 ? one : many}`);
 
   if (history.length) {
@@ -196,6 +199,7 @@ export async function accountUsage(userId, accountId) {
     incomes: usage.incomes,
     transfers: usage.transfers,
     schedules: usage.schedules,
+    loans: usage.loans ?? 0,
     deletable: reasons.length === 0,
     reasons
   };

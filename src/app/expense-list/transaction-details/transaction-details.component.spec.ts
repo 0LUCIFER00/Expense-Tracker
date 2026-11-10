@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { TransactionDetailsComponent } from './transaction-details.component';
 import { Expense, Income, SplitSummary } from '../../shared/models';
 
@@ -37,7 +38,7 @@ describe('TransactionDetailsComponent', () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       imports: [TransactionDetailsComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()]
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()]
     });
     http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(TransactionDetailsComponent);
@@ -57,6 +58,23 @@ describe('TransactionDetailsComponent', () => {
   afterEach(() => http.verify());
 
   const el = () => fixture.nativeElement as HTMLElement;
+
+  describe('interest from Lending & Borrowing', () => {
+    it('is not removed here: it points to the repayment that undoes it', () => {
+      open({ expense: null, income: { ...INCOME, splitExpenseId: null, category: 'Interest', description: 'Interest from Asha', loanRepaymentId: 'r1' } });
+
+      expect(el().textContent).toContain('reverse that repayment there');
+      expect(el().querySelector('a[href="/loans"]')).not.toBeNull();
+      expect(Array.from(el().querySelectorAll('button')).some(b => b.textContent!.includes('Remove entry'))).toBeFalse();
+    });
+
+    it('nor is interest paid on a debt', () => {
+      open({ expense: { ...EXPENSE, loanRepaymentId: 'r2' } as Expense });
+
+      expect(Array.from(el().querySelectorAll('button')).some(b => b.textContent!.includes('Remove entry'))).toBeFalse();
+      expect(el().querySelector('a[href="/loans"]')).not.toBeNull();
+    });
+  });
 
   describe('an expense', () => {
     it('shows the amount, the account it was paid from and when it was added', () => {

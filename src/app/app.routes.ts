@@ -70,6 +70,13 @@ export const routes: Routes = [
     canActivate: [authGuard, balanceGuard],
     loadComponent: () => import('./bal-mnt/bal-mnt.component').then(m => m.BalMntComponent)
   },
+  // Lending & Borrowing: in the account menu, above Settings. It names
+  // accounts and moves money in them, so it needs what Cash & Accounts needs.
+  {
+    path: 'loans',
+    canActivate: [authGuard, balanceGuard],
+    loadComponent: () => import('./loans/loans.component').then(m => m.LoansComponent)
+  },
   // The page was called Balance Management; keep its old address working.
   { path: 'bal-mnt', redirectTo: 'money' },
   {

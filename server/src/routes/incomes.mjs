@@ -41,7 +41,9 @@ function toApi(row, { canViewSource }) {
     splitExpenseId: row.split_expense_id ?? null,
     splitDescription: row.split_description ?? null,
     // As on an expense: where an imported entry came from, with its notes.
-    imported: row.import_info ?? null
+    imported: row.import_info ?? null,
+    // Interest received on a loan, filed by Lending & Borrowing.
+    loanRepaymentId: row.loan_repayment_id ?? null
   };
 }
 
@@ -167,10 +169,21 @@ incomesRouter.delete('/:id', asyncRoute(async (req, res) => {
   }
 
   // Into Recently deleted, not gone: restorable for 30 days.
-  const removed = await removeIncome(req.session.userId, {
-    incomeId: req.params.id,
-    via: req.session.loginType === 'admin' ? 'admin' : 'user'
-  });
+  let removed;
+
+  try {
+    removed = await removeIncome(req.session.userId, {
+      incomeId: req.params.id,
+      via: req.session.loginType === 'admin' ? 'admin' : 'user'
+    });
+  } catch (error) {
+    // Interest filed by Lending & Borrowing is undone there, not here.
+    if (error.status) {
+      return res.status(error.status).json({ error: error.message });
+    }
+
+    throw error;
+  }
 
   if (!removed) {
     return notFound(res, 'Entry not found');

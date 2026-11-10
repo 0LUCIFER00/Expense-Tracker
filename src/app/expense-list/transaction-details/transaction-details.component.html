@@ -130,7 +130,18 @@
     }
   </div>
 
-  @if (canRemove || (pending && canApprove)) {
+  @if (fromLoan) {
+    <footer class="foot">
+      <p class="foot-note">
+        Interest from a repayment in Lending &amp; Borrowing. To undo it, reverse that repayment there.
+      </p>
+      <div class="foot-actions">
+        <a class="btn ghost" routerLink="/loans">Open Lending &amp; Borrowing</a>
+      </div>
+    </footer>
+  }
+
+  @if (removable || (pending && canApprove)) {
     <footer class="foot">
       @if (confirmEntry) {
         <p class="foot-note strong">Remove this entry? {{ removeNote }}</p>
@@ -139,14 +150,14 @@
           <button type="button" class="btn danger-solid" (click)="remove.emit()">Yes, remove</button>
         </div>
       } @else {
-        @if (canRemove) {
+        @if (removable) {
           <p class="foot-note">{{ removeNote }}</p>
         }
         <div class="foot-actions">
           @if (pending && canApprove) {
             <button type="button" class="btn good" (click)="approve.emit()">Approve</button>
           }
-          @if (canRemove) {
+          @if (removable) {
             <button type="button" class="btn danger" (click)="confirmEntry = true">
               <svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" /></svg>
               Remove entry

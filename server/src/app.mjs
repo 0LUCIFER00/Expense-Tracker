@@ -11,6 +11,7 @@ import { budgetsRouter } from './routes/budgets.mjs';
 import { recurringRouter } from './routes/recurring.mjs';
 import { goalsRouter } from './routes/goals.mjs';
 import { transfersRouter } from './routes/transfers.mjs';
+import { loansRouter } from './routes/loans.mjs';
 import { attachmentsRouter } from './routes/attachments.mjs';
 import { importsRouter } from './routes/imports.mjs';
 import { recycleBinRouter } from './routes/recycle-bin.mjs';
@@ -143,6 +144,7 @@ export function createApp() {
   app.use('/api/recurring', recurringRouter);
   app.use('/api/goals', goalsRouter);
   app.use('/api/transfers', transfersRouter);
+  app.use('/api/loans', loansRouter);
   app.use('/api/imports', importsRouter);
   app.use('/api/recycle-bin', recycleBinRouter);
   app.use('/api/balances', balancesRouter);

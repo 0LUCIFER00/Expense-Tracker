@@ -1,0 +1,125 @@
+<form class="editor" (ngSubmit)="onSubmit()" novalidate>
+  <header class="ed-head">
+    <div>
+      <h2 class="ed-title" id="loan-editor-title">
+        {{ editing ? 'Change ' + loan!.personName : lent ? 'Money given' : 'Money received' }}
+      </h2>
+      <p class="ed-sub">
+        {{ lent ? 'Money you lent. It leaves your account but is not spending.' : 'Money you borrowed. It arrives in your account but is not income.' }}
+      </p>
+    </div>
+    <button type="button" class="ed-close" aria-label="Close" (click)="cancel.emit()">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+    </button>
+  </header>
+
+  <div class="ed-body">
+    @if (!editing) {
+      <div class="kind" role="radiogroup" aria-label="Given or received">
+        <button type="button" role="radio" class="kind-btn" [class.on]="lent" [attr.aria-checked]="lent"
+          (click)="setDirection('lent')">I gave money</button>
+        <button type="button" role="radio" class="kind-btn" [class.on]="!lent" [attr.aria-checked]="!lent"
+          (click)="setDirection('borrowed')">I received money</button>
+      </div>
+    }
+
+    <div class="grid">
+      <div>
+        <label class="et-field-label" for="l-name">{{ lent ? 'Given to' : 'Received from' }}</label>
+        <input id="l-name" class="et-field" name="personName" maxlength="80" autocomplete="off" [(ngModel)]="personName">
+      </div>
+      <div>
+        <label class="et-field-label" for="l-contact">Contact <span class="opt">(optional)</span></label>
+        <input id="l-contact" class="et-field" name="contact" maxlength="120" autocomplete="off" placeholder="Phone or email"
+          [(ngModel)]="contact">
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <label class="et-field-label" for="l-amount">Amount (₹)</label>
+        <input id="l-amount" class="et-field amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01"
+          [disabled]="termsLocked" [(ngModel)]="amount">
+      </div>
+      <div>
+        <label class="et-field-label" for="l-date">{{ lent ? 'Date given' : 'Date received' }}</label>
+        <input id="l-date" class="et-field" name="date" type="date" [max]="today" [disabled]="termsLocked || !canBackdate"
+          [(ngModel)]="date">
+      </div>
+    </div>
+
+    <div>
+      <label class="et-field-label" for="l-account">{{ lent ? 'Given from' : 'Received into' }}</label>
+      <select id="l-account" class="et-field" name="accountId" [disabled]="editing" [(ngModel)]="accountId">
+        <option value="" disabled>Choose an account</option>
+        @for (a of accounts; track a.id) {
+          <option [value]="a.id">{{ accountLabel(a) }}</option>
+        }
+      </select>
+      @if (editing) {
+        <p class="hint">The account can't be changed. To use another, cancel this record and add it again.</p>
+      } @else if (accounts.length === 0) {
+        <p class="hint warn">Add an account on Cash &amp; Accounts first.</p>
+      }
+    </div>
+
+    <div>
+      <label class="et-field-label" for="l-due">Expected repayment <span class="opt">(optional)</span></label>
+      <input id="l-due" class="et-field" name="dueDate" type="date" [min]="date" [(ngModel)]="dueDate">
+    </div>
+
+    <fieldset class="interest" [disabled]="termsLocked">
+      <label class="check">
+        <input type="checkbox" name="withInterest" [(ngModel)]="withInterest">
+        <span>{{ lent ? 'I charge interest' : 'I pay interest' }}</span>
+      </label>
+      @if (withInterest) {
+        <div class="grid">
+          <div>
+            <label class="et-field-label" for="l-rate">Rate (%)</label>
+            <input id="l-rate" class="et-field" name="rate" type="number" inputmode="decimal" min="0.01" max="100" step="0.01"
+              [(ngModel)]="rate">
+          </div>
+          <div>
+            <label class="et-field-label" for="l-period">Per</label>
+            <select id="l-period" class="et-field" name="period" [(ngModel)]="period">
+              <option value="month">Month</option>
+              <option value="year">Year</option>
+            </select>
+          </div>
+        </div>
+        <p class="hint">
+          Simple interest on the principal still owed, counted by the day. Never compounded: unpaid interest earns
+          nothing. Repayments pay interest first, then principal. Interest {{ lent ? 'received counts as income' : 'paid counts as an expense' }}.
+        </p>
+      }
+    </fieldset>
+
+    <div>
+      <label class="et-field-label" for="l-notes">Notes <span class="opt">(optional)</span></label>
+      <input id="l-notes" class="et-field" name="notes" maxlength="300" autocomplete="off" [(ngModel)]="notes">
+    </div>
+
+    @if (termsLocked) {
+      <p class="hint">The amount, date and interest are fixed once a repayment is recorded.</p>
+    }
+
+    @if (after !== null && account) {
+      <div class="after" [class.out]="lent">
+        <strong>{{ account.category }} after this: ₹{{ after | number: '1.0-2' }}</strong>
+        <span>{{ lent ? 'Not counted as spending, and no budget changes.' : 'Not counted as income.' }}</span>
+      </div>
+    }
+
+    @if (error || serverError) {
+      <p class="err" role="alert">{{ error || serverError }}</p>
+    }
+  </div>
+
+  <footer class="ed-foot">
+    <button type="button" class="et-btn-ghost" [disabled]="busy" (click)="cancel.emit()">Cancel</button>
+    <button type="submit" class="et-btn-primary" [disabled]="busy || (!editing && accounts.length === 0)">
+      {{ busy ? 'Saving…' : editing ? 'Save changes' : lent ? 'Record money given' : 'Record money received' }}
+    </button>
+  </footer>
+</form>
