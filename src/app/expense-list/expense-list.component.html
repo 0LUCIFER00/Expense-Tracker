@@ -52,14 +52,11 @@
             {{ t.label }}
           </button>
         }
-        <!-- Under the three, across their width: removed entries, for 30 days. -->
+        <!-- After Credit: removed entries, kept 30 days (Recently deleted). -->
         <button type="button" role="tab" class="tab tab-deleted"
           [class.on]="tab === 'deleted'" [attr.aria-selected]="tab === 'deleted'"
-          (click)="onTab('deleted')">
-          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-            <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />
-          </svg>
-          Recently deleted
+          title="Recently deleted" (click)="onTab('deleted')">
+          Deleted
         </button>
       </div>
 
@@ -118,7 +115,16 @@
       <app-recently-deleted (restored)="onImported()" />
     } @else {
 
-    <h1 class="list-title">{{ listTitle }}</h1>
+    <!-- The heading, and a search across description, category and account. -->
+    <div class="list-head">
+      <h1 class="list-title">{{ listTitle }}</h1>
+      <label class="list-search">
+        <span class="sr-only">Search transactions</span>
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" /></svg>
+        <input type="search" placeholder="Search transactions" autocomplete="off"
+          [value]="searchText" (input)="onSearch($event)" />
+      </label>
+    </div>
 
     <!-- Wide enough that a phone scrolls it sideways rather than squeezing. -->
     <div class="table-scroll">

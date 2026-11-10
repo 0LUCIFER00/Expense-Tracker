@@ -734,7 +734,7 @@ html[data-theme='dark'] {
     flex-direction: column;
   }
 
-  body.fits-screen app-expense-list .list-title,
+  body.fits-screen app-expense-list .list-head,
   body.fits-screen app-expense-list .table-note,
   body.fits-screen app-expense-list .no-record {
     flex-shrink: 0;

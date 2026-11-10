@@ -638,11 +638,72 @@ describe('ExpenseListComponent', () => {
       expect(reset().disabled).toBeTrue();
     });
 
+    it('puts Deleted after Credit, in the same row of tabs', () => {
+      const fixture = load([expense()]);
+      const tabs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.tx-panel [role="tab"]'))
+        .map(t => t.textContent!.trim());
+
+      expect(tabs).toEqual(['All', 'Debit', 'Credit', 'Deleted']);
+    });
+
+    it('searches the list by description, category or account, and the totals follow', () => {
+      const fixture = load(
+        [
+          expense({ id: 'e1', description: 'Coffee', amount: 100, category: 'Food & Drink', sourceCategory: 'Paytm' }),
+          expense({ id: 'e2', description: 'Bus pass', amount: 30, category: 'Travel', sourceCategory: 'Cash' })
+        ],
+        {},
+        [],
+        [income({ description: 'October salary', amount: 50000 })]
+      );
+      const el = fixture.nativeElement as HTMLElement;
+      const search = el.querySelector<HTMLInputElement>('.list-search input')!;
+      const type = (text: string) => {
+        search.value = text;
+        search.dispatchEvent(new Event('input'));
+        fixture.detectChanges();
+      };
+
+      type('coff');
+      expect(component.rows.map(r => r.description)).toEqual(['Coffee']);
+      expect(component.total).toBe(100);
+      expect(component.moneyIn).toBe(0);
+
+      type('TRAVEL');
+      expect(component.rows.map(r => r.description)).toEqual(['Bus pass']);
+
+      type('hdfc');
+      expect(component.rows.map(r => r.description)).toEqual(['October salary']);
+      expect(component.moneyIn).toBe(50000);
+
+      type('nothing like this');
+      expect(component.rows.length).toBe(0);
+      expect(el.textContent).toContain('No record found');
+    });
+
+    it('clears the search with Reset', () => {
+      const fixture = load([expense({ description: 'Coffee' }), expense({ id: 'e2', description: 'Bus' })]);
+      const el = fixture.nativeElement as HTMLElement;
+      const search = el.querySelector<HTMLInputElement>('.list-search input')!;
+
+      search.value = 'bus';
+      search.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(component.hasFilters).toBeTrue();
+
+      el.querySelector<HTMLButtonElement>('.reset-btn')!.click();
+      fixture.detectChanges();
+
+      expect(component.searchText).toBe('');
+      expect(component.rows.length).toBe(2);
+      expect(search.value).toBe('');
+    });
+
     it('offers Recently deleted as a tab, which shows the bin in place of the list', () => {
       const fixture = load([expense()]);
       const el = fixture.nativeElement as HTMLElement;
       const binTab = Array.from(el.querySelectorAll<HTMLButtonElement>('.tx-panel [role="tab"]'))
-        .find(b => b.textContent!.includes('Recently deleted'))!;
+        .find(b => b.textContent!.trim() === 'Deleted')!;
 
       expect(binTab).toBeTruthy();
       binTab.click();

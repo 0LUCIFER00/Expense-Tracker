@@ -149,32 +149,17 @@
 
 /* ---- what to show ---- */
 
+/* All, Debit, Credit and Deleted, one row of equal pills. */
 .tx-panel .tab-bar {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   height: auto;
 }
 
 .tx-panel .tab {
   height: 34px;
-}
-
-/* Recently deleted: under the three, across their width. */
-.tx-panel .tab-deleted {
-  grid-column: 1 / -1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.375rem;
-  font-weight: 600;
-}
-
-.tab-deleted svg {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  padding-inline: 0.25rem;
+  font-size: 0.8125rem;
 }
 
 .tx-panel .filter select {
@@ -210,8 +195,59 @@
   justify-content: center;
 }
 
+/* The list's heading on the left, its search on the right. */
+.list-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.list-search {
+  flex: 0 1 280px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 36px;
+  box-sizing: border-box;
+  padding: 0 0.75rem;
+  border: 1px solid var(--field-border);
+  border-radius: 8px;
+  background-color: var(--field-bg);
+  color: var(--ink-3);
+}
+
+.list-search svg {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.list-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.list-search input:focus {
+  outline: none;
+}
+
+.list-search:focus-within {
+  border-color: var(--focus-border);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
 .list-title {
-  margin: 0 0 0.75rem;
+  margin: 0;
   font-size: 1.125rem;
   font-weight: 800;
 }

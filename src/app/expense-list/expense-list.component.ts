@@ -113,6 +113,8 @@ export class ExpenseListComponent implements OnInit {
   selectedYear = 0;
   /** '' is "all"; UNCATEGORISED selects the entries with no category. */
   selectedCategory = '';
+  /** Narrows the list (and its totals) to rows whose description, category or account contain it. */
+  searchText = '';
 
   /** Only the categories actually used, so the filter never offers a dead end. */
   usedCategories: string[] = [];
@@ -365,9 +367,15 @@ export class ExpenseListComponent implements OnInit {
     this.applyFilters();
   }
 
+  onSearch(event: Event): void {
+    this.searchText = (event.target as HTMLInputElement).value;
+    this.applyFilters();
+  }
+
   /** True when anything differs from the full list: a tab, year, month or category. */
   get hasFilters(): boolean {
-    return this.tab !== 'all' || this.selectedYear !== 0 || this.selectedMonth !== 0 || !!this.selectedCategory;
+    return this.tab !== 'all' || this.selectedYear !== 0 || this.selectedMonth !== 0 ||
+      !!this.selectedCategory || !!this.searchText.trim();
   }
 
   /** Back to everything: All, every year, month and category. */
@@ -375,6 +383,7 @@ export class ExpenseListComponent implements OnInit {
     this.selectedYear = 0;
     this.selectedMonth = 0;
     this.selectedCategory = '';
+    this.searchText = '';
 
     if (this.tab !== 'all') {
       // Also clears the tab from the address and re-lists the categories.
@@ -416,7 +425,11 @@ export class ExpenseListComponent implements OnInit {
       )
       .map(income => this.fromIncome(income));
 
-    const sorted = this.applySorting([...expenseRows, ...incomeRows]);
+    const needle = this.searchText.trim().toLowerCase();
+    const found = (row: TransactionRow) => !needle ||
+      [row.description, row.category, row.account].some(text => (text ?? '').toLowerCase().includes(needle));
+
+    const sorted = this.applySorting([...expenseRows, ...incomeRows].filter(found));
 
     this.expenses = sorted.filter(row => row.expense).map(row => row.expense!);
     this.incomes = sorted.filter(row => row.income).map(row => row.income!);

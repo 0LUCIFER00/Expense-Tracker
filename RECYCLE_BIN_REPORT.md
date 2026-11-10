@@ -13,8 +13,8 @@ merged, not deployed**.
   drawer's **Remove entry** and WhatsApp's **undo** both still put the money
   back exactly as before. But the expense or income now moves to **Recently
   deleted** for 30 days, where it can be restored or deleted for good.
-- **Recently deleted is a tab on Transactions.** It sits under All / Debit /
-  Credit in the side panel; there is no new menu. Choosing it shows the bin in
+- **Recently deleted is a tab on Transactions.** It is **Deleted**, the fourth
+  tab after All / Debit / Credit in the side panel; there is no new menu. Choosing it shows the bin in
   the list's place:
   - **Columns:** description (with Pending, Split, Repays… and receipt tags),
     Expense / Income, amount, account, the entry's own date, the date it was
@@ -37,6 +37,9 @@ merged, not deployed**.
 - **Wording:** the remove note and toasts now say "Moved to Recently deleted …
   you can restore it for 30 days". WhatsApp's undo reply adds where to restore
   it.
+- **The transaction list has a search too**, beside its heading. It matches
+  description, category or account, and the totals and Export follow it. The
+  panel's reset button clears it.
 - **Layout:** compact at laptop size (checked at 1260×620, fits with no
   scrolling), cards on a phone, in light and dark themes.
 
@@ -142,7 +145,7 @@ now stay linked.
 | Suite | Before | Now |
 |---|---|---|
 | API (`npm run test:api`) | 361 | **388 passing** |
-| Angular (`npm run test:ci`) | 366 | **377 passing** |
+| Angular (`npm run test:ci`) | 366 | **380 passing** |
 
 The production build has no warnings.
 
