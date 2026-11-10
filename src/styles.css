@@ -727,6 +727,20 @@ html[data-theme='dark'] {
     min-height: 0;
   }
 
+  /*
+   * When More filters is open the filters scroll inside the panel; the totals
+   * above and Import / Export below stay put (and Import's menu, outside this
+   * box, is never clipped).
+   */
+  body.fits-screen app-expense-list .tx-panel > .filter-bar {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    margin-inline: -4px;
+    padding-inline: 4px;
+    padding-bottom: 4px;
+  }
+
   body.fits-screen app-expense-list .card {
     flex: 1 1 0;
     min-height: 0;
@@ -735,6 +749,8 @@ html[data-theme='dark'] {
   }
 
   body.fits-screen app-expense-list .list-head,
+  body.fits-screen app-expense-list .chip-row,
+  body.fits-screen app-expense-list .table-foot,
   body.fits-screen app-expense-list .table-note,
   body.fits-screen app-expense-list .no-record {
     flex-shrink: 0;
@@ -757,6 +773,15 @@ html[data-theme='dark'] {
 
 /* Transactions on a laptop-height window: the side panel a little tighter, so it fits at 560px. */
 @media (min-width: 900px) and (min-height: 560px) and (max-height: 820px) {
+  /* The calendar: the entry count gives way so each day keeps its amounts. */
+  body.fits-screen app-transaction-calendar .c-count {
+    display: none;
+  }
+
+  body.fits-screen app-transaction-calendar .sum {
+    padding-block: 0.3125rem;
+  }
+
   body.fits-screen app-expense-list .tx-panel {
     gap: 0.625rem;
   }

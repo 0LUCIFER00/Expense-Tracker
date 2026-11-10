@@ -27,6 +27,17 @@ export function today(): string {
   return toIsoDate(new Date());
 }
 
+/**
+ * Today in India (Asia/Kolkata) as YYYY-MM-DD, whatever the device's own time
+ * zone: the same calendar the server's WhatsApp entries are dated by.
+ */
+export function todayInIndia(now: Date = new Date()): string {
+  // en-CA formats as YYYY-MM-DD.
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(now);
+}
+
 export function yesterday(): string {
   const day = new Date();
   day.setDate(day.getDate() - 1);

@@ -1,0 +1,75 @@
+/* The List / Calendar switch, and the month controls in Calendar view. */
+
+
+.view-switch {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 9px;
+  background-color: var(--sunken);
+}
+
+.view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  height: 30px;
+  padding: 0 0.625rem;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.view-btn.on { background-color: var(--accent); color: #fff; }
+
+.month-nav { display: flex; align-items: center; gap: 0.375rem; }
+.month-title { min-width: 8.5rem; text-align: center; }
+
+.nav-btn,
+.today-btn {
+  display: grid;
+  place-items: center;
+  height: 32px;
+  border: 1px solid var(--field-border);
+  border-radius: 8px;
+  background-color: var(--surface);
+  color: var(--ink-2);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.nav-btn { width: 32px; padding: 0; }
+.today-btn { padding: 0 0.625rem; color: var(--accent-ink); font-size: 0.75rem; font-weight: 700; }
+.today-btn:disabled { opacity: 0.5; cursor: default; }
+.nav-btn:hover, .today-btn:hover:not(:disabled) { border-color: var(--focus-border); }
+
+.view-btn svg,
+.nav-btn svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.view-btn:focus-visible,
+.nav-btn:focus-visible,
+.today-btn:focus-visible {
+  outline: 2px solid var(--focus-border);
+  outline-offset: 2px;
+}
+
+.view-note {
+  margin: 0;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+/* In Calendar view the month controls share the heading row: a narrower search keeps it to one line. */
+.list-head.calendar > .list-search { flex-basis: 200px; }

@@ -1,0 +1,100 @@
+<!-- The month's figures: what came in, went out (your share), what is left, and how many. -->
+<div class="cal-summary" role="group" aria-label="Month summary">
+  <div class="sum in"><span class="k">Income</span><span class="v tnum">+{{ rupees(monthTotals.incomePaise) }}</span></div>
+  <div class="sum out"><span class="k">Expenses · your share</span><span class="v tnum">−{{ rupees(monthTotals.expensePaise) }}</span></div>
+  <div class="sum net"><span class="k">Net</span>
+    <span class="v tnum" [class.minus]="monthTotals.netPaise < 0">{{ monthTotals.netPaise < 0 ? '−' : '+' }}{{ rupees(monthTotals.netPaise < 0 ? -monthTotals.netPaise : monthTotals.netPaise) }}</span>
+  </div>
+  <div class="sum count"><span class="k">Transactions</span><span class="v tnum">{{ monthCount }}</span></div>
+</div>
+
+@if (loading) {
+  <p class="cal-state" role="status">Loading the month…</p>
+} @else {
+  <div class="cal-body">
+    <div class="cal-month">
+      <div class="cal-weekdays" aria-hidden="true">
+        @for (w of weekdays; track w) { <span>{{ w }}</span> }
+      </div>
+
+      <!-- One button per day; arrow keys move between them. -->
+      <div class="cal-grid" role="group" aria-label="Days">
+        @for (c of cells; track c.iso) {
+          <button type="button" class="cell" [attr.data-iso]="c.iso"
+            [class.out-month]="!c.inMonth" [class.empty]="c.inMonth && !c.summary" [class.future]="c.future"
+            [class.today]="c.today" [class.on]="c.iso === selected" [class.high]="c.high"
+            [disabled]="!c.inMonth" [attr.aria-pressed]="c.inMonth ? c.iso === selected : null"
+            [attr.aria-label]="c.label" [attr.tabindex]="c.inMonth ? (c.iso === selected || (!selected && c.day === 1) ? 0 : -1) : -1"
+            (click)="pick(c)" (keydown)="onGridKey($event, c)">
+            <span class="c-top">
+              <span class="c-num">{{ c.day }}</span>
+              @if (c.high) {
+                <span class="c-high" [title]="'High spending: more than twice your average spending day this month (' + averageLabel + ')'">High</span>
+              }
+            </span>
+            @if (c.summary; as s) {
+              @if (s.totals.expensePaise) {
+                <span class="c-out tnum"><span class="full">−{{ rupees(s.totals.expensePaise) }}</span><span class="brief">{{ short(s.totals.expensePaise) }}</span></span>
+              }
+              @if (s.totals.incomePaise) {
+                <span class="c-in tnum"><span class="full">+{{ rupees(s.totals.incomePaise) }}</span><span class="brief">+{{ short(s.totals.incomePaise) }}</span></span>
+              }
+              <span class="c-count">{{ s.rows.length }} {{ s.rows.length === 1 ? 'entry' : 'entries' }}</span>
+              <span class="c-dots" aria-hidden="true">
+                @if (s.totals.expensePaise) { <span class="dot out"></span> }
+                @if (s.totals.incomePaise) { <span class="dot in"></span> }
+              </span>
+            }
+          </button>
+        }
+      </div>
+
+      <div class="cal-legend">
+        <span><b class="out">−₹</b> spent, your share</span>
+        <span><b class="in">+₹</b> income</span>
+        @if (averagePaise) {
+          <span><b class="high">High</b> more than twice your average spending day ({{ averageLabel }})</span>
+        }
+      </div>
+    </div>
+
+    <!-- The day chosen: its entries, each opening the details drawer the list uses. -->
+    <aside class="cal-day" aria-live="polite" [attr.aria-label]="selected ? longDate(selected) : 'No day chosen'">
+      @if (selected) {
+        <div class="d-head">
+          <h2>{{ longDate(selected) }}</h2>
+          @if (selectedHigh) { <span class="d-high">High spending</span> }
+        </div>
+
+        @if (selectedSummary; as s) {
+          <div class="d-totals">
+            <span class="t out tnum">Spent {{ rupees(s.totals.expensePaise) }}</span>
+            <span class="t in tnum">In {{ rupees(s.totals.incomePaise) }}</span>
+            @if (s.totals.repaidPaise) { <span class="t back tnum">Repaid {{ rupees(s.totals.repaidPaise) }}</span> }
+          </div>
+
+          <ul class="d-list">
+            @for (row of selectedRows; track row.key) {
+              <li>
+                <button type="button" class="d-row" (click)="open.emit(row)" [attr.aria-label]="'Details of ' + row.description">
+                  <span class="d-desc">{{ row.description }}</span>
+                  <span class="d-amt tnum" [class.in]="row.kind === 'in' && !row.income?.splitExpenseId" [class.back]="!!row.income?.splitExpenseId">{{ rowAmount(row) }}</span>
+                  <span class="d-meta">{{ row.category }}@if (canViewSource && row.account) { · {{ row.account }}} · {{ rowKind(row) }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+          <p class="d-note">Choose an entry for its details, receipts, or to remove it.</p>
+        } @else {
+          <p class="d-empty">Nothing {{ selected > today ? 'planned' : 'recorded' }} on this day{{ rows.length ? ' that matches' : '' }}.</p>
+        }
+      } @else {
+        <p class="d-empty">Choose a day to see its entries.</p>
+      }
+    </aside>
+  </div>
+
+  @if (!monthCount) {
+    <p class="cal-state">Nothing in this month matches. Try another month, or clear the filters.</p>
+  }
+}

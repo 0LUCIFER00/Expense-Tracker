@@ -1,0 +1,104 @@
+/* One day of the calendar. */
+
+.cell {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1px;
+  padding: 0.3125rem 0.4375rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 9px;
+  background-color: var(--sunken);
+  color: var(--ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.cell:hover:not(:disabled) { border-color: var(--focus-border); }
+.cell:focus-visible { outline: 2px solid var(--focus-border); outline-offset: 2px; }
+
+/* A day of this month with nothing on it: an outline only. */
+.cell.empty {
+  border-style: dashed;
+  background-color: transparent;
+  color: var(--ink-3);
+}
+
+.cell.empty.future { color: var(--ink-3); opacity: 0.6; }
+
+/* The days of the months either side. */
+.cell.out-month {
+  border-color: transparent;
+  background-color: transparent;
+  color: var(--ink-3);
+  opacity: 0.45;
+  cursor: default;
+}
+
+.cell.on {
+  border: 2px solid var(--focus-border);
+  padding: calc(0.3125rem - 1px) calc(0.4375rem - 1px);
+  background-color: var(--accent-soft);
+}
+
+.c-top { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+
+.c-num {
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.cell.today .c-num { background-color: var(--accent); color: #fff; }
+
+.c-out,
+.c-in {
+  font-size: 0.75rem;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.c-out { color: var(--bad-ink); }
+
+/* Never squeezed away when a cell is short: the amounts are the point. */
+.c-top, .c-out, .c-in, .c-count { flex: none; }
+.c-in { color: var(--good-ink); }
+
+.c-count {
+  margin-top: auto;
+  font-size: 0.625rem;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.brief,
+.c-dots { display: none; }
+
+.c-dots { gap: 2px; justify-content: center; }
+.dot { width: 5px; height: 5px; border-radius: 50%; }
+.dot.out { background-color: var(--bad); }
+.dot.in { background-color: var(--good); }
+
+/* A phone: a compact month, the number, a short amount and dots. */
+@container (max-width: 520px) {
+  .cal-grid { grid-auto-rows: 52px; gap: 3px; }
+  .cell { align-items: center; padding: 3px 2px; gap: 0; }
+  .cell.on { padding: 2px 1px; }
+  .c-top { justify-content: center; }
+  .c-high, .c-count, .full { display: none; }
+  .brief { display: inline; }
+  .c-out, .c-in { font-size: 0.5625rem; }
+  .c-out { color: var(--ink-2); }
+  .c-dots { display: flex; margin-top: auto; }
+  .cell.high:not(.on) { border-color: var(--warn-ink); background-color: var(--warn-soft); }
+}

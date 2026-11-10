@@ -2,7 +2,34 @@ import { CommonModule } from '@angular/common';
 import { TransactionDetailsComponent } from './transaction-details/transaction-details.component';
 import { TransactionImportComponent } from './transaction-import/transaction-import.component';
 import { RecentlyDeletedComponent } from './recently-deleted/recently-deleted.component';
-import { Component, OnInit, inject } from '@angular/core';
+import { TransactionCalendarComponent } from './transaction-calendar/transaction-calendar.component';
+import { MonthKey, monthLabel, monthOf, shiftMonth } from './transaction-calendar/calendar-month';
+import {
+  ADVANCED_KEYS,
+  AdvancedKey,
+  EMPTY_FILTERS,
+  FilterChip,
+  ListKey,
+  MONTH_NAMES,
+  NO_ACCOUNT,
+  OLDER_YEARS,
+  PERIOD_LABELS,
+  RECENT_YEARS,
+  Period,
+  TransactionFilters,
+  chipsFor,
+  compile,
+  filterProblem,
+  isNarrowed,
+  matchesFilters,
+  matchesSearch,
+  paymentMethodOf,
+  searchText,
+  toggled,
+  totalsOf,
+  withoutChip
+} from './transaction-filters';
+import { Component, ElementRef, HostListener, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
@@ -12,7 +39,7 @@ import { IncomeService } from '../shared/income.service';
 import { downloadCsv } from '../shared/csv';
 import { ToastService } from '../shared/toast.service';
 import { SettingsService } from '../shared/settings.service';
-import { parseLocalDate } from '../shared/date-utils';
+import { parseLocalDate, todayInIndia } from '../shared/date-utils';
 import { FitsScreenDirective } from '../shared/fits-screen.directive';
 
 /** Which half of the ledger is on screen. */
@@ -59,15 +86,17 @@ const TABS: TransactionTab[] = ['all', 'out', 'in', 'deleted'];
 @Component({
   selector: 'app-expense-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, FitsScreenDirective, TransactionDetailsComponent, TransactionImportComponent, RecentlyDeletedComponent],
+  imports: [CommonModule, FormsModule, FitsScreenDirective, TransactionDetailsComponent, TransactionImportComponent, RecentlyDeletedComponent,
+    TransactionCalendarComponent],
   templateUrl: './expense-list.component.html',
-  styleUrls: ['./expense-list.component.css', './transaction-panel.css']
+  styleUrls: ['./expense-list.component.css', './transaction-panel.css', './transaction-filters.css', './transaction-view.css']
 })
 export class ExpenseListComponent implements OnInit {
   private readonly expenseService = inject(ExpenseService);
   private readonly incomeService = inject(IncomeService);
   private readonly settingsService = inject(SettingsService);
   private readonly toast = inject(ToastService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   // Optional so the component still builds where no router is provided.
   private readonly route = inject(ActivatedRoute, { optional: true });
   private readonly router = inject(Router, { optional: true });
@@ -106,15 +135,76 @@ export class ExpenseListComponent implements OnInit {
 
   loading = true;
 
-  currentYear = new Date().getFullYear();
-  recentYearsCount = 5;
+  /** Every filter applied to the list (the tab aside); see transaction-filters.ts. */
+  filters: TransactionFilters = { ...EMPTY_FILTERS };
+  /** The Filter menu's choices being edited, applied together with Apply filters. */
+  draft: Pick<TransactionFilters, AdvancedKey> = this.advancedOf(EMPTY_FILTERS);
+  /** Whether the Filter menu beside the search is open. */
+  advancedOpen = false;
+  advancedError = '';
+  /** Why a custom date range was not applied (its ends cross, or one is not a date). */
+  dateError = '';
+  /** One removable chip per active filter, shown above the list. */
+  chips: FilterChip[] = [];
 
-  selectedMonth = 0;
-  selectedYear = 0;
-  /** '' is "all"; UNCATEGORISED selects the entries with no category. */
-  selectedCategory = '';
-  /** Narrows the list (and its totals) to rows whose description, category or account contain it. */
-  searchText = '';
+  /** List (the default) or the month as a calendar. */
+  view: 'list' | 'calendar' = 'list';
+  /** Today in India, which the calendar and the date filters go by. */
+  indiaToday = todayInIndia();
+  /** The month the calendar shows. */
+  calendarMonth: MonthKey = monthOf(this.indiaToday);
+  /** Every row that passes the search, filters and tab, whatever its date: the calendar picks its month. */
+  calendarRows: TransactionRow[] = [];
+
+  /** The list is shown a page at a time; sorting and filters cover every page. */
+  readonly pageSize = 50;
+  page = 1;
+
+  /** Income minus your share of settled spending, for the filtered rows. */
+  net = 0;
+
+  readonly noAccount = NO_ACCOUNT;
+
+  /** The Year and Month menus, as before: the last five years and "Older", and the twelve months. */
+  readonly years = [
+    ...Array.from({ length: RECENT_YEARS }, (_, i) => {
+      const year = Number(todayInIndia().slice(0, 4)) - i;
+      return { value: year, label: String(year) };
+    }),
+    { value: OLDER_YEARS, label: 'Older' }
+  ];
+
+  readonly months = MONTH_NAMES.map((label, i) => ({ value: i + 1, label }));
+  readonly periods = (Object.keys(PERIOD_LABELS) as Period[]).map(value => ({ value, label: PERIOD_LABELS[value] }));
+
+  /** Accounts and payment methods the loaded entries use, for the More filters menus. */
+  accountOptions: string[] = [];
+  paymentMethods: string[] = [];
+
+  /**
+   * One category, for code that thinks in one: '' when none or several are
+   * chosen. UNCATEGORISED selects the entries with no category.
+   */
+  get selectedCategory(): string {
+    return this.filters.categories.length === 1 ? this.filters.categories[0] : '';
+  }
+
+  set selectedCategory(value: string) {
+    this.filters = { ...this.filters, categories: value ? [value] : [] };
+    this.draft = { ...this.draft, categories: [...this.filters.categories] };
+  }
+
+  /** What the search box holds. */
+  get searchText(): string {
+    return this.filters.search;
+  }
+
+  set searchText(value: string) {
+    this.filters = { ...this.filters, search: value };
+  }
+
+  /** Search text per entry, built once per entry rather than on every keystroke. */
+  private haystacks = new WeakMap<object, string>();
 
   /** Only the categories actually used, so the filter never offers a dead end. */
   usedCategories: string[] = [];
@@ -126,30 +216,6 @@ export class ExpenseListComponent implements OnInit {
   sortColumn: SortColumn | null = null;
   sortDirection: 'asc' | 'desc' | 'default' = 'default';
 
-  years = [
-    { value: 0, label: 'All' },
-    ...Array.from({ length: this.recentYearsCount }, (_, i) => ({
-      value: this.currentYear - i,
-      label: (this.currentYear - i).toString()
-    })),
-    { value: -1, label: '< 5 Years' }
-  ];
-
-  months = [
-    { value: 0, label: 'All' },
-    { value: 1, label: 'January' },
-    { value: 2, label: 'February' },
-    { value: 3, label: 'March' },
-    { value: 4, label: 'April' },
-    { value: 5, label: 'May' },
-    { value: 6, label: 'June' },
-    { value: 7, label: 'July' },
-    { value: 8, label: 'August' },
-    { value: 9, label: 'September' },
-    { value: 10, label: 'October' },
-    { value: 11, label: 'November' },
-    { value: 12, label: 'December' }
-  ];
 
   ngOnInit(): void {
     const requested = this.route?.snapshot.queryParamMap.get('tab') as TransactionTab | null;
@@ -179,7 +245,8 @@ export class ExpenseListComponent implements OnInit {
         this.splits = new Map(splits.map(split => [split.id, split]));
         this.collectCategories();
         this.setViewPermission();
-        this.applyFilters();
+        this.haystacks = new WeakMap();
+        this.applyFilters(true);
         this.loading = false;
       },
       error: error => {
@@ -208,10 +275,30 @@ export class ExpenseListComponent implements OnInit {
 
     this.usedCategories = [...names].sort();
 
+    // Accounts and payment methods in use, for the More filters menus.
+    const accounts = new Set<string>();
+    const methods = new Set<string>();
+
+    for (const expense of this.allExpenses) {
+      if (expense.sourceCategory) accounts.add(expense.sourceCategory);
+      if (expense.imported?.paymentMethod) methods.add(expense.imported.paymentMethod);
+    }
+
+    for (const income of this.allIncomes) {
+      if (income.targetCategory) accounts.add(income.targetCategory);
+      if (income.imported?.paymentMethod) methods.add(income.imported.paymentMethod);
+    }
+
+    this.accountOptions = [...accounts].sort();
+    this.paymentMethods = [...methods].sort();
+
     // A filter left pointing at a category that no longer has entries would
     // show an empty list with no clue why.
-    if (this.selectedCategory && !names.has(this.selectedCategory)) {
-      this.selectedCategory = '';
+    const kept = this.filters.categories.filter(name => names.has(name));
+
+    if (kept.length !== this.filters.categories.length) {
+      this.filters = { ...this.filters, categories: kept };
+      this.draft = { ...this.draft, categories: [...kept] };
     }
   }
 
@@ -352,14 +439,44 @@ export class ExpenseListComponent implements OnInit {
     });
   }
 
-  onFilterMonth(event: Event): void {
-    this.selectedMonth = Number((event.target as HTMLSelectElement).value);
+  onPeriod(event: Event): void {
+    const period = (event.target as HTMLSelectElement).value as Period;
+
+    this.dateError = '';
+    // A date range and a year or month would fight; the newer choice wins.
+    const yearMonth = period === 'all' ? {} : { year: 0, month: 0 };
+    this.filters = period === 'custom'
+      ? { ...this.filters, ...yearMonth, period }
+      : { ...this.filters, ...yearMonth, period, from: '', to: '' };
     this.applyFilters();
   }
 
   onFilterYear(event: Event): void {
-    this.selectedYear = Number((event.target as HTMLSelectElement).value);
+    this.setYearMonth({ year: Number((event.target as HTMLSelectElement).value) });
+  }
+
+  onFilterMonth(event: Event): void {
+    this.setYearMonth({ month: Number((event.target as HTMLSelectElement).value) });
+  }
+
+  /** A year or month clears any date range, so the two never contradict. */
+  private setYearMonth(change: Partial<Pick<TransactionFilters, 'year' | 'month'>>): void {
+    this.dateError = '';
+    this.filters = { ...this.filters, ...change, period: 'all', from: '', to: '' };
     this.applyFilters();
+  }
+
+  /** A custom range's end; a range whose ends cross is not applied, and says why. */
+  onDate(end: 'from' | 'to', event: Event): void {
+    const next = { ...this.filters, [end]: (event.target as HTMLInputElement).value };
+    const problem = filterProblem(next);
+
+    this.dateError = problem ?? '';
+
+    if (!problem) {
+      this.filters = next;
+      this.applyFilters();
+    }
   }
 
   onFilterCategory(event: Event): void {
@@ -372,18 +489,133 @@ export class ExpenseListComponent implements OnInit {
     this.applyFilters();
   }
 
-  /** True when anything differs from the full list: a tab, year, month or category. */
-  get hasFilters(): boolean {
-    return this.tab !== 'all' || this.selectedYear !== 0 || this.selectedMonth !== 0 ||
-      !!this.selectedCategory || !!this.searchText.trim();
+  private advancedOf(f: TransactionFilters): Pick<TransactionFilters, AdvancedKey> {
+    return {
+      categories: [...f.categories], statuses: [...f.statuses], accounts: [...f.accounts],
+      paymentMethods: [...f.paymentMethods], minAmount: f.minAmount, maxAmount: f.maxAmount
+    };
   }
 
-  /** Back to everything: All, every year, month and category. */
+  /** Opens or closes the Filter menu. Closing without Apply forgets the unapplied choices. */
+  toggleAdvanced(): void {
+    if (this.advancedOpen) {
+      this.closeFilterMenu();
+    } else {
+      this.draft = this.advancedOf(this.filters);
+      this.advancedError = '';
+      this.advancedOpen = true;
+    }
+  }
+
+  closeFilterMenu(refocus = false): void {
+    if (!this.advancedOpen) {
+      return;
+    }
+
+    this.advancedOpen = false;
+    this.draft = this.advancedOf(this.filters);
+    this.advancedError = '';
+
+    if (refocus) {
+      this.host.nativeElement.querySelector<HTMLElement>('.filter-toggle')?.focus();
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (this.advancedOpen && !this.host.nativeElement.querySelector('.filter-anchor')?.contains(event.target as Node)) {
+      this.closeFilterMenu();
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.closeFilterMenu(true);
+  }
+
+  /** Min or max amount, as typed. */
+  setDraft(key: 'minAmount' | 'maxAmount', value: string): void {
+    this.draft = { ...this.draft, [key]: value };
+    this.advancedError = '';
+  }
+
+  /** Ticks or unticks one option of a multiple-choice filter. */
+  toggleDraft(key: ListKey, value: string): void {
+    this.draft = { ...this.draft, [key]: toggled(this.draft[key] as string[], value) };
+    this.advancedError = '';
+  }
+
+  isTicked(key: ListKey, value: string): boolean {
+    return (this.draft[key] as string[]).includes(value);
+  }
+
+  /** Clears every choice in the menu (not yet applied). */
+  clearDraft(): void {
+    this.draft = this.advancedOf(EMPTY_FILTERS);
+    this.advancedError = '';
+  }
+
+  /** True when the menu's choices differ from what is applied. */
+  get draftChanged(): boolean {
+    const same = (a: unknown, b: unknown) =>
+      Array.isArray(a) && Array.isArray(b) ? [...a].sort().join('\n') === [...b].sort().join('\n') : a === b;
+
+    return ADVANCED_KEYS.some(key => !same(this.draft[key], this.filters[key]));
+  }
+
+  /** How many choices the menu has applied, for the badge on its button. */
+  get advancedCount(): number {
+    const f = this.filters;
+
+    return f.categories.length + f.statuses.length + f.accounts.length + f.paymentMethods.length +
+      (f.minAmount.trim() ? 1 : 0) + (f.maxAmount.trim() ? 1 : 0);
+  }
+
+  /** Applies the menu's choices together, once they make sense (amounts, min below max). */
+  applyAdvanced(): void {
+    const next = { ...this.filters, ...this.advancedOf({ ...this.filters, ...this.draft }) };
+    const problem = filterProblem(next);
+
+    if (problem) {
+      this.advancedError = problem;
+      return;
+    }
+
+    this.advancedError = '';
+    this.filters = next;
+    this.advancedOpen = false;
+    this.applyFilters();
+  }
+
+  removeChip(chip: FilterChip): void {
+    this.filters = withoutChip(this.filters, chip);
+    this.draft = this.advancedOf(this.filters);
+    this.advancedError = '';
+    this.applyFilters();
+  }
+
+  /** The From and To boxes, shown in the Year and Month row's place while a custom range is on. */
+  get customRangeShown(): boolean {
+    return this.filters.period === 'custom' && this.tab !== 'deleted' && this.view === 'list';
+  }
+
+  /** True when anything other than the tab narrows the list. */
+  get narrowed(): boolean {
+    return isNarrowed(this.filters);
+  }
+
+  /** True when anything differs from the full list: the tab, or any filter or search. */
+  get hasFilters(): boolean {
+    return this.tab !== 'all' || this.narrowed;
+  }
+
+  /** Clear all: back to everything, every filter and the search cleared, the All tab. */
   resetFilters(): void {
-    this.selectedYear = 0;
-    this.selectedMonth = 0;
-    this.selectedCategory = '';
-    this.searchText = '';
+    this.filters = { ...EMPTY_FILTERS };
+    this.draft = this.advancedOf(EMPTY_FILTERS);
+    this.advancedError = '';
+    this.dateError = '';
+    this.advancedOpen = false;
 
     if (this.tab !== 'all') {
       // Also clears the tab from the address and re-lists the categories.
@@ -394,50 +626,108 @@ export class ExpenseListComponent implements OnInit {
     }
   }
 
-  /** True when a date falls inside the chosen year and month. */
-  private inPeriod(date: string): boolean {
-    const parsed = parseLocalDate(date);
+  // ------------------------------------------------------------ pages
 
-    if (this.selectedMonth !== 0 && parsed.getMonth() !== this.selectedMonth - 1) {
-      return false;
-    }
-
-    if (this.selectedYear === -1) {
-      return parsed.getFullYear() < this.currentYear - this.recentYearsCount + 1;
-    }
-
-    return this.selectedYear === 0 || parsed.getFullYear() === this.selectedYear;
+  get pageCount(): number {
+    return Math.max(1, Math.ceil(this.rows.length / this.pageSize));
   }
 
-  applyFilters(): void {
-    const expenseRows = this.allExpenses
-      .filter(expense => this.inPeriod(expense.date))
-      .filter(expense =>
-        !this.selectedCategory ||
-        (expense.category ?? UNCATEGORISED) === this.selectedCategory
-      )
-      .map(expense => this.fromExpense(expense));
+  /** The rows on the page showing, from the filtered and sorted whole. */
+  get pagedRows(): TransactionRow[] {
+    const start = (this.page - 1) * this.pageSize;
+    return this.rows.slice(start, start + this.pageSize);
+  }
 
-    const incomeRows = this.allIncomes
-      .filter(income => this.inPeriod(income.date))
-      .filter(income =>
-        !this.selectedCategory || this.incomeCategory(income) === this.selectedCategory
-      )
-      .map(income => this.fromIncome(income));
+  get pageFirst(): number {
+    return this.rows.length ? (this.page - 1) * this.pageSize + 1 : 0;
+  }
 
-    const needle = this.searchText.trim().toLowerCase();
-    const found = (row: TransactionRow) => !needle ||
-      [row.description, row.category, row.account].some(text => (text ?? '').toLowerCase().includes(needle));
+  get pageLast(): number {
+    return Math.min(this.rows.length, this.page * this.pageSize);
+  }
 
-    const sorted = this.applySorting([...expenseRows, ...incomeRows].filter(found));
+  goPage(page: number): void {
+    this.page = Math.min(this.pageCount, Math.max(1, page));
+  }
+
+  setView(view: 'list' | 'calendar'): void {
+    this.view = view;
+    this.openRow = null;
+  }
+
+  shiftCalendar(delta: number): void {
+    this.calendarMonth = shiftMonth(this.calendarMonth, delta);
+  }
+
+  calendarToToday(): void {
+    this.indiaToday = todayInIndia();
+    this.calendarMonth = monthOf(this.indiaToday);
+  }
+
+  get calendarTitle(): string {
+    return monthLabel(this.calendarMonth);
+  }
+
+  get onThisMonth(): boolean {
+    return this.calendarMonth === monthOf(this.indiaToday);
+  }
+
+  /** The chips for what is in force: the calendar chooses its own month, so a date chip does not apply there. */
+  get visibleChips(): FilterChip[] {
+    return this.view === 'calendar'
+      ? this.chips.filter(chip => !['period', 'range', 'year', 'month'].includes(chip.key))
+      : this.chips;
+  }
+
+  /**
+   * Every filter and the search together, then the sort; the totals cover all
+   * the matching rows (whatever the tab or page), by the dashboard's rules.
+   *
+   * @param keepPage after a reload (a removal, an import) stay on the page
+   *   showing; any change of filter, search, sort or tab starts at page 1
+   */
+  applyFilters(keepPage = false): void {
+    this.indiaToday = todayInIndia();
+    const compiled = compile(this.filters, this.indiaToday);
+    // The calendar takes every date; the month it shows is its date filter.
+    const anyDate = compile({ ...this.filters, period: 'all', from: '', to: '', year: 0, month: 0 }, this.indiaToday);
+    const search = this.filters.search.trim();
+    const all = [
+      ...this.allExpenses.map(expense => this.fromExpense(expense)),
+      ...this.allIncomes.map(income => this.fromIncome(income))
+    ];
+    const matching = all.filter(row =>
+      matchesFilters(row, compiled) && (!search || matchesSearch(this.haystack(row), search)));
+
+    const sorted = this.applySorting(matching);
 
     this.expenses = sorted.filter(row => row.expense).map(row => row.expense!);
     this.incomes = sorted.filter(row => row.income).map(row => row.income!);
     this.rows = this.tab === 'all' ? sorted : sorted.filter(row => row.kind === this.tab);
+    this.calendarRows = all.filter(row =>
+      (this.tab === 'all' || row.kind === this.tab) &&
+      matchesFilters(row, anyDate) && (!search || matchesSearch(this.haystack(row), search)));
 
-    this.total = this.expenseService.totalOf(this.expenses);
-    this.moneyIn = this.sum(this.incomes.filter(income => !income.splitExpenseId));
-    this.paidBack = this.sum(this.incomes.filter(income => income.splitExpenseId));
+    const totals = totalsOf(sorted);
+    this.total = totals.expensePaise / 100;
+    this.moneyIn = totals.incomePaise / 100;
+    this.paidBack = totals.repaidPaise / 100;
+    this.net = totals.netPaise / 100;
+
+    this.chips = chipsFor(this.filters);
+    this.page = keepPage ? Math.min(this.page, this.pageCount) : 1;
+  }
+
+  private haystack(row: TransactionRow): string {
+    const entry = (row.expense ?? row.income) as object;
+    let text = this.haystacks.get(entry);
+
+    if (text === undefined) {
+      text = searchText(row);
+      this.haystacks.set(entry, text);
+    }
+
+    return text;
   }
 
   private sum(incomes: Income[]): number {
@@ -546,13 +836,16 @@ export class ExpenseListComponent implements OnInit {
     }
 
     const today = new Date().toISOString().slice(0, 10);
+    // Every matching row, not just the page showing. Unfiltered, the file is
+    // exactly what it always was; filtered, its name says so.
+    const filtered = this.narrowed ? 'filtered-' : '';
 
     if (this.tab === 'out') {
-      downloadCsv(`expenses-${today}.csv`, ...this.expenseCsv());
+      downloadCsv(`expenses-${filtered}${today}.csv`, ...this.expenseCsv());
     } else if (this.tab === 'in') {
-      downloadCsv(`money-in-${today}.csv`, ...this.incomeCsv());
+      downloadCsv(`money-in-${filtered}${today}.csv`, ...this.incomeCsv());
     } else {
-      downloadCsv(`transactions-${today}.csv`, ...this.allCsv());
+      downloadCsv(`transactions-${filtered}${today}.csv`, ...this.allCsv());
     }
   }
 

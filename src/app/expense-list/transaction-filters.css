@@ -1,0 +1,347 @@
+/*
+ * The filter parts of Transactions: the Net total, More filters in the side
+ * panel, the chips above the list and the pager below it. Theme tokens only,
+ * so both themes are served.
+ */
+
+/* ---- Net, under the three totals ---- */
+
+.sum-row.net { background-color: var(--accent-soft); }
+.sum-row.net .dot { background-color: var(--good); }
+.sum-row.net dt { font-weight: 800; color: var(--ink); }
+.sum-row.net dd { color: var(--good-ink); }
+.sum-row.net.minus .dot { background-color: var(--bad); }
+.sum-row.net.minus dd { color: var(--bad-ink); }
+
+/* ---- inputs in the panel, matching its selects ---- */
+
+.tx-panel .filter input {
+  width: 100%;
+  height: 40px;
+  box-sizing: border-box;
+  padding: 0 0.625rem;
+  border: 1px solid var(--field-border);
+  border-radius: 8px;
+  background-color: var(--field-bg);
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: var(--ink);
+  color-scheme: light dark;
+}
+
+.tx-panel .filter input:focus {
+  outline: none;
+  border-color: var(--focus-border);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.tx-panel .filter select:disabled {
+  opacity: 0.6;
+}
+
+/* ---- the Filter menu, right after the search ---- */
+
+.list-head { position: relative; }
+
+.filter-anchor {
+  position: relative;
+  flex: none;
+}
+
+.filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  height: 36px;
+  padding: 0 0.75rem;
+  border: 1px solid var(--field-border);
+  border-radius: 8px;
+  background-color: var(--surface);
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filter-toggle:hover,
+.filter-toggle[aria-expanded='true'] { border-color: var(--focus-border); color: var(--accent-ink); }
+
+.filter-toggle svg,
+.filter-chip svg,
+.page-btn svg {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.more-count {
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background-color: var(--accent);
+  color: #fff;
+  font-size: 0.6875rem;
+}
+
+.filter-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  max-height: min(460px, calc(100dvh - 150px));
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rule-strong);
+  border-radius: 12px;
+  background-color: var(--surface);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+}
+
+.fm-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.875rem;
+}
+
+.fm-group { margin: 0; padding: 0; border: 0; min-width: 0; }
+
+.fm-group legend {
+  margin-bottom: 0.375rem;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--ink-2);
+}
+
+.fm-options { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+
+/* A tick box dressed as a pill: any number can be on. */
+.fm-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 30px;
+  padding: 0 0.625rem;
+  border: 1px solid var(--field-border);
+  border-radius: 999px;
+  color: var(--ink-2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fm-option input { width: 14px; height: 14px; margin: 0; accent-color: var(--accent); }
+.fm-option.on { border-color: var(--focus-border); background-color: var(--accent-soft); color: var(--accent-ink); }
+.fm-option:focus-within { outline: 2px solid var(--focus-border); outline-offset: 1px; }
+.fm-none { font-size: 0.75rem; color: var(--ink-3); }
+
+.fm-amounts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+.fm-amounts span { display: block; margin-bottom: 2px; font-size: 0.6875rem; font-weight: 700; color: var(--ink-3); }
+
+.fm-amounts input {
+  width: 100%;
+  height: 36px;
+  box-sizing: border-box;
+  padding: 0 0.625rem;
+  border: 1px solid var(--field-border);
+  border-radius: 8px;
+  background-color: var(--field-bg);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.fm-amounts input:focus { outline: none; border-color: var(--focus-border); box-shadow: 0 0 0 2px var(--focus-ring); }
+
+.fm-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0.875rem;
+  border-top: 1px solid var(--rule);
+}
+
+.apply-btn {
+  height: 36px;
+  padding: 0 1rem;
+  border: 0;
+  border-radius: 8px;
+  background-color: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.apply-btn:hover:not(:disabled) { background-color: var(--accent-hover); }
+.apply-btn:disabled { opacity: 0.5; cursor: default; }
+
+.filter-error {
+  margin: 0;
+  padding: 0.5rem 0.625rem;
+  border-radius: 8px;
+  background-color: var(--bad-soft);
+  color: var(--bad-ink);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.filter-toggle:focus-visible,
+.apply-btn:focus-visible,
+.filter-chip:focus-visible,
+.clear-all:focus-visible,
+.page-btn:focus-visible {
+  outline: 2px solid var(--focus-border);
+  outline-offset: 2px;
+}
+
+/* A phone: the menu spans the list's width under its heading. */
+@media (max-width: 640px) {
+  .filter-anchor { position: static; }
+  .filter-menu { left: 0; right: 0; width: auto; max-width: none; }
+}
+
+/* ---- active filters above the list ---- */
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+  margin: -0.25rem 0 0.75rem;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  height: 28px;
+  padding: 0 0.5rem 0 0.75rem;
+  border: 1px solid var(--focus-border);
+  border-radius: 999px;
+  background-color: var(--accent-soft);
+  color: var(--accent-ink);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filter-chip:hover { background-color: var(--surface); }
+
+.clear-all {
+  height: 28px;
+  padding: 0 0.5rem;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.chip-count {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+
+/* ---- the foot: the note, and the pages ---- */
+
+.table-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.25rem;
+}
+
+.page-btn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--field-border);
+  border-radius: 8px;
+  background-color: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.page-btn:hover:not(:disabled) { border-color: var(--focus-border); color: var(--accent-ink); }
+.page-btn:disabled { opacity: 0.4; cursor: default; }
+
+.page-of {
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.no-record .clear-all {
+  margin-top: 0.5rem;
+}
+
+/* ---- the four totals as a 2 × 2 grid, so the filters below get the height ---- */
+
+.tx-panel .sum-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.375rem;
+}
+
+.tx-panel .sum-row {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+  padding: 0.4375rem 0.625rem;
+}
+
+.tx-panel .sum-row dt {
+  font-size: 0.6875rem;
+  white-space: nowrap;
+}
+
+.tx-panel .sum-row dd {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9375rem;
+}
+
+/* Panel above the list (narrow screens): the date error uses the full width. */
+@media (max-width: 899px) {
+  .tx-panel .filter-bar > .filter-error {
+    grid-column: 1 / -1;
+  }
+}
+
+/* The search and its Filter button sit together, at the right of the heading. */
+.list-head > .list-search { margin-left: auto; }
+.list-head > .filter-anchor { margin-left: -0.5rem; }
+

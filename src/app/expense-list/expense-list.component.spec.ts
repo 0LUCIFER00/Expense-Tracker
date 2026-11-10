@@ -8,6 +8,7 @@ import {
 import { ExpenseListComponent, TransactionTab } from './expense-list.component';
 import { DEFAULT_SETTINGS, Expense, Income, Settings, SplitSummary } from '../shared/models';
 import { UNCATEGORISED } from '../shared/expense.service';
+import { todayInIndia } from '../shared/date-utils';
 
 function expense(overrides: Partial<Expense> = {}): Expense {
   return {
@@ -592,7 +593,7 @@ describe('ExpenseListComponent', () => {
       const totals = Array.from(el.querySelectorAll('.tx-panel .sum-row')).map(row =>
         `${row.querySelector('dt')!.textContent!.trim()}: ${row.querySelector('dd')!.textContent!.trim()}`);
 
-      expect(totals).toEqual(['Debit · your share: ₹300', 'Credit: ₹5,000', 'Repaid on splits: ₹250']);
+      expect(totals).toEqual(['Debit · your share: ₹300', 'Credit: ₹5,000', 'Repaid on splits: ₹250', 'Net: ₹4,700']);
     });
 
     it('holds the tabs and the labelled filters, and the list is headed by the tab', () => {
@@ -602,7 +603,7 @@ describe('ExpenseListComponent', () => {
 
       expect(panel.querySelector('[role="tablist"]')).not.toBeNull();
       expect(Array.from(panel.querySelectorAll('.filter label')).map(l => l.textContent!.trim()))
-        .toEqual(['Year', 'Month', 'Category']);
+        .toEqual(['Year', 'Month', 'Date range']);
       expect(el.querySelector('.list-title')!.textContent).toContain('All transactions');
 
       component.onTab('out');
@@ -621,7 +622,8 @@ describe('ExpenseListComponent', () => {
       expect(reset().disabled).toBeTrue();
 
       component.onTab('out');
-      component.onFilterYear({ target: { value: '2026' } } as unknown as Event);
+      component.onPeriod({ target: { value: 'custom' } } as unknown as Event);
+      component.onDate('from', { target: { value: '2026-01-01' } } as unknown as Event);
       component.onFilterCategory({ target: { value: 'Food & Drink' } } as unknown as Event);
       fixture.detectChanges();
       expect(component.rows.length).toBe(1);
@@ -631,11 +633,75 @@ describe('ExpenseListComponent', () => {
       fixture.detectChanges();
 
       expect(component.tab).toBe('all');
-      expect(component.selectedYear).toBe(0);
+      expect(component.filters.period).toBe('all');
+      expect(component.filters.from).toBe('');
       expect(component.selectedCategory).toBe('');
       expect(component.rows.length).toBe(2);
-      expect(el.querySelector<HTMLSelectElement>('#yearFilter')!.value).toBe('0');
+      expect(el.querySelector<HTMLSelectElement>('#periodFilter')!.value).toBe('all');
       expect(reset().disabled).toBeTrue();
+    });
+
+    it('filters by year and month as before, side by side, and they give way to a date range', () => {
+      const thisYear = Number(todayInIndia().slice(0, 4));
+      const fixture = load([
+        expense({ id: 'e1', date: `${thisYear}-03-20` }),
+        expense({ id: 'e2', date: `${thisYear}-07-02` }),
+        expense({ id: 'e3', date: `${thisYear - 1}-03-11` }),
+        expense({ id: 'e4', date: `${thisYear - 7}-03-01` })
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+      const options = (id: string) => Array.from(el.querySelectorAll(`#${id} option`)).map(o => o.textContent!.trim());
+      const ids = () => component.rows.map(r => r.expense?.id).sort();
+
+      expect(el.querySelector('.tx-panel .filter-pair #yearFilter')).not.toBeNull();
+      expect(el.querySelector('.tx-panel .filter-pair #monthFilter')).not.toBeNull();
+      expect(options('yearFilter')).toEqual(['All years', ...[0, 1, 2, 3, 4].map(i => String(thisYear - i)), 'Older']);
+      expect(options('monthFilter').slice(0, 2)).toEqual(['All months', 'January']);
+      expect(options('monthFilter').length).toBe(13);
+
+      component.onFilterMonth({ target: { value: '3' } } as unknown as Event);
+      expect(ids()).withContext('March of any year').toEqual(['e1', 'e3', 'e4']);
+
+      component.onFilterYear({ target: { value: String(thisYear) } } as unknown as Event);
+      fixture.detectChanges();
+      expect(ids()).toEqual(['e1']);
+      expect(Array.from(el.querySelectorAll('.filter-chip')).map(c => c.textContent!.trim()))
+        .toEqual([String(thisYear), 'March']);
+
+      component.onFilterYear({ target: { value: '-1' } } as unknown as Event);
+      expect(ids()).withContext('Older, in March').toEqual(['e4']);
+
+      component.onPeriod({ target: { value: 'year' } } as unknown as Event);
+      expect(component.filters.year).toBe(0);
+      expect(component.filters.month).toBe(0);
+
+      component.onFilterMonth({ target: { value: '7' } } as unknown as Event);
+      expect(component.filters.period).withContext('and the date range gives way to a month').toBe('all');
+      expect(ids()).toEqual(['e2']);
+
+      el.querySelector<HTMLButtonElement>('.panel-head .reset-btn')!.click();
+      fixture.detectChanges();
+      expect(component.filters.month).toBe(0);
+      expect(el.querySelector<HTMLSelectElement>('#monthFilter')!.value).toBe('0');
+      expect(component.rows.length).toBe(4);
+    });
+
+    it('puts a custom range\'s From and To in the Year and Month row, so the panel keeps its height', () => {
+      const fixture = load([expense()]);
+      const el = fixture.nativeElement as HTMLElement;
+      const rows = () => Array.from(el.querySelectorAll('.filter-bar .filter-pair')).map(p => p.classList[1]);
+
+      expect(rows()).toEqual(['year-month']);
+
+      component.onPeriod({ target: { value: 'custom' } } as unknown as Event);
+      fixture.detectChanges();
+      expect(rows()).toEqual(['custom-range']);
+      expect(el.querySelector('#fromDate')).not.toBeNull();
+      expect(el.querySelector('#yearFilter')).toBeNull();
+
+      component.onPeriod({ target: { value: 'all' } } as unknown as Event);
+      fixture.detectChanges();
+      expect(rows()).toEqual(['year-month']);
     });
 
     it('puts Deleted after Credit, in the same row of tabs', () => {
@@ -678,7 +744,7 @@ describe('ExpenseListComponent', () => {
 
       type('nothing like this');
       expect(component.rows.length).toBe(0);
-      expect(el.textContent).toContain('No record found');
+      expect(el.textContent).toContain('No transactions match');
     });
 
     it('clears the search with Reset', () => {
@@ -712,7 +778,7 @@ describe('ExpenseListComponent', () => {
       expect(component.tab).toBe('deleted');
       expect(el.querySelector('app-recently-deleted')).not.toBeNull();
       expect(el.querySelector('.table-scroll')).toBeNull();
-      expect(el.querySelector<HTMLSelectElement>('#yearFilter')!.disabled).toBeTrue();
+      expect(el.querySelector<HTMLSelectElement>('#periodFilter')!.disabled).toBeTrue();
       expect(Array.from(el.querySelectorAll('.sum-row')).every(r => r.classList.contains('muted'))).toBeTrue();
       http.expectOne('/api/recycle-bin').flush({ retentionDays: 30, canManage: true, entries: [] });
     });
@@ -722,15 +788,389 @@ describe('ExpenseListComponent', () => {
       const el = fixture.nativeElement as HTMLElement;
       const muted = () => Array.from(el.querySelectorAll('.sum-row')).map(t => t.classList.contains('muted'));
 
-      expect(muted()).toEqual([false, false, false]);
+      // Debit, Credit, Repaid, Net: Net covers both, so it stays bright.
+      expect(muted()).toEqual([false, false, false, false]);
 
       component.onTab('out');
       fixture.detectChanges();
-      expect(muted()).toEqual([false, true, true]);
+      expect(muted()).toEqual([false, true, true, false]);
 
       component.onTab('in');
       fixture.detectChanges();
-      expect(muted()).toEqual([true, false, false]);
+      expect(muted()).toEqual([true, false, false, false]);
+    });
+  });
+
+  describe('smart search and filters', () => {
+    const many = (count: number) => Array.from({ length: count }, (_, i) => expense({
+      id: `m${i}`, description: `Item ${i}`, amount: i + 1, date: `2026-10-${String((i % 28) + 1).padStart(2, '0')}`,
+      createdAt: `2026-10-01T00:00:${String(i % 60).padStart(2, '0')}.000Z`
+    }));
+
+    it('combines the date range, category, More filters and search, with the totals and net to match', () => {
+      const fixture = load(
+        [
+          expense({ id: 'e1', description: 'Coffee', amount: 120, date: '2026-10-05', category: 'Food & Drink' }),
+          expense({ id: 'e2', description: 'Coffee beans', amount: 900, date: '2026-10-06', category: 'Food & Drink' }),
+          expense({ id: 'e3', description: 'Coffee', amount: 150, date: '2026-09-30', category: 'Food & Drink' }),
+          expense({ id: 'e4', description: 'Bus', amount: 40, date: '2026-10-05', category: 'Travel' })
+        ],
+        {},
+        [],
+        [income({ amount: 1000, date: '2026-10-07' })]
+      );
+
+      component.onPeriod({ target: { value: 'custom' } } as unknown as Event);
+      component.onDate('from', { target: { value: '2026-10-01' } } as unknown as Event);
+      component.onDate('to', { target: { value: '2026-10-31' } } as unknown as Event);
+      expect(component.rows.length).toBe(4);
+      expect(component.net).toBe(1000 - 120 - 900 - 40);
+
+      component.onFilterCategory({ target: { value: 'Food & Drink' } } as unknown as Event);
+      component.setDraft('maxAmount', '500');
+      expect(component.rows.length).withContext('More filters wait for Apply').toBe(2);
+
+      component.applyAdvanced();
+      component.onSearch({ target: { value: 'coffee' } } as unknown as Event);
+      fixture.detectChanges();
+
+      expect(component.rows.map(r => r.expense?.id)).toEqual(['e1']);
+      expect(component.total).toBe(120);
+      expect(component.moneyIn).toBe(0);
+      expect(component.net).toBe(-120);
+
+      const chips = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.filter-chip')).map(c => c.textContent!.trim());
+      expect(chips).toEqual(['1 Oct 2026 – 31 Oct 2026', 'Food & Drink', 'At most ₹500', '“coffee”']);
+    });
+
+    it('refuses More filters that do not make sense, and keeps the list as it was', () => {
+      const fixture = load([expense({ amount: 100 }), expense({ id: 'e2', amount: 300 })]);
+      component.advancedOpen = true;
+      fixture.detectChanges();
+
+      component.setDraft('minAmount', '500');
+      component.setDraft('maxAmount', '100');
+      component.applyAdvanced();
+      fixture.detectChanges();
+
+      expect(component.rows.length).toBe(2);
+      expect((fixture.nativeElement as HTMLElement).querySelector('.filter-error')!.textContent).toContain('more than the maximum');
+
+      component.setDraft('minAmount', 'lots');
+      component.applyAdvanced();
+      expect(component.advancedError).toContain('not a number');
+      expect(component.rows.length).toBe(2);
+    });
+
+    it('filters by status and account from More filters', () => {
+      load([
+        expense({ id: 'e1', isPendingApproval: true, status: 'Pending / Waiting Admin', sourceCategory: 'Paytm' }),
+        expense({ id: 'e2', sourceCategory: 'Cash' })
+      ]);
+
+      component.toggleDraft('statuses', 'pending');
+      component.applyAdvanced();
+      expect(component.rows.map(r => r.expense?.id)).toEqual(['e1']);
+      expect(component.total).withContext('a pending expense is not spending yet').toBe(0);
+
+      component.toggleDraft('statuses', 'pending');
+      component.toggleDraft('accounts', 'Cash');
+      component.applyAdvanced();
+      expect(component.rows.map(r => r.expense?.id)).toEqual(['e2']);
+      expect(component.accountOptions).toEqual(['Cash', 'Paytm']);
+    });
+
+    it('removing a chip removes only that filter', () => {
+      const fixture = load([expense({ description: 'Coffee', category: 'Food & Drink' }), expense({ id: 'e2', description: 'Bus', category: 'Travel' })]);
+
+      component.onFilterCategory({ target: { value: 'Travel' } } as unknown as Event);
+      component.onSearch({ target: { value: 'bus' } } as unknown as Event);
+      fixture.detectChanges();
+
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[aria-label="Remove filter Travel"]')!.click();
+      fixture.detectChanges();
+
+      expect(component.selectedCategory).toBe('');
+      expect(component.searchText).toBe('bus');
+      expect(component.rows.length).toBe(1);
+    });
+
+    it('pages 50 at a time, the sort covering every page, and a filter starts again at page 1', () => {
+      const fixture = load(many(120));
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(component.pagedRows.length).toBe(50);
+      expect(el.querySelector('.page-of')!.textContent!.replace(/\s+/g, ' ')).toContain('1–50 of 120');
+
+      component.onSort('amount');
+      component.onSort('amount');
+      // Descending across all 120, not just the page.
+      expect(component.pagedRows[0].amount).toBe(120);
+
+      component.goPage(3);
+      fixture.detectChanges();
+      expect(component.pagedRows.length).toBe(20);
+      expect(component.pagedRows[19].amount).toBe(1);
+      expect(el.querySelectorAll('.table-row').length).toBe(20);
+
+      // "Item 77" also matches by amount (₹77 is Item 76), as an amount search should.
+      component.onSearch({ target: { value: 'Item 77' } } as unknown as Event);
+      expect(component.page).toBe(1);
+      expect(component.rows.map(r => r.description).sort()).toEqual(['Item 76', 'Item 77']);
+    });
+
+    it('exports every filtered row, across pages, under a name that says so; unfiltered stays as it was', async () => {
+      load(many(70));
+      let blob: Blob | null = null;
+      let name = '';
+      spyOn(URL, 'createObjectURL').and.callFake((b: Blob | MediaSource) => { blob = b as Blob; return 'blob:x'; });
+      spyOn(URL, 'revokeObjectURL');
+      spyOn(HTMLAnchorElement.prototype, 'click').and.callFake(function (this: HTMLAnchorElement) { name = this.download; });
+
+      component.onExportCsv();
+      expect(name).toMatch(/^transactions-\d{4}-\d{2}-\d{2}\.csv$/);
+
+      component.setDraft('minAmount', '11');
+      component.applyAdvanced();
+      expect(component.rows.length).toBe(60);
+      expect(component.pagedRows.length).toBe(50);
+
+      component.onExportCsv();
+      expect(name).toMatch(/^transactions-filtered-\d{4}-\d{2}-\d{2}\.csv$/);
+
+      const text = await (blob as unknown as Blob).text();
+      expect(text.trim().split('\r\n').length).withContext('header plus all 60 filtered rows').toBe(61);
+      expect(text).not.toContain('Item 0,');
+    });
+
+    it('says so when nothing matches, and Clear all brings everything back', () => {
+      const fixture = load([expense({ description: 'Coffee' })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      component.onSearch({ target: { value: 'zzz' } } as unknown as Event);
+      fixture.detectChanges();
+      expect(el.querySelector('.no-record')!.textContent).toContain('No transactions match');
+
+      el.querySelector<HTMLButtonElement>('.no-record .clear-all')!.click();
+      fixture.detectChanges();
+      expect(component.rows.length).toBe(1);
+      expect(el.querySelector('.chip-row')).toBeNull();
+    });
+  });
+
+  describe('the Filter menu beside the search', () => {
+    function loadMixed() {
+      return load([
+        expense({ id: 'e1', description: 'Coffee', category: 'Food & Drink', sourceCategory: 'Paytm', amount: 100 }),
+        expense({ id: 'e2', description: 'Bus', category: 'Travel', sourceCategory: 'Cash', amount: 30 }),
+        expense({ id: 'e3', description: 'Shoes', category: 'Shopping', sourceCategory: 'Paytm', amount: 900 })
+      ]);
+    }
+
+    const open = (fixture: { nativeElement: HTMLElement; detectChanges(): void }) => {
+      fixture.nativeElement.querySelector<HTMLButtonElement>('.filter-toggle')!.click();
+      fixture.detectChanges();
+    };
+
+    const option = (el: HTMLElement, legend: string, text: string) => {
+      const group = Array.from(el.querySelectorAll('.fm-group')).find(g => g.querySelector('legend')!.textContent!.trim() === legend)!;
+      return Array.from(group.querySelectorAll<HTMLLabelElement>('.fm-option')).find(l => l.textContent!.trim() === text)!
+        .querySelector('input')!;
+    };
+
+    it('sits right after the search', () => {
+      const fixture = loadMixed();
+      const head = fixture.nativeElement.querySelector('.list-head')!;
+      const kids = Array.from(head.children).map(c => (c as HTMLElement).className.split(' ')[0]);
+
+      expect(kids).toEqual(['list-title', 'list-search', 'filter-anchor', 'view-switch']);
+    });
+
+    it('takes several categories and accounts at once, and applies them only on Apply', () => {
+      const fixture = loadMixed();
+      const el = fixture.nativeElement as HTMLElement;
+      open(fixture);
+
+      option(el, 'Category', 'Food & Drink').click();
+      option(el, 'Category', 'Travel').click();
+      fixture.detectChanges();
+      expect(component.rows.length).withContext('nothing applied yet').toBe(3);
+
+      el.querySelector<HTMLButtonElement>('.apply-btn')!.click();
+      fixture.detectChanges();
+
+      expect(component.rows.map(r => r.expense?.id).sort()).toEqual(['e1', 'e2']);
+      expect(el.querySelector('.filter-menu')).withContext('Apply closes the menu').toBeNull();
+      expect(el.querySelector('.filter-toggle .more-count')!.textContent!.trim()).toBe('2');
+      expect(Array.from(el.querySelectorAll('.filter-chip')).map(c => c.textContent!.trim())).toEqual(['Food & Drink', 'Travel']);
+
+      open(fixture);
+      option(el, 'Account', 'Paytm').click();
+      fixture.detectChanges();
+      el.querySelector<HTMLButtonElement>('.apply-btn')!.click();
+      fixture.detectChanges();
+
+      expect(component.rows.map(r => r.expense?.id)).toEqual(['e1']);
+    });
+
+    it('closing without Apply forgets the unapplied ticks', () => {
+      const fixture = loadMixed();
+      const el = fixture.nativeElement as HTMLElement;
+      open(fixture);
+
+      option(el, 'Category', 'Shopping').click();
+      component.onEscape();
+      fixture.detectChanges();
+      expect(el.querySelector('.filter-menu')).toBeNull();
+      expect(component.rows.length).toBe(3);
+
+      open(fixture);
+      expect(option(el, 'Category', 'Shopping').checked).toBeFalse();
+    });
+
+    it('a chip takes off one of several values', () => {
+      const fixture = loadMixed();
+      const el = fixture.nativeElement as HTMLElement;
+
+      component.toggleDraft('categories', 'Food & Drink');
+      component.toggleDraft('categories', 'Travel');
+      component.applyAdvanced();
+      fixture.detectChanges();
+
+      el.querySelector<HTMLButtonElement>('[aria-label="Remove filter Travel"]')!.click();
+      fixture.detectChanges();
+
+      expect(component.filters.categories).toEqual(['Food & Drink']);
+      expect(component.rows.map(r => r.expense?.id)).toEqual(['e1']);
+    });
+
+    it('Clear empties the menu, and amounts that do not make sense are refused inside it', () => {
+      const fixture = loadMixed();
+      const el = fixture.nativeElement as HTMLElement;
+      open(fixture);
+
+      option(el, 'Category', 'Travel').click();
+      fixture.detectChanges();
+      Array.from(el.querySelectorAll<HTMLButtonElement>('.fm-foot button')).find(b => b.textContent!.trim() === 'Clear')!.click();
+      fixture.detectChanges();
+      expect(option(el, 'Category', 'Travel').checked).toBeFalse();
+
+      component.setDraft('minAmount', '500');
+      component.setDraft('maxAmount', '100');
+      fixture.detectChanges();
+      el.querySelector<HTMLButtonElement>('.apply-btn')!.click();
+      fixture.detectChanges();
+
+      expect(el.querySelector('.filter-menu .filter-error')!.textContent).toContain('more than the maximum');
+      expect(component.rows.length).toBe(3);
+    });
+  });
+
+  describe('calendar view', () => {
+    const month = () => component.calendarMonth;
+
+    it('is off by default: the List view shows, with the switch beside the search and Filter', () => {
+      const fixture = load([expense()]);
+      const el = fixture.nativeElement as HTMLElement;
+      const head = Array.from(el.querySelector('.list-head')!.children).map(c => (c as HTMLElement).className.split(' ')[0]);
+
+      expect(component.view).toBe('list');
+      expect(head).toEqual(['list-title', 'list-search', 'filter-anchor', 'view-switch']);
+      expect(el.querySelector('app-transaction-calendar')).toBeNull();
+      expect(el.querySelector('.table-scroll')).not.toBeNull();
+    });
+
+    it('switches to the calendar, keeping the search, filters and tab', () => {
+      const fixture = load([
+        expense({ id: 'e1', description: 'Coffee', category: 'Food & Drink', date: '2026-10-05' }),
+        expense({ id: 'e2', description: 'Bus', category: 'Travel', date: '2026-10-06' })
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      component.toggleDraft('categories', 'Travel');
+      component.applyAdvanced();
+      component.setView('calendar');
+      fixture.detectChanges();
+
+      expect(el.querySelector('app-transaction-calendar')).not.toBeNull();
+      expect(el.querySelector('.table-scroll')).toBeNull();
+      expect(component.calendarRows.map(r => r.expense?.id)).toEqual(['e2']);
+      expect(Array.from(el.querySelectorAll('.filter-chip')).map(c => c.textContent!.trim())).toEqual(['Travel']);
+
+      component.setView('list');
+      fixture.detectChanges();
+      expect(component.rows.map(r => r.expense?.id)).withContext('the list still filtered').toEqual(['e2']);
+    });
+
+    it('lets the month choose the dates: the Date filter is set aside, not lost', () => {
+      const fixture = load([expense({ id: 'e1', date: '2026-10-05' })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      component.onPeriod({ target: { value: 'today' } } as unknown as Event);
+      expect(component.rows.length).toBe(0);
+
+      component.setView('calendar');
+      fixture.detectChanges();
+
+      expect(component.calendarRows.length).withContext('every date, for the month to pick from').toBe(1);
+      expect(el.querySelector<HTMLSelectElement>('#periodFilter')!.disabled).toBeTrue();
+      expect(Array.from(el.querySelectorAll('.filter-chip')).map(c => c.textContent!.trim())).toEqual([]);
+
+      component.setView('list');
+      expect(component.filters.period).toBe('today');
+    });
+
+    it('steps through months and years, and Today comes back to this month', () => {
+      const fixture = load([expense()]);
+      const el = fixture.nativeElement as HTMLElement;
+      component.setView('calendar');
+      fixture.detectChanges();
+
+      const now = month();
+      el.querySelector<HTMLButtonElement>('[aria-label="Next month"]')!.click();
+      fixture.detectChanges();
+      expect(month() > now).toBeTrue();
+      expect(el.querySelector('.month-title')!.textContent).toContain(component.calendarTitle);
+
+      component.calendarMonth = '2026-12';
+      component.shiftCalendar(1);
+      expect(month()).toBe('2027-01');
+      component.shiftCalendar(-2);
+      expect(month()).toBe('2026-11');
+
+      el.querySelector<HTMLButtonElement>('.today-btn')!.click();
+      fixture.detectChanges();
+      expect(month()).toBe(component.indiaToday.slice(0, 7));
+      expect(el.querySelector<HTMLButtonElement>('.today-btn')!.disabled).toBeTrue();
+    });
+
+    it('opens an entry from the calendar in the same details drawer as the list', () => {
+      const fixture = load([expense({ id: 'e1', description: 'Coffee', date: '2026-10-05' })]);
+      component.setView('calendar');
+      component.calendarMonth = '2026-10';
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      el.querySelector<HTMLButtonElement>('[data-iso="2026-10-05"]')!.click();
+      fixture.detectChanges();
+      el.querySelector<HTMLButtonElement>('.d-row')!.click();
+      fixture.detectChanges();
+
+      expect(component.openRow?.expense?.id).toBe('e1');
+      expect(el.querySelector('app-transaction-details')).not.toBeNull();
+      http.expectOne('/api/expenses/e1/attachments').flush([]);
+    });
+
+    it('leaves the List view\'s pages and export as they were', () => {
+      const many = Array.from({ length: 70 }, (_, i) => expense({ id: `m${i}`, amount: i + 1 }));
+      load(many);
+
+      component.setView('calendar');
+      component.setView('list');
+
+      expect(component.pagedRows.length).toBe(50);
+      expect(component.rows.length).toBe(70);
+      expect(component.canExport).toBeTrue();
     });
   });
 });

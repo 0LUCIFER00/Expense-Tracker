@@ -28,6 +28,11 @@
           <dt><span class="dot" aria-hidden="true"></span>Repaid on splits</dt>
           <dd class="tnum">₹{{ paidBack | number }}</dd>
         </div>
+        <!-- Credit less your share of debit; repayments are in neither. -->
+        <div class="sum-row net" [class.muted]="tab === 'deleted'" [class.minus]="net < 0">
+          <dt><span class="dot" aria-hidden="true"></span>Net</dt>
+          <dd class="tnum">{{ net < 0 ? '−' : '' }}₹{{ (net < 0 ? -net : net) | number }}</dd>
+        </div>
       </dl>
     </section>
 
@@ -36,7 +41,7 @@
       <div class="panel-head">
         <h2 id="show-title" class="panel-title">Show</h2>
         <button type="button" class="reset-btn" [disabled]="!hasFilters" (click)="resetFilters()"
-          aria-label="Reset filters" title="Reset filters">
+          aria-label="Clear all filters" title="Clear all filters">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
             <path d="M3 12a9 9 0 1 0 2.6-6.4M3 4v5h5" />
           </svg>
@@ -60,38 +65,60 @@
         </button>
       </div>
 
-      <!-- Year and month share a row; both are short. -->
-      <div class="filter-pair">
+      <!--
+        When: a year and month, as before, or a date range; what and how much are in the Filter menu.
+        A custom range clears the year and month, so its From and To take their row: the panel
+        keeps its height and never scrolls on a laptop screen.
+      -->
+      @if (!customRangeShown) {
+      <div class="filter-pair year-month">
         <div class="filter">
           <label for="yearFilter">Year</label>
-          <select id="yearFilter" [disabled]="tab === 'deleted'" (change)="onFilterYear($event)">
+          <select id="yearFilter" [disabled]="tab === 'deleted' || view === 'calendar'" (change)="onFilterYear($event)">
+            <option [value]="0" [selected]="filters.year === 0">All years</option>
             @for (y of years; track y.value) {
-              <option [value]="y.value" [selected]="y.value === selectedYear">{{ y.value === 0 ? 'All years' : y.label }}</option>
+              <option [value]="y.value" [selected]="filters.year === y.value">{{ y.label }}</option>
             }
           </select>
         </div>
 
         <div class="filter">
           <label for="monthFilter">Month</label>
-          <select id="monthFilter" [disabled]="tab === 'deleted'" (change)="onFilterMonth($event)">
+          <select id="monthFilter" [disabled]="tab === 'deleted' || view === 'calendar'" (change)="onFilterMonth($event)">
+            <option [value]="0" [selected]="filters.month === 0">All months</option>
             @for (m of months; track m.value) {
-              <option [value]="m.value" [selected]="m.value === selectedMonth">{{ m.value === 0 ? 'All months' : m.label }}</option>
+              <option [value]="m.value" [selected]="filters.month === m.value">{{ m.label }}</option>
             }
           </select>
         </div>
       </div>
+      }
 
-      @if (usedCategories.length > 1) {
-        <div class="filter">
-          <label for="categoryFilter">Category</label>
-          <select id="categoryFilter" [disabled]="tab === 'deleted'" (change)="onFilterCategory($event)">
-            <option value="" [selected]="!selectedCategory">All categories</option>
-            @for (name of usedCategories; track name) {
-              <option [value]="name"
-              [selected]="name === selectedCategory">{{ name }}</option>
-            }
-          </select>
+      <div class="filter">
+        <label for="periodFilter">Date range</label>
+        <select id="periodFilter" [disabled]="tab === 'deleted' || view === 'calendar'" (change)="onPeriod($event)">
+          @for (p of periods; track p.value) {
+            <option [value]="p.value" [selected]="p.value === filters.period">{{ p.label }}</option>
+          }
+        </select>
+      </div>
+
+
+      @if (customRangeShown) {
+        <div class="filter-pair custom-range">
+          <div class="filter">
+            <label for="fromDate">From</label>
+            <input id="fromDate" type="date" [value]="filters.from" [attr.max]="filters.to || null" (change)="onDate('from', $event)" />
+          </div>
+          <div class="filter">
+            <label for="toDate">To</label>
+            <input id="toDate" type="date" [value]="filters.to" [attr.min]="filters.from || null" (change)="onDate('to', $event)" />
+          </div>
         </div>
+      }
+
+      @if (dateError) {
+        <p class="filter-error" role="alert">{{ dateError }}</p>
       }
     </section>
 
@@ -99,11 +126,14 @@
     <div class="panel-actions">
       <app-transaction-import menuPosition="above-start" (imported)="onImported()" />
 
-      <button type="button" class="export-btn" [disabled]="!canExport" (click)="onExportCsv()">
+      <!-- Exports every matching row (all pages); with filters on, only those. -->
+      <button type="button" class="export-btn" [disabled]="!canExport" (click)="onExportCsv()"
+        [attr.aria-label]="narrowed ? 'Export the ' + rows.length + ' filtered transactions as CSV' : null"
+        [title]="narrowed ? 'Only the ' + rows.length + ' filtered transactions' : 'Export CSV'">
         <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
           <path d="M12 3v12M7.5 10.5 12 15l4.5-4.5M4 19h16" />
         </svg>
-        Export CSV
+        {{ narrowed ? 'Export ' + rows.length : 'Export CSV' }}
       </button>
     </div>
   </aside>
@@ -116,15 +146,167 @@
     } @else {
 
     <!-- The heading, and a search across description, category and account. -->
-    <div class="list-head">
-      <h1 class="list-title">{{ listTitle }}</h1>
+    <div class="list-head" [class.calendar]="view === 'calendar'">
+      @if (view === 'calendar') {
+        <!-- The month showing, its neighbours either side, and back to this one. -->
+        <div class="month-nav">
+          <button type="button" class="nav-btn" (click)="shiftCalendar(-1)" aria-label="Previous month">
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg>
+          </button>
+          <h1 class="list-title month-title" aria-live="polite">{{ calendarTitle }}</h1>
+          <button type="button" class="nav-btn" (click)="shiftCalendar(1)" aria-label="Next month">
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+          </button>
+          <button type="button" class="today-btn" [disabled]="onThisMonth" (click)="calendarToToday()">Today</button>
+        </div>
+      } @else {
+        <h1 class="list-title">{{ listTitle }}</h1>
+      }
       <label class="list-search">
         <span class="sr-only">Search transactions</span>
         <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" /></svg>
-        <input type="search" placeholder="Search transactions" autocomplete="off"
+        <input type="search" placeholder="Search name, amount, notes…" autocomplete="off"
           [value]="searchText" (input)="onSearch($event)" />
       </label>
+
+      <!-- Right after the search: pick any number of categories, statuses, accounts and methods. -->
+      <div class="filter-anchor">
+        <button type="button" class="filter-toggle" aria-haspopup="dialog" aria-controls="filter-menu"
+          [attr.aria-expanded]="advancedOpen" (click)="toggleAdvanced()">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z" /></svg>
+          Filter
+          @if (advancedCount) { <span class="more-count" [attr.aria-label]="advancedCount + ' chosen'">{{ advancedCount }}</span> }
+        </button>
+
+        @if (advancedOpen) {
+          <div id="filter-menu" class="filter-menu" role="dialog" aria-label="Filter transactions">
+            <div class="fm-body">
+              <fieldset class="fm-group">
+                <legend>Category</legend>
+                <div class="fm-options">
+                  @for (name of usedCategories; track name) {
+                    <label class="fm-option" [class.on]="isTicked('categories', name)">
+                      <input type="checkbox" [checked]="isTicked('categories', name)" (change)="toggleDraft('categories', name)" />
+                      {{ name }}
+                    </label>
+                  } @empty {
+                    <span class="fm-none">No categories yet.</span>
+                  }
+                </div>
+              </fieldset>
+
+              <fieldset class="fm-group">
+                <legend>Status</legend>
+                <div class="fm-options">
+                  <label class="fm-option" [class.on]="isTicked('statuses', 'approved')">
+                    <input type="checkbox" [checked]="isTicked('statuses', 'approved')" (change)="toggleDraft('statuses', 'approved')" />
+                    Approved
+                  </label>
+                  <label class="fm-option" [class.on]="isTicked('statuses', 'pending')">
+                    <input type="checkbox" [checked]="isTicked('statuses', 'pending')" (change)="toggleDraft('statuses', 'pending')" />
+                    Pending
+                  </label>
+                </div>
+              </fieldset>
+
+              @if (canViewSourceDetails) {
+                <fieldset class="fm-group">
+                  <legend>Account</legend>
+                  <div class="fm-options">
+                    @for (a of accountOptions; track a) {
+                      <label class="fm-option" [class.on]="isTicked('accounts', a)">
+                        <input type="checkbox" [checked]="isTicked('accounts', a)" (change)="toggleDraft('accounts', a)" />
+                        {{ a }}
+                      </label>
+                    }
+                    <label class="fm-option" [class.on]="isTicked('accounts', noAccount)">
+                      <input type="checkbox" [checked]="isTicked('accounts', noAccount)" (change)="toggleDraft('accounts', noAccount)" />
+                      No account
+                    </label>
+                  </div>
+                </fieldset>
+              }
+
+              @if (paymentMethods.length) {
+                <fieldset class="fm-group">
+                  <legend>Payment method</legend>
+                  <div class="fm-options">
+                    @for (m of paymentMethods; track m) {
+                      <label class="fm-option" [class.on]="isTicked('paymentMethods', m)">
+                        <input type="checkbox" [checked]="isTicked('paymentMethods', m)" (change)="toggleDraft('paymentMethods', m)" />
+                        {{ m }}
+                      </label>
+                    }
+                    <label class="fm-option" [class.on]="isTicked('paymentMethods', noAccount)">
+                      <input type="checkbox" [checked]="isTicked('paymentMethods', noAccount)" (change)="toggleDraft('paymentMethods', noAccount)" />
+                      Not recorded
+                    </label>
+                  </div>
+                </fieldset>
+              }
+
+              <fieldset class="fm-group">
+                <legend>Amount</legend>
+                <div class="fm-amounts">
+                  <label><span>Min ₹</span>
+                    <input id="minAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="0"
+                      [value]="draft.minAmount" (input)="setDraft('minAmount', $any($event.target).value)"
+                      (keydown.enter)="applyAdvanced()" />
+                  </label>
+                  <label><span>Max ₹</span>
+                    <input id="maxAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="Any"
+                      [value]="draft.maxAmount" (input)="setDraft('maxAmount', $any($event.target).value)"
+                      (keydown.enter)="applyAdvanced()" />
+                  </label>
+                </div>
+              </fieldset>
+
+              @if (advancedError) {
+                <p class="filter-error" role="alert">{{ advancedError }}</p>
+              }
+            </div>
+
+            <div class="fm-foot">
+              <button type="button" class="clear-all" (click)="clearDraft()">Clear</button>
+              <button type="button" class="apply-btn" [disabled]="!draftChanged" (click)="applyAdvanced()">Apply filters</button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- List (the default) or the month as a calendar; the filters carry across. -->
+      <div class="view-switch" role="radiogroup" aria-label="View">
+        <button type="button" role="radio" class="view-btn" [class.on]="view === 'list'" [attr.aria-checked]="view === 'list'" (click)="setView('list')">
+          <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
+          List
+        </button>
+        <button type="button" role="radio" class="view-btn" [class.on]="view === 'calendar'" [attr.aria-checked]="view === 'calendar'" (click)="setView('calendar')">
+          <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
+          Calendar
+        </button>
+      </div>
     </div>
+
+    <!-- What is narrowing the list, each removable; Clear all takes them all. -->
+    @if (visibleChips.length) {
+      <div class="chip-row" role="group" aria-label="Active filters">
+        @for (c of visibleChips; track c.key + (c.value ?? '')) {
+          <button type="button" class="filter-chip" (click)="removeChip(c)" [attr.aria-label]="'Remove filter ' + c.label">
+            {{ c.label }}
+            <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+          </button>
+        }
+        <button type="button" class="clear-all" (click)="resetFilters()">Clear all</button>
+        @if (view === 'list') {
+          <span class="chip-count">{{ rows.length | number }} match{{ rows.length === 1 ? '' : 'es' }}</span>
+        }
+      </div>
+    }
+
+    @if (view === 'calendar') {
+      <app-transaction-calendar [rows]="calendarRows" [month]="calendarMonth" [today]="indiaToday"
+        [canViewSource]="canViewSourceDetails" [loading]="loading" (open)="onOpenRow($event)" />
+    } @else {
 
     <!-- Wide enough that a phone scrolls it sideways rather than squeezing. -->
     <div class="table-scroll">
@@ -155,7 +337,7 @@
       </div>
 
       <!-- Tracked by key, so a reload after a change reuses the rows it can. -->
-      @for (row of rows; track row.key) {
+      @for (row of pagedRows; track row.key) {
         <!-- Every row opens its details: amount, account, split, receipts, remove. -->
         <div class="table-row et-splittable" [class.no-account]="!canViewSourceDetails"
           [class.row-out]="row.kind === 'out'" [class.row-in]="row.kind === 'in'"
@@ -203,14 +385,32 @@
     </div>
 
     @if (rows.length) {
-      <p class="table-note">Click any entry for its details and receipts{{ canRemoveExpenses ? ', or to remove it' : '' }}.</p>
+      <div class="table-foot">
+        <p class="table-note">Click any entry for its details and receipts{{ canRemoveExpenses ? ', or to remove it' : '' }}.</p>
+        @if (pageCount > 1) {
+          <nav class="pager" aria-label="Pages">
+            <button type="button" class="page-btn" [disabled]="page === 1" (click)="goPage(page - 1)" aria-label="Previous page">
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg>
+            </button>
+            <span class="page-of tnum">{{ pageFirst | number }}–{{ pageLast | number }} of {{ rows.length | number }}</span>
+            <button type="button" class="page-btn" [disabled]="page === pageCount" (click)="goPage(page + 1)" aria-label="Next page">
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+            </button>
+          </nav>
+        }
+      </div>
     }
 
     @if (rows.length === 0) {
       <div class="no-record">
-        <h3>No record found</h3>
-        <p>Nothing matches these filters.</p>
+        <h3>{{ narrowed ? 'No transactions match' : 'No record found' }}</h3>
+        <p>{{ narrowed ? 'Nothing matches these filters and search.' : 'Nothing has been added here yet.' }}</p>
+        @if (hasFilters) {
+          <button type="button" class="clear-all" (click)="resetFilters()">Clear all filters</button>
+        }
       </div>
+    }
+
     }
 
     }
