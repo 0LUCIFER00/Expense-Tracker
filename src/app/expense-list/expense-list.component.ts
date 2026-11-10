@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { TransactionDetailsComponent } from './transaction-details/transaction-details.component';
+import { TransactionImportComponent } from './transaction-import/transaction-import.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -56,7 +57,7 @@ const TABS: TransactionTab[] = ['all', 'out', 'in'];
 @Component({
   selector: 'app-expense-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, FitsScreenDirective, TransactionDetailsComponent],
+  imports: [CommonModule, FormsModule, FitsScreenDirective, TransactionDetailsComponent, TransactionImportComponent],
   templateUrl: './expense-list.component.html',
   styleUrl: './expense-list.component.css'
 })
@@ -153,6 +154,11 @@ export class ExpenseListComponent implements OnInit {
       this.tab = requested;
     }
 
+    this.reload();
+  }
+
+  /** After an import: the new entries, and the totals with them. */
+  onImported(): void {
     this.reload();
   }
 

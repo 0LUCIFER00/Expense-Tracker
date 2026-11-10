@@ -40,7 +40,17 @@
           @if (expense?.remarks) {
             <dd class="how">{{ expense?.remarks }}</dd>
           }
+          @if (imported) {
+            <dd class="how">From {{ imported.fileName }}</dd>
+          }
         </div>
+      }
+      <!-- Two columns of an imported file that have no field of their own. -->
+      @if (imported?.paymentMethod) {
+        <div class="wide"><dt>Payment method</dt><dd>{{ imported?.paymentMethod }}</dd></div>
+      }
+      @if (imported?.notes) {
+        <div class="wide"><dt>Notes</dt><dd>{{ imported?.notes }}</dd></div>
       }
     </dl>
 

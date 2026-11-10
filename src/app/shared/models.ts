@@ -67,6 +67,15 @@ export interface Expense {
   splitReceived?: number;
   /** Receipts and invoices attached; only the list says how many. */
   attachmentCount?: number;
+  /** Set when it came from an imported file. */
+  imported?: ImportedFrom | null;
+}
+
+/** Where an imported entry came from, with the cells the app has no field for. */
+export interface ImportedFrom {
+  fileName: string;
+  notes: string | null;
+  paymentMethod: string | null;
 }
 
 /** What the add-expense form sends. The server decides the resulting status. */
@@ -181,6 +190,8 @@ export interface Income {
   /** Set when this was someone paying back their part of a split expense. */
   splitExpenseId?: string | null;
   splitDescription?: string | null;
+  /** Set when it came from an imported file. */
+  imported?: ImportedFrom | null;
 }
 
 /** What the Add Money form sends. */

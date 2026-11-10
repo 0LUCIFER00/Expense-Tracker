@@ -52,6 +52,9 @@
       }
 
       <div class="filter-actions">
+        <!-- Import sits beside Export; its menu also offers the sample files. -->
+        <app-transaction-import (imported)="onImported()" />
+
         <button type="button" class="export-btn" [disabled]="!canExport" (click)="onExportCsv()">
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
             <path d="M12 3v12M7.5 10.5 12 15l4.5-4.5M4 19h16" />

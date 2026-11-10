@@ -1,0 +1,459 @@
+<!-- Import beside Export: a menu of the two file types and the sample files. -->
+<div class="imp-anchor">
+  <button type="button" class="import-btn" aria-haspopup="menu" aria-controls="import-menu"
+    [attr.aria-expanded]="menuOpen" (click)="toggleMenu()">
+    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+      <path d="M12 15V3M7.5 7.5 12 3l4.5 4.5M4 19h16" />
+    </svg>
+    Import
+    <svg class="chev" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+  </button>
+
+  @if (menuOpen) {
+    <div id="import-menu" class="imp-menu" role="menu" aria-label="Import" (keydown)="onMenuKey($event)">
+      <p class="imp-group" role="presentation">Import transactions</p>
+
+      <button type="button" role="menuitem" class="imp-item" (click)="chooseFile('csv')">
+        <span class="imp-ic csv" aria-hidden="true">CSV</span>
+        <span class="imp-text">
+          <strong>Import CSV</strong>
+          <small>A .csv file from your bank or a spreadsheet</small>
+        </span>
+      </button>
+
+      <button type="button" role="menuitem" class="imp-item" (click)="chooseFile('xlsx')">
+        <span class="imp-ic xls" aria-hidden="true">XLSX</span>
+        <span class="imp-text">
+          <strong>Import Excel (.xlsx)</strong>
+          <small>Reads the sheet named Transactions, or the first sheet</small>
+        </span>
+      </button>
+
+      <p class="imp-group" role="presentation">Download a sample file</p>
+
+      @for (t of templates; track t.kind) {
+        <div class="imp-tpl" role="presentation">
+          <span class="imp-tpl-ic" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 20h14" /></svg>
+          </span>
+          <span class="imp-tpl-name">{{ t.label }}<small>{{ t.note }}</small></span>
+          <button type="button" role="menuitem" class="imp-fmt" [disabled]="building"
+            [attr.aria-label]="t.label + ' as CSV'" (click)="downloadTemplate(t.kind, 'csv')">
+            {{ building === t.kind + '-csv' ? '…' : 'CSV' }}
+          </button>
+          <button type="button" role="menuitem" class="imp-fmt" [disabled]="building"
+            [attr.aria-label]="t.label + ' as Excel'" (click)="downloadTemplate(t.kind, 'xlsx')">
+            {{ building === t.kind + '-xlsx' ? '…' : 'Excel' }}
+          </button>
+        </div>
+      }
+
+      <p class="imp-help" role="presentation">
+        Dates as 2026-11-05, or day first as 05/11/2026. Amounts in rupees, like 1250.50.
+        The Excel templates include instructions.
+      </p>
+    </div>
+  }
+
+  <input #fileInput type="file" class="sr-only" tabindex="-1" aria-hidden="true" (change)="onFileChosen($event)" />
+</div>
+
+@if (step) {
+  <div class="et-overlay imp-overlay">
+    <section class="imp-dialog" role="dialog" aria-modal="true" aria-labelledby="imp-title"
+      [class.wide]="step === 'review'">
+
+      <header class="imp-head">
+        <div class="imp-head-text">
+          <h2 id="imp-title">{{ title }}</h2>
+          @if (file) {
+            <p class="imp-file">
+              {{ file.name }}@if (table) {<span> · {{ table.rows.length | number }} row{{ table.rows.length === 1 ? '' : 's' }}</span>}
+            </p>
+          }
+        </div>
+
+        @if (step !== 'error') {
+          <ol class="imp-steps" aria-label="Steps">
+            @for (label of ['Columns', 'Check', 'Import', 'Report']; track label; let i = $index) {
+              <li [class.done]="stepNumber > i + 1" [class.now]="stepNumber === i + 1"
+                [attr.aria-current]="stepNumber === i + 1 ? 'step' : null">{{ label }}</li>
+            }
+          </ol>
+        }
+
+        <button type="button" class="imp-x" aria-label="Close" [disabled]="step === 'importing'" (click)="close()">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+        </button>
+      </header>
+
+      <!-- ===================================================== reading -->
+      @if (step === 'reading') {
+        <div class="imp-body imp-center" aria-live="polite">
+          <p class="imp-status">{{ status }}</p>
+          <div class="imp-bar" role="progressbar" [attr.aria-valuenow]="readPercent" aria-valuemin="0" aria-valuemax="100">
+            <span [style.width.%]="readPercent"></span>
+          </div>
+        </div>
+      }
+
+      <!-- ===================================================== error -->
+      @if (step === 'error') {
+        <div class="imp-body imp-center" role="alert">
+          <span class="imp-big-ic bad" aria-hidden="true">!</span>
+          <p class="imp-error-text">{{ error }}</p>
+        </div>
+        <footer class="imp-foot">
+          <button type="button" class="et-btn-ghost" (click)="close()">Close</button>
+          <button type="button" class="et-btn-primary" (click)="chooseAgain()">Choose another file</button>
+        </footer>
+      }
+
+      <!-- ===================================================== columns -->
+      @if (step === 'map' && table) {
+        <div class="imp-body">
+          <p class="imp-lead">
+            Say which column holds what. Date, Description and Amount are needed; the rest are optional.
+          </p>
+
+          <div class="imp-map">
+            @for (field of fields; track field) {
+              <label class="imp-map-row" [class.opt]="!isRequired(field)">
+                <span class="imp-map-name">
+                  <span>{{ fieldLabels[field] }}@if (isRequired(field)) {<b class="req" aria-label="required">*</b>}</span>
+                  @if (field === 'debit') { <small>For statements with separate columns</small> }
+                </span>
+                <select class="et-field" [ngModel]="columns[field]" (ngModelChange)="setColumn(field, $event)">
+                  <option [ngValue]="-1">Not in this file</option>
+                  @for (h of table.headers; track $index) {
+                    <option [ngValue]="$index">{{ columnLabel($index) }}</option>
+                  }
+                </select>
+                <span class="imp-map-eg">{{ exampleFor(field) }}</span>
+              </label>
+            }
+          </div>
+
+          @if (!kindFromFile) {
+            <fieldset class="imp-kind">
+              <legend>The file has no Type column, so every row is</legend>
+              <label><input type="radio" name="kind-map" [checked]="defaultKind === 'expense'" (change)="defaultKind = 'expense'" /> An expense</label>
+              <label><input type="radio" name="kind-map" [checked]="defaultKind === 'income'" (change)="defaultKind = 'income'" /> Income</label>
+              <label><input type="radio" name="kind-map" [checked]="defaultKind === 'sign'" (change)="defaultKind = 'sign'" /> Negative amounts are expenses, positive are income</label>
+            </fieldset>
+          }
+
+          @if (mapProblem) {
+            <p class="imp-note bad" role="alert">{{ mapProblem }}</p>
+          }
+        </div>
+        <footer class="imp-foot">
+          @if (preview) {
+            <button type="button" class="et-btn-ghost" (click)="cancelColumns()">Back</button>
+          } @else {
+            <button type="button" class="et-btn-ghost" (click)="close()">Cancel</button>
+          }
+          <button type="button" class="et-btn-primary" [disabled]="!!mapProblem" (click)="applyColumns()">Check the rows</button>
+        </footer>
+      }
+
+      <!-- ===================================================== review -->
+      @if (step === 'review' && preview) {
+        <div class="imp-body imp-review-body">
+
+          @for (prev of preview.previousImports.slice(0, 1); track prev.id) {
+            <p class="imp-note warn" role="status">
+              You imported this exact file on {{ prev.createdAt | date: 'd MMM y' }}
+              ({{ prev.importedRows }} row{{ prev.importedRows === 1 ? '' : 's' }}). Rows already in
+              Transactions are marked as duplicates and left out.
+            </p>
+          }
+
+          <div class="imp-toolbar">
+            <div class="imp-filters" role="tablist" aria-label="Show rows">
+              @for (f of filterTabs; track f.value) {
+                <button type="button" role="tab" class="imp-filter" [attr.data-f]="f.value"
+                  [class.on]="filter === f.value" [attr.aria-selected]="filter === f.value"
+                  (click)="setFilter(f.value)">
+                  {{ f.label }} <span class="n">{{ counts[f.value] }}</span>
+                </button>
+              }
+            </div>
+
+            <div class="imp-options">
+              @if (!kindFromFile) {
+                <label class="imp-opt">
+                  <span>Rows are</span>
+                  <select class="et-field" [ngModel]="defaultKind" (ngModelChange)="onKindChange($event)">
+                    <option value="expense">Expenses</option>
+                    <option value="income">Income</option>
+                    <option value="sign">− out, + in</option>
+                  </select>
+                </label>
+              }
+              @if (hasBlankAccounts && preview.options.accounts.length) {
+                <label class="imp-opt">
+                  <span>Rows with no account</span>
+                  <select class="et-field" [ngModel]="fallbackAccount" (ngModelChange)="onFallbackChange($event)">
+                    <option value="">Leave them without one</option>
+                    @for (a of preview.options.accounts; track a.id) {
+                      <option [value]="a.name">{{ a.name }}</option>
+                    }
+                  </select>
+                </label>
+              }
+              <label class="imp-switch">
+                <input type="checkbox" role="switch" [checked]="updateBalances"
+                  (change)="onBalancesChange($any($event.target).checked)" />
+                <span class="track" aria-hidden="true"><span class="knob"></span></span>
+                <span>Update account balances</span>
+              </label>
+              <button type="button" class="imp-link" (click)="editColumns()">Change columns</button>
+            </div>
+          </div>
+
+          @if (!updateBalances) {
+            <p class="imp-note">
+              Entries are recorded against their accounts, but no money moves. Use this when the balances
+              on Cash &amp; Accounts already include these transactions.
+            </p>
+          }
+
+          @if (filter === 'invalid' && unknownCategoryRows.length) {
+            <div class="imp-bulk">
+              <span>{{ unknownCategoryRows.length }} row{{ unknownCategoryRows.length === 1 ? ' has a category' : 's have categories' }} the app does not have.</span>
+              <button type="button" class="imp-link" (click)="useOtherForUnknown()">File them under Other</button>
+            </div>
+          }
+
+          @if (previewError) {
+            <p class="imp-note bad" role="alert">{{ previewError }}</p>
+          }
+
+          <div class="imp-list" role="list" [attr.aria-busy]="checking">
+            <div class="imp-list-head" aria-hidden="true">
+              <span></span><span>Row</span><span>Date</span><span>Description</span><span>Category</span>
+              <span>Account</span><span class="r">Amount</span><span></span>
+            </div>
+
+            @for (row of visibleRows; track row.p.row) {
+              <div class="imp-row" role="listitem" [attr.data-state]="row.state" [class.off]="!row.included">
+                <span class="c-check">
+                  @if (row.toggleable) {
+                    <input type="checkbox" [checked]="row.included" (change)="toggleRow(row)"
+                      [attr.aria-label]="(row.included ? 'Leave out' : 'Import') + ' row ' + row.p.row" />
+                  }
+                </span>
+                <span class="c-row tnum">{{ row.p.row }}</span>
+                <span class="c-date tnum">{{ shortDate(row.p.date) }}</span>
+                <span class="c-desc">
+                  <span class="d-text">{{ row.p.description || '(no description)' }}</span>
+                  <span class="pill" [attr.data-state]="row.state">{{ stateLabel[row.state] }}</span>
+                  @if (row.state === 'invalid') {
+                    @for (e of row.p.errors; track $index) { <span class="why bad">{{ e }}</span> }
+                  } @else if (stateNote(row)) {
+                    <span class="why" [class.warn]="row.state === 'duplicate'">{{ stateNote(row) }}</span>
+                  }
+                  @for (i of row.p.info; track $index) { <span class="why">{{ i }}</span> }
+                </span>
+                <span class="c-cat">{{ row.p.category ?? '—' }}</span>
+                <span class="c-acc">{{ row.p.accountName ?? '—' }}</span>
+                <span class="c-amt tnum" [class.in]="row.p.kind === 'income'">
+                  {{ rowAmount(row.p) }}
+                </span>
+                <span class="c-act">
+                  @if (row.state !== 'imported') {
+                    <button type="button" class="imp-link" (click)="startEdit(row)"
+                      [attr.aria-label]="(row.state === 'invalid' ? 'Fix' : 'Edit') + ' row ' + row.p.row">
+                      {{ row.state === 'invalid' ? 'Fix' : 'Edit' }}
+                    </button>
+                  }
+                  @if (row.state === 'invalid') {
+                    <button type="button" class="imp-link muted" (click)="setExcluded(row, true)">Leave out</button>
+                  } @else if (row.state === 'excluded' && row.p.status === 'invalid') {
+                    <button type="button" class="imp-link muted" (click)="setExcluded(row, false)">Bring back</button>
+                  }
+                </span>
+
+                @if (editingRow === row.p.row) {
+                  <form class="imp-edit" (ngSubmit)="saveEdit()">
+                    <label><span>Type</span>
+                      <select class="et-field" name="kind" [ngModel]="draftKind" (ngModelChange)="setDraftKind($event)">
+                        <option value="expense">Expense</option>
+                        <option value="income">Income</option>
+                      </select>
+                    </label>
+                    <label><span>Date</span>
+                      <input class="et-field" name="date" [(ngModel)]="draft.date" placeholder="2026-11-05" autocomplete="off" />
+                    </label>
+                    <label class="wide"><span>Description</span>
+                      <input class="et-field" name="description" [(ngModel)]="draft.description" maxlength="200" />
+                    </label>
+                    <label><span>Amount (₹)</span>
+                      <input class="et-field" name="amount" [(ngModel)]="draft.amount" inputmode="decimal" />
+                    </label>
+                    <label><span>Category</span>
+                      <select class="et-field" name="category" [(ngModel)]="draft.category">
+                        <option value="">None</option>
+                        @if (draftCategoryUnknown) { <option [value]="draft.category">{{ draft.category }} (not a category)</option> }
+                        @for (c of (draftKind === 'income' ? preview.options.incomeCategories : preview.options.expenseCategories); track c) {
+                          <option [value]="c">{{ c }}</option>
+                        }
+                      </select>
+                    </label>
+                    <label><span>Account</span>
+                      <select class="et-field" name="account" [(ngModel)]="draft.account">
+                        <option value="">{{ draftKind === 'income' ? 'Choose an account' : 'No account (list only)' }}</option>
+                        @if (draftAccountUnknown) { <option [value]="draft.account">{{ draft.account }} (no such account)</option> }
+                        @for (a of preview.options.accounts; track a.id) {
+                          <option [value]="a.name">{{ a.name }}</option>
+                        }
+                      </select>
+                    </label>
+                    <div class="imp-edit-actions">
+                      <button type="button" class="et-btn-ghost" (click)="editingRow = null">Cancel</button>
+                      <button type="submit" class="et-btn-primary">Check again</button>
+                    </div>
+                  </form>
+                }
+              </div>
+            } @empty {
+              <p class="imp-empty">{{ filter === 'invalid' ? 'Nothing needs fixing.' : 'No rows here.' }}</p>
+            }
+          </div>
+        </div>
+
+        <footer class="imp-foot">
+          <span class="imp-foot-note" aria-live="polite">
+            @if (checking) { Checking… } @else {
+              {{ includedCount | number }} of {{ review.length | number }} will be imported.
+            }
+          </span>
+          <button type="button" class="et-btn-ghost" (click)="close()">Cancel</button>
+          <button type="button" class="et-btn-primary" [disabled]="!includedCount || checking" (click)="goConfirm()">
+            Import {{ includedCount | number }} transaction{{ includedCount === 1 ? '' : 's' }}
+          </button>
+        </footer>
+      }
+
+      <!-- ===================================================== confirm -->
+      @if (step === 'confirm' && preview) {
+        <div class="imp-body">
+          <ul class="imp-confirm">
+            @if (preview.summary.expenses.count) {
+              <li><strong>{{ preview.summary.expenses.count }} expense{{ preview.summary.expenses.count === 1 ? '' : 's' }}</strong>
+                totalling {{ rupees(preview.summary.expenses.paise) }}</li>
+            }
+            @if (preview.summary.incomes.count) {
+              <li><strong>{{ preview.summary.incomes.count }} income entr{{ preview.summary.incomes.count === 1 ? 'y' : 'ies' }}</strong>
+                totalling {{ rupees(preview.summary.incomes.paise) }}</li>
+            }
+            @if (preview.summary.pending) {
+              <li>{{ preview.summary.pending }} will wait for approval before they count.</li>
+            }
+          </ul>
+
+          @if (preview.summary.accounts.length) {
+            <p class="imp-sub">Balances that change</p>
+            <ul class="imp-accounts">
+              @for (a of preview.summary.accounts; track a.name) {
+                <li><span>{{ a.name }}</span><span class="tnum" [class.in]="a.changePaise > 0">{{ signedRupees(a.changePaise) }}</span></li>
+              }
+            </ul>
+          } @else {
+            <p class="imp-note">No account balance changes.</p>
+          }
+
+          <p class="imp-note">
+            Nothing already in Transactions is changed. {{ review.length - includedCount }}
+            row{{ review.length - includedCount === 1 ? ' is' : 's are' }} left out.
+          </p>
+        </div>
+        <footer class="imp-foot">
+          <button type="button" class="et-btn-ghost" (click)="backToReview()">Back</button>
+          <button type="button" class="et-btn-primary" (click)="startImport()">Yes, import {{ includedCount | number }}</button>
+        </footer>
+      }
+
+      <!-- ===================================================== importing -->
+      @if (step === 'importing') {
+        <div class="imp-body imp-center" aria-live="polite">
+          <p class="imp-status">Importing {{ progress.done | number }} of {{ progress.total | number }}…</p>
+          <div class="imp-bar" role="progressbar" [attr.aria-valuenow]="progress.done" aria-valuemin="0"
+            [attr.aria-valuemax]="progress.total">
+            <span [style.width.%]="progress.total ? (progress.done / progress.total) * 100 : 0"></span>
+          </div>
+          @if (chunkError) {
+            <p class="imp-note bad" role="alert">
+              The import stopped after {{ progress.done | number }} of {{ progress.total | number }}: {{ chunkError }}
+              Trying again is safe; rows already imported are not added twice.
+            </p>
+          } @else {
+            <p class="imp-sub">Keep this open until it finishes.</p>
+          }
+        </div>
+        @if (chunkError) {
+          <footer class="imp-foot">
+            <button type="button" class="et-btn-ghost" (click)="stopImport()">Stop here</button>
+            <button type="button" class="et-btn-primary" (click)="runQueue()">Try again</button>
+          </footer>
+        }
+      }
+
+      <!-- ===================================================== report -->
+      @if (step === 'report') {
+        <div class="imp-body">
+          <dl class="imp-stats">
+            <div><dt>Rows in file</dt><dd>{{ table?.rows?.length ?? 0 | number }}</dd></div>
+            <div><dt>Ready to import</dt><dd>{{ planned.ready | number }}</dd></div>
+            <div data-tone="warn"><dt>Duplicates</dt><dd>{{ planned.duplicates | number }}</dd></div>
+            <div data-tone="bad"><dt>Invalid</dt><dd>{{ planned.invalid | number }}</dd></div>
+            <div data-tone="good"><dt>Imported</dt><dd>{{ importedCount | number }}</dd></div>
+            <div [attr.data-tone]="failures.length ? 'bad' : null"><dt>Failed</dt><dd>{{ failures.length | number }}</dd></div>
+          </dl>
+
+          @if (planned.leftOut || planned.earlier) {
+            <p class="imp-note">
+              @if (planned.leftOut) {
+                {{ planned.leftOut }} row{{ planned.leftOut === 1 ? '' : 's' }} left out by you@if (planned.samples) {, including {{ planned.samples }} example row{{ planned.samples === 1 ? '' : 's' }}}.
+              }
+              @if (planned.earlier) {
+                {{ planned.earlier }} imported earlier in this window.
+              }
+            </p>
+          }
+
+          @if (notAttempted) {
+            <p class="imp-note bad">{{ notAttempted }} row{{ notAttempted === 1 ? ' was' : 's were' }} not attempted after the import stopped.</p>
+          }
+
+          @for (alert of budgetAlerts; track $index) {
+            <p class="imp-note warn">{{ alert }}</p>
+          }
+
+          @if (failures.length) {
+            <p class="imp-sub">Not imported</p>
+            <ul class="imp-failed">
+              @for (f of failures; track f.row) {
+                <li><span class="tnum">Row {{ f.row }}</span><span>{{ f.description }}</span><span class="why bad">{{ f.error }}</span></li>
+              }
+            </ul>
+          } @else if (importedCount) {
+            <p class="imp-note good">
+              Everything chosen was imported. It is in Transactions now, and counts on Home and in Budgets.
+            </p>
+          }
+        </div>
+        <footer class="imp-foot">
+          @if (failures.length) {
+            <button type="button" class="et-btn-ghost" (click)="downloadFailed()">Download the failed rows</button>
+          }
+          @if (failures.length || notAttempted) {
+            <button type="button" class="et-btn-ghost" (click)="fixFailed()">Fix and try again</button>
+          }
+          <button type="button" class="et-btn-primary" (click)="close()">Done</button>
+        </footer>
+      }
+    </section>
+  </div>
+}

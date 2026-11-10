@@ -1,0 +1,26 @@
+/* The confirmation before importing, and the report after. */
+
+.imp-confirm { margin: 0; padding-left: 1.125rem; line-height: 1.8; }
+
+.imp-accounts,
+.imp-failed { margin: 0; padding: 0; list-style: none; }
+
+.imp-accounts li { display: flex; justify-content: space-between; padding: 0.375rem 0; border-bottom: 1px solid var(--rule); font-size: 0.875rem; }
+.imp-accounts .tnum { font-weight: 800; color: var(--bad-ink); }
+.imp-accounts .tnum.in { color: var(--good-ink); }
+
+.imp-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; margin: 0; }
+.imp-stats div { padding: 0.625rem 0.75rem; border-radius: 10px; background-color: var(--sunken); }
+.imp-stats dt { font-size: 0.75rem; font-weight: 700; color: var(--ink-3); }
+.imp-stats dd { margin: 2px 0 0; font-size: 1.375rem; font-weight: 800; }
+.imp-stats [data-tone='good'] dd { color: var(--good-ink); }
+.imp-stats [data-tone='warn'] dd { color: var(--warn-ink); }
+.imp-stats [data-tone='bad'] dd { color: var(--bad-ink); }
+
+.imp-failed { max-height: 240px; overflow-y: auto; }
+.imp-failed li { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 0 0.5rem; padding: 0.375rem 0; border-bottom: 1px solid var(--rule); font-size: 0.8125rem; }
+.imp-failed .why { grid-column: 2; }
+
+@media (max-width: 760px) {
+  .imp-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

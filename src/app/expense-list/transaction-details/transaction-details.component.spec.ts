@@ -69,6 +69,27 @@ describe('TransactionDetailsComponent', () => {
       expect(el().querySelector('.status')!.textContent).toContain('Completed');
     });
 
+    it('shows where an imported entry came from, with its notes and payment method', () => {
+      open({
+        expense: {
+          ...EXPENSE,
+          createdAt: '2026-11-09T10:00:00.000Z',
+          imported: { fileName: 'november.csv', notes: 'Team lunch', paymentMethod: 'UPI' }
+        }
+      });
+
+      const facts = el().querySelector('.facts')!.textContent!;
+      expect(facts).toContain('From november.csv');
+      expect(facts).toContain('Payment method');
+      expect(facts).toContain('UPI');
+      expect(facts).toContain('Team lunch');
+    });
+
+    it('shows no import facts for an entry added by hand', () => {
+      open();
+      expect(el().querySelector('.facts')!.textContent).not.toContain('Notes');
+    });
+
     it('hides the account where this sign-in may not see it', () => {
       open({ canViewSource: false });
       expect(el().querySelector('.facts')!.textContent).not.toContain('HDFC Bank');

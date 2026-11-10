@@ -39,7 +39,9 @@ function toApi(row, { canViewSource }) {
     // Set when this was someone paying back their part of a split expense,
     // rather than income. The description is only looked up for the list.
     splitExpenseId: row.split_expense_id ?? null,
-    splitDescription: row.split_description ?? null
+    splitDescription: row.split_description ?? null,
+    // As on an expense: where an imported entry came from, with its notes.
+    imported: row.import_info ?? null
   };
 }
 
@@ -50,7 +52,12 @@ incomesRouter.get('/', asyncRoute(async (req, res) => {
     `select ${INCOME_COLUMNS},
             (select e.description
                from expenses e
-              where e.id = incomes.split_expense_id) as split_description
+              where e.id = incomes.split_expense_id) as split_description,
+            (select json_build_object(
+                      'fileName', b.file_name, 'notes', r.notes, 'paymentMethod', r.payment_method)
+               from import_rows r
+               join import_batches b on b.id = r.batch_id
+              where r.income_id = incomes.id) as import_info
        from incomes
       where user_id = $1
       order by received_on desc, created_at desc`,

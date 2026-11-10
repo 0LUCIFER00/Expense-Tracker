@@ -80,7 +80,10 @@ function toApi(row, { canViewSource }) {
     // or just-approved entry has had nothing paid back against it yet.
     splitReceived: Number(row.split_received ?? 0),
     // Receipts and invoices attached; only the list query counts them.
-    attachmentCount: Number(row.attachment_count ?? 0)
+    attachmentCount: Number(row.attachment_count ?? 0),
+    // Set when the entry came from an imported file: its name, and the Notes
+    // and Payment Method cells, which have no field of their own.
+    imported: row.import_info ?? null
   };
 }
 
@@ -101,7 +104,12 @@ expensesRouter.get('/', asyncRoute(async (req, res) => {
               where i.split_expense_id = expenses.id) as split_received,
             (select count(*)::int
                from receipt_attachments a
-              where a.expense_id = expenses.id) as attachment_count
+              where a.expense_id = expenses.id) as attachment_count,
+            (select json_build_object(
+                      'fileName', b.file_name, 'notes', r.notes, 'paymentMethod', r.payment_method)
+               from import_rows r
+               join import_batches b on b.id = r.batch_id
+              where r.expense_id = expenses.id) as import_info
        from expenses
       where user_id = $1
       order by created_at`,

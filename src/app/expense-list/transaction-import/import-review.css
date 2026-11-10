@@ -1,0 +1,197 @@
+/* The review list, its toolbar and fixes, the confirmation and the report. */
+
+.imp-review-body { padding-top: 0.75rem; }
+
+.imp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.imp-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.imp-filter {
+  height: 32px;
+  padding: 0 0.625rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.imp-filter .n {
+  margin-left: 2px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background-color: var(--sunken);
+  font-size: 0.75rem;
+}
+
+.imp-filter.on { border-color: var(--focus-border); background-color: var(--accent-soft); color: var(--accent-ink); }
+.imp-filter[data-f='invalid'] .n { color: var(--bad-ink); }
+.imp-filter[data-f='duplicate'] .n { color: var(--warn-ink); }
+
+.imp-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  font-size: 0.8125rem;
+}
+
+.imp-opt { display: flex; align-items: center; gap: 0.375rem; color: var(--ink-2); }
+.imp-opt .et-field { width: auto; padding: 0.375rem 0.5rem; font-size: 0.8125rem; }
+
+.imp-switch { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 700; }
+.imp-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.imp-switch .track { position: relative; width: 34px; height: 20px; border-radius: 999px; background-color: var(--rule-strong); transition: background-color 0.15s; }
+.imp-switch .knob { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background-color: #fff; transition: transform 0.15s; }
+.imp-switch input:checked + .track { background-color: var(--accent); }
+.imp-switch input:checked + .track .knob { transform: translateX(14px); }
+.imp-switch input:focus-visible + .track { outline: 2px solid var(--focus-border); outline-offset: 2px; }
+
+.imp-link {
+  padding: 0.25rem 0.125rem;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.imp-link.muted { color: var(--ink-3); }
+
+.imp-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  margin: 0.5rem 0;
+  font-size: 0.8125rem;
+}
+
+/* The rows: tick, row, date, description and reasons, category, account, amount, actions. */
+.imp-list { container-type: inline-size; }
+
+.imp-list-head,
+.imp-row {
+  display: grid;
+  grid-template-columns: 22px 34px 86px minmax(170px, 2fr) minmax(84px, 1fr) minmax(84px, 1fr) 92px 78px;
+  align-items: start;
+  gap: 0 0.625rem;
+}
+
+.imp-list-head {
+  position: sticky;
+  top: -0.75rem;
+  z-index: 1;
+  padding: 0.5rem 0.625rem;
+  border-radius: 8px;
+  background-color: var(--sunken);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--ink-2);
+}
+
+.imp-list[aria-busy='true'] .imp-row { opacity: 0.6; }
+
+.imp-row {
+  padding: 0.5625rem 0.625rem;
+  border-bottom: 1px solid var(--rule);
+  border-left: 3px solid transparent;
+  font-size: 0.8125rem;
+}
+
+.imp-row[data-state='invalid'] { border-left-color: var(--bad); }
+.imp-row[data-state='duplicate'] { border-left-color: var(--warn-ink); }
+.imp-row.off .c-date, .imp-row.off .c-desc .d-text, .imp-row.off .c-cat,
+.imp-row.off .c-acc, .imp-row.off .c-amt { color: var(--ink-3); }
+
+.imp-row input[type='checkbox'] { width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--accent); }
+.c-row, .c-date { color: var(--ink-3); }
+.c-desc { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; min-width: 0; }
+.d-text { font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.c-cat, .c-acc { overflow-wrap: anywhere; color: var(--ink-2); }
+.c-amt { text-align: right; font-weight: 800; }
+.c-amt.in { color: var(--good-ink); }
+.r { text-align: right; }
+.c-act { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0 0.5rem; }
+
+.pill {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background-color: var(--good-soft);
+  color: var(--good-ink);
+  font-size: 0.6875rem;
+  font-weight: 800;
+}
+
+.pill[data-state='duplicate'] { background-color: var(--warn-soft); color: var(--warn-ink); }
+.pill[data-state='invalid'] { background-color: var(--bad-soft); color: var(--bad-ink); }
+.pill[data-state='excluded'], .pill[data-state='sample'] { background-color: var(--sunken); color: var(--ink-3); }
+.pill[data-state='imported'] { background-color: var(--accent-soft); color: var(--accent-ink); }
+
+.why { flex: 1 1 100%; font-size: 0.75rem; color: var(--ink-3); line-height: 1.45; }
+.why.bad { color: var(--bad-ink); }
+.why.warn { color: var(--warn-ink); }
+
+.imp-empty { padding: 1.5rem; text-align: center; color: var(--ink-3); }
+
+/* Fixing one row: its fields under it, across the whole width. */
+.imp-edit {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.625rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  background-color: var(--sunken);
+}
+
+.imp-edit label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.75rem; font-weight: 700; color: var(--ink-2); }
+.imp-edit label.wide { grid-column: span 2; }
+.imp-edit .et-field { padding: 0.5rem 0.625rem; font-size: 0.8125rem; }
+.imp-edit-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 0.5rem; }
+.imp-edit-actions > * { min-height: 38px; }
+
+/* Cards when the dialog itself is narrow, whatever the window. */
+@container (max-width: 780px) {
+  .imp-list-head { display: none; }
+
+  /* A card per row: description first, the facts under it. */
+  .imp-row {
+    grid-template-columns: 24px auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'check desc desc amt'
+      'check date cat acc'
+      'check act act act';
+    gap: 0.25rem 0.5rem;
+  }
+
+  .c-check { grid-area: check; }
+  .c-desc { grid-area: desc; }
+  .c-amt { grid-area: amt; }
+  .c-row { display: none; }
+  .c-date { grid-area: date; }
+  .c-cat { grid-area: cat; }
+  .c-acc { grid-area: acc; text-align: right; }
+  .c-date, .c-cat, .c-acc { font-size: 0.75rem; }
+  .c-act { grid-area: act; justify-content: flex-start; }
+  .imp-edit { grid-template-columns: 1fr 1fr; }
+}

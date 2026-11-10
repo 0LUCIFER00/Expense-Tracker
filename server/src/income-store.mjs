@@ -88,7 +88,9 @@ export async function insertIncome(client, userId, entry) {
     }
   }
 
-  const credit = Boolean(target);
+  // `updateBalance: false` records the account without crediting it: an
+  // import of entries the balance already includes. Everything else credits.
+  const credit = Boolean(target) && entry.updateBalance !== false;
   let balanceAfter = null;
 
   if (credit) {

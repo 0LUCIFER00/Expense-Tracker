@@ -554,4 +554,29 @@ describe('ExpenseListComponent', () => {
     expect(component.tab).toBe('in');
     expect(component.rows.map(row => row.kind)).toEqual(['in']);
   });
+
+  describe('Import', () => {
+    it('sits beside Export, which is unchanged', () => {
+      const fixture = load([expense()]);
+      const actions = (fixture.nativeElement as HTMLElement).querySelector('.filter-actions')!;
+      const buttons = Array.from(actions.querySelectorAll('button')).map(b => b.textContent!.trim());
+
+      expect(buttons[0]).toContain('Import');
+      expect(buttons[1]).toContain('Export CSV');
+      expect(actions.querySelector('app-transaction-import')).not.toBeNull();
+    });
+
+    it('reloads the list after an import, so the new entries and totals show', () => {
+      load([expense()]);
+
+      component.onImported();
+      http.expectOne('/api/expenses').flush([expense(), expense({ id: 'e2', description: 'Imported tea', amount: 20 })]);
+      http.expectOne('/api/incomes').flush([]);
+      http.expectOne('/api/expenses/splits').flush([]);
+      http.expectOne('/api/settings').flush(DEFAULT_SETTINGS);
+
+      expect(component.rows.map(row => row.description)).toContain('Imported tea');
+      expect(component.total).toBe(120);
+    });
+  });
 });

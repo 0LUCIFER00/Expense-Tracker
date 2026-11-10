@@ -16,7 +16,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Attachment, AttachmentService, isImage, sizeLabel } from '../../shared/attachment.service';
 import { AttachmentPickerComponent } from '../../shared/attachment-picker/attachment-picker.component';
 import { categoryIcon } from '../../shared/category-icons';
-import { Expense, Income, SplitSummary } from '../../shared/models';
+import { Expense, ImportedFrom, Income, SplitSummary } from '../../shared/models';
 import { ToastService } from '../../shared/toast.service';
 
 const MAX = 10;
@@ -77,6 +77,11 @@ export class TransactionDetailsComponent implements OnChanges, AfterViewInit {
 
   readonly isImage = isImage;
   readonly sizeLabel = sizeLabel;
+
+  /** Where an imported entry came from, with its notes; null for one added here. */
+  get imported(): ImportedFrom | null {
+    return this.expense?.imported ?? this.income?.imported ?? null;
+  }
 
   get isIncome(): boolean {
     return !this.expense && !!this.income;

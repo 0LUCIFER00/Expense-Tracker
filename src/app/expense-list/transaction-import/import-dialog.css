@@ -1,0 +1,289 @@
+/* The import dialog: its frame, the step bar and the simpler steps. */
+
+.imp-overlay {
+  /* Under the sticky header, which stays on top of every overlay. */
+  padding-top: calc(54px + 0.75rem);
+  align-items: start;
+}
+
+.imp-dialog {
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 54px - 1.5rem);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  background-color: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.imp-dialog.wide {
+  width: min(1080px, 100%);
+}
+
+.imp-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.875rem 0.875rem 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.imp-head-text {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.imp-head h2 {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 800;
+}
+
+.imp-file {
+  margin: 2px 0 0;
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imp-steps {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+
+.imp-steps li {
+  counter-increment: step;
+  display: flex;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+  border-radius: 999px;
+}
+
+.imp-steps li::before {
+  content: counter(step);
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: var(--sunken);
+  font-size: 0.6875rem;
+}
+
+.imp-steps li.done::before {
+  content: '✓';
+  background-color: var(--good-soft);
+  color: var(--good-ink);
+}
+
+.imp-steps li.now {
+  background-color: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.imp-steps li.now::before {
+  background-color: var(--accent);
+  color: #fff;
+}
+
+.imp-x {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.imp-x svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.imp-x:hover:not(:disabled) { background-color: var(--sunken); }
+.imp-x:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.imp-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1rem 1.25rem;
+}
+
+.imp-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding-block: 2rem;
+  text-align: center;
+}
+
+.imp-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--rule);
+  background-color: var(--surface);
+}
+
+.imp-foot-note {
+  margin-right: auto;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.imp-status {
+  margin: 0;
+  font-weight: 700;
+}
+
+.imp-bar {
+  width: min(360px, 100%);
+  height: 8px;
+  border-radius: 999px;
+  background-color: var(--rule);
+  overflow: hidden;
+}
+
+.imp-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background-color: var(--accent);
+  transition: width 0.25s;
+}
+
+.imp-big-ic {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 1.375rem;
+  font-weight: 800;
+}
+
+.imp-big-ic.bad { background-color: var(--bad-soft); color: var(--bad-ink); }
+
+.imp-error-text {
+  max-width: 420px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.imp-lead,
+.imp-sub {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+
+.imp-sub {
+  margin: 1rem 0 0.375rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.imp-note {
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background-color: var(--sunken);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.imp-note.bad { background-color: var(--bad-soft); color: var(--bad-ink); }
+.imp-note.warn { background-color: var(--warn-soft); color: var(--warn-ink); }
+.imp-note.good { background-color: var(--good-soft); color: var(--good-ink); }
+
+/* Columns: field, the column it comes from, and its first value. */
+.imp-map {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.imp-map-row {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr) minmax(0, 0.8fr);
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.imp-map-name {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.imp-map-name small { font-weight: 500; color: var(--ink-3); }
+.imp-map-row.opt .imp-map-name { font-weight: 600; color: var(--ink-2); }
+.req { color: var(--bad-ink); margin-left: 2px; }
+
+.imp-map .et-field { padding: 0.5rem 0.625rem; font-size: 0.8125rem; }
+
+.imp-map-eg {
+  font-size: 0.75rem;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imp-kind {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin: 1rem 0 0;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 10px;
+  font-size: 0.875rem;
+}
+
+.imp-kind legend { padding: 0 0.25rem; font-size: 0.8125rem; font-weight: 800; }
+.imp-kind label { display: flex; align-items: center; gap: 0.5rem; }
+
+@media (max-width: 640px) {
+  /* Full screen below the app's header, which stays on top. */
+  .imp-overlay { padding: 54px 0 0; }
+
+  .imp-dialog,
+  .imp-dialog.wide {
+    width: 100%;
+    max-height: none;
+    height: calc(100dvh - 54px);
+    border-radius: 0;
+  }
+
+  .imp-steps { display: none; }
+  .imp-map-row { grid-template-columns: 1fr; gap: 0.25rem; padding-bottom: 0.375rem; }
+  .imp-foot > .et-btn-primary,
+  .imp-foot > .et-btn-ghost { flex: 1 1 auto; }
+  .imp-foot-note { flex: 1 1 100%; }
+}
