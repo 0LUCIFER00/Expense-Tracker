@@ -1,11 +1,46 @@
 <!-- Fits the window: tabs, filters and the column headings stay; the rows scroll. -->
 <div class="expenses-page" appFitsScreen>
 
+  <!--
+    The totals first, for the year, month and category chosen. Debit is your
+    share only; a repayment is never counted as money in. A tile the tab
+    showing leaves out is dimmed, not hidden, so the row never jumps.
+  -->
+  <section class="summary-tiles" aria-label="Totals">
+    <div class="sum-tile out" [class.muted]="tab === 'in'">
+      <span class="sum-ic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M7 7l10 10M17 9v8H9" /></svg>
+      </span>
+      <span class="sum-text">
+        <span class="sum-label">Debit · your share</span>
+        <span class="sum-value tnum">₹{{ total | number }}</span>
+      </span>
+    </div>
+    <div class="sum-tile in" [class.muted]="tab === 'out'">
+      <span class="sum-ic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M17 17L7 7M7 15V7h8" /></svg>
+      </span>
+      <span class="sum-text">
+        <span class="sum-label">Credit</span>
+        <span class="sum-value tnum">₹{{ moneyIn | number }}</span>
+      </span>
+    </div>
+    <div class="sum-tile back" [class.muted]="tab === 'out'">
+      <span class="sum-ic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4" /></svg>
+      </span>
+      <span class="sum-text">
+        <span class="sum-label">Repaid on splits</span>
+        <span class="sum-value tnum">₹{{ paidBack | number }}</span>
+      </span>
+    </div>
+  </section>
+
   <div class="card">
 
     <!--
-      One line: which half of the ledger, the filters, Export and the totals, so
-      the table below gets the height. The filter labels are for screen
+      One line: which half of the ledger, the filters, then Import and Export,
+      so the table below gets the height. The filter labels are for screen
       readers; on screen the first option says what each one is.
     -->
     <div class="filter-bar">
@@ -62,18 +97,6 @@
           Export CSV
         </button>
 
-        <!-- Debit is your share only; a repayment is never counted as money in. -->
-        @if (tab !== 'in') {
-          <span class="total-pill tnum">Debit ₹{{ total | number }}</span>
-        }
-        @if (tab !== 'out') {
-          <span class="total-pill in tnum">Credit ₹{{ moneyIn | number }}</span>
-        }
-        @if (tab !== 'out' && paidBack) {
-          <span class="total-pill back tnum">
-            Repaid ₹{{ paidBack | number }}
-          </span>
-        }
       </div>
     </div>
 

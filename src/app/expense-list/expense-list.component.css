@@ -27,29 +27,27 @@
 
 /* ---- which half of the ledger ---- */
 
-/* One bordered control, so the three read as a choice rather than three buttons. */
+/* One sunken track holding three pills, so they read as a single choice. */
 .tab-bar {
   display: inline-flex;
+  gap: 3px;
   height: 40px;
   box-sizing: border-box;
-  border: 1px solid var(--field-border);
+  padding: 3px;
   border-radius: 10px;
-  overflow: hidden;
+  background-color: var(--sunken);
 }
 
 .tab {
   padding: 0 0.875rem;
   border: 0;
+  border-radius: 8px;
   background: transparent;
   color: var(--ink-2);
   font-family: inherit;
   font-size: 0.875rem;
   font-weight: 700;
   cursor: pointer;
-}
-
-.tab + .tab {
-  border-left: 1px solid var(--field-border);
 }
 
 .tab:hover:not(.on) {
@@ -143,29 +141,6 @@
 .export-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-/* The same 40px as the filters and Export, so the whole row lines up. */
-.total-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 40px;
-  box-sizing: border-box;
-  padding: 0 0.75rem;
-  border-radius: 8px;
-  background-color: var(--accent);
-  color: #fff;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-/* Money in, and what came back from splits: the same pill, in the good colour. */
-.total-pill.in,
-.total-pill.back {
-  background-color: var(--good-soft);
-  color: var(--good-ink);
 }
 
 /* ---- the table ---- */
@@ -420,11 +395,6 @@
   .export-btn {
     flex: 1 1 auto;
     justify-content: center;
-  }
-
-  .total-pill {
-    flex: 1 1 auto;
-    text-align: center;
   }
 
   .table-scroll {

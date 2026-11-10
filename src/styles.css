@@ -718,6 +718,7 @@ html[data-theme='dark'] {
     flex-direction: column;
   }
 
+  body.fits-screen app-expense-list .summary-tiles,
   body.fits-screen app-expense-list .filter-bar,
   body.fits-screen app-expense-list .table-note,
   body.fits-screen app-expense-list .no-record {

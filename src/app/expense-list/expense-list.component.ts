@@ -59,7 +59,7 @@ const TABS: TransactionTab[] = ['all', 'out', 'in'];
   standalone: true,
   imports: [CommonModule, FormsModule, FitsScreenDirective, TransactionDetailsComponent, TransactionImportComponent],
   templateUrl: './expense-list.component.html',
-  styleUrl: './expense-list.component.css'
+  styleUrls: ['./expense-list.component.css', './transaction-summary.css']
 })
 export class ExpenseListComponent implements OnInit {
   private readonly expenseService = inject(ExpenseService);

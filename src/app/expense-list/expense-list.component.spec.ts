@@ -579,4 +579,37 @@ describe('ExpenseListComponent', () => {
       expect(component.total).toBe(120);
     });
   });
+
+  describe('summary tiles', () => {
+    it('show Debit (your share), Credit and Repaid above the list, out of the toolbar', () => {
+      const fixture = load(
+        [expense({ amount: 300 })],
+        {},
+        [],
+        [income({ amount: 5000 }), income({ id: 'i2', amount: 250, splitExpenseId: 'e9', splitDescription: 'Dinner' })]
+      );
+      const el = fixture.nativeElement as HTMLElement;
+      const tiles = Array.from(el.querySelectorAll('.sum-tile')).map(t =>
+        `${t.querySelector('.sum-label')!.textContent!.trim()}: ${t.querySelector('.sum-value')!.textContent!.trim()}`);
+
+      expect(tiles).toEqual(['Debit · your share: ₹300', 'Credit: ₹5,000', 'Repaid on splits: ₹250']);
+      expect(el.querySelector('.filter-actions')!.textContent).not.toContain('₹');
+    });
+
+    it('dim the totals the tab showing leaves out', () => {
+      const fixture = load([expense()]);
+      const el = fixture.nativeElement as HTMLElement;
+      const muted = () => Array.from(el.querySelectorAll('.sum-tile')).map(t => t.classList.contains('muted'));
+
+      expect(muted()).toEqual([false, false, false]);
+
+      component.onTab('out');
+      fixture.detectChanges();
+      expect(muted()).toEqual([false, true, true]);
+
+      component.onTab('in');
+      fixture.detectChanges();
+      expect(muted()).toEqual([true, false, false]);
+    });
+  });
 });
