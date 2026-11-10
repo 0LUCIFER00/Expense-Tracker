@@ -1,0 +1,210 @@
+/*
+ * Transactions as a side panel and a list. The panel holds the totals, what
+ * to show (tabs, year, month, category) and Import / Export; the list takes
+ * the rest of the width. Below 900px the panel sits above the list.
+ * Colours come from the theme tokens, so both themes are served.
+ */
+
+.tx-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+
+.tx-panel {
+  flex: 0 0 296px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1.125rem 1.125rem 0;
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  background-color: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.tx-layout > .card {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.panel-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.panel-block + .panel-block {
+  padding-top: 0.875rem;
+  border-top: 1px solid var(--rule);
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: var(--ink-2);
+}
+
+/* ---- totals ---- */
+
+.sum-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.sum-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  background-color: var(--sunken);
+  transition: opacity 0.15s;
+}
+
+/* A total the tab showing does not list: still there, quieter. */
+.sum-row.muted {
+  opacity: 0.55;
+}
+
+.sum-row dt {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.sum-row dd {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--bad);
+}
+
+.sum-row.in .dot { background-color: var(--good); }
+.sum-row.in dd { color: var(--good-ink); }
+.sum-row.back .dot { background-color: var(--accent-ink); }
+.sum-row.back dd { color: var(--accent-ink); }
+
+/* ---- what to show ---- */
+
+.tx-panel .tab-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tx-panel .filter select {
+  width: 100%;
+}
+
+.filter-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+/*
+ * ---- file actions: two equal buttons at the foot ----
+ * Pinned to the panel's bottom edge, so on a short window they stay in view
+ * while the rest of the panel scrolls behind them.
+ */
+
+.panel-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0.75rem 0 1.125rem;
+  border-top: 1px solid var(--rule);
+  background-color: var(--surface);
+}
+
+.panel-actions .export-btn {
+  justify-content: center;
+}
+
+.list-title {
+  margin: 0 0 0.875rem;
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+
+/* ---- narrower screens: the panel above the list ---- */
+
+@media (max-width: 899px) {
+  .tx-layout {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tx-panel {
+    flex: none;
+  }
+
+  .sum-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .sum-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.125rem;
+  }
+
+  /* Tabs across the top, then the filters side by side. */
+  .tx-panel .filter-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.625rem;
+  }
+
+  .tx-panel .filter-bar > .panel-title,
+  .tx-panel .filter-bar > .tab-bar {
+    grid-column: 1 / -1;
+  }
+
+  .tx-panel .filter-bar > .filter-pair {
+    grid-column: span 2;
+  }
+
+  .panel-actions {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .tx-panel {
+    padding: 1rem;
+  }
+
+  .sum-row {
+    padding: 0.5rem 0.625rem;
+  }
+
+  .sum-row dt {
+    font-size: 0.6875rem;
+  }
+
+  .sum-row dd {
+    font-size: 0.9375rem;
+  }
+}

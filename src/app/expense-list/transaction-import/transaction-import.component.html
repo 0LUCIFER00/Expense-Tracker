@@ -10,7 +10,7 @@
   </button>
 
   @if (menuOpen) {
-    <div id="import-menu" class="imp-menu" role="menu" aria-label="Import" (keydown)="onMenuKey($event)">
+    <div id="import-menu" class="imp-menu" [class.above-start]="menuPosition === 'above-start'" role="menu" aria-label="Import" (keydown)="onMenuKey($event)">
       <p class="imp-group" role="presentation">Import transactions</p>
 
       <button type="button" role="menuitem" class="imp-item" (click)="chooseFile('csv')">

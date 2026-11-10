@@ -1,49 +1,39 @@
-<!-- Fits the window: tabs, filters and the column headings stay; the rows scroll. -->
+<!--
+  Fits the window: a side panel with the totals, what to show and the file
+  actions; beside it the list, whose column headings stay while the rows scroll.
+  On a narrow screen the panel sits above the list.
+-->
 <div class="expenses-page" appFitsScreen>
+<div class="tx-layout">
 
-  <!--
-    The totals first, for the year, month and category chosen. Debit is your
-    share only; a repayment is never counted as money in. A tile the tab
-    showing leaves out is dimmed, not hidden, so the row never jumps.
-  -->
-  <section class="summary-tiles" aria-label="Totals">
-    <div class="sum-tile out" [class.muted]="tab === 'in'">
-      <span class="sum-ic" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M7 7l10 10M17 9v8H9" /></svg>
-      </span>
-      <span class="sum-text">
-        <span class="sum-label">Debit · your share</span>
-        <span class="sum-value tnum">₹{{ total | number }}</span>
-      </span>
-    </div>
-    <div class="sum-tile in" [class.muted]="tab === 'out'">
-      <span class="sum-ic" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M17 17L7 7M7 15V7h8" /></svg>
-      </span>
-      <span class="sum-text">
-        <span class="sum-label">Credit</span>
-        <span class="sum-value tnum">₹{{ moneyIn | number }}</span>
-      </span>
-    </div>
-    <div class="sum-tile back" [class.muted]="tab === 'out'">
-      <span class="sum-ic" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4" /></svg>
-      </span>
-      <span class="sum-text">
-        <span class="sum-label">Repaid on splits</span>
-        <span class="sum-value tnum">₹{{ paidBack | number }}</span>
-      </span>
-    </div>
-  </section>
-
-  <div class="card">
+  <aside class="tx-panel" aria-label="Totals and filters">
 
     <!--
-      One line: which half of the ledger, the filters, then Import and Export,
-      so the table below gets the height. The filter labels are for screen
-      readers; on screen the first option says what each one is.
+      For the year, month and category chosen. Debit is your share only; a
+      repayment is never counted as money in. A total the tab showing leaves
+      out is dimmed, not hidden, so the panel never jumps.
     -->
-    <div class="filter-bar">
+    <section class="panel-block" aria-labelledby="totals-title">
+      <h2 id="totals-title" class="panel-title">Totals</h2>
+      <dl class="sum-list">
+        <div class="sum-row out" [class.muted]="tab === 'in'">
+          <dt><span class="dot" aria-hidden="true"></span>Debit · your share</dt>
+          <dd class="tnum">₹{{ total | number }}</dd>
+        </div>
+        <div class="sum-row in" [class.muted]="tab === 'out'">
+          <dt><span class="dot" aria-hidden="true"></span>Credit</dt>
+          <dd class="tnum">₹{{ moneyIn | number }}</dd>
+        </div>
+        <div class="sum-row back" [class.muted]="tab === 'out'">
+          <dt><span class="dot" aria-hidden="true"></span>Repaid on splits</dt>
+          <dd class="tnum">₹{{ paidBack | number }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="panel-block filter-bar" aria-labelledby="show-title">
+      <h2 id="show-title" class="panel-title">Show</h2>
+
       <!-- Which half of the ledger. Debit is the old View Expenses page. -->
       <div class="tab-bar" role="tablist" aria-label="Transactions">
         @for (t of tabs; track t.value) {
@@ -55,27 +45,30 @@
         }
       </div>
 
-      <div class="filter">
-        <label class="sr-only" for="yearFilter">Year</label>
-        <select id="yearFilter" (change)="onFilterYear($event)">
-          @for (y of years; track y.value) {
-            <option [value]="y.value">{{ y.value === 0 ? 'All years' : y.label }}</option>
-          }
-        </select>
-      </div>
+      <!-- Year and month share a row; both are short. -->
+      <div class="filter-pair">
+        <div class="filter">
+          <label for="yearFilter">Year</label>
+          <select id="yearFilter" (change)="onFilterYear($event)">
+            @for (y of years; track y.value) {
+              <option [value]="y.value">{{ y.value === 0 ? 'All years' : y.label }}</option>
+            }
+          </select>
+        </div>
 
-      <div class="filter">
-        <label class="sr-only" for="monthFilter">Month</label>
-        <select id="monthFilter" (change)="onFilterMonth($event)">
-          @for (m of months; track m.value) {
-            <option [value]="m.value">{{ m.value === 0 ? 'All months' : m.label }}</option>
-          }
-        </select>
+        <div class="filter">
+          <label for="monthFilter">Month</label>
+          <select id="monthFilter" (change)="onFilterMonth($event)">
+            @for (m of months; track m.value) {
+              <option [value]="m.value">{{ m.value === 0 ? 'All months' : m.label }}</option>
+            }
+          </select>
+        </div>
       </div>
 
       @if (usedCategories.length > 1) {
         <div class="filter">
-          <label class="sr-only" for="categoryFilter">Category</label>
+          <label for="categoryFilter">Category</label>
           <select id="categoryFilter" (change)="onFilterCategory($event)">
             <option value="">All categories</option>
             @for (name of usedCategories; track name) {
@@ -85,20 +78,24 @@
           </select>
         </div>
       }
+    </section>
 
-      <div class="filter-actions">
-        <!-- Import sits beside Export; its menu also offers the sample files. -->
-        <app-transaction-import (imported)="onImported()" />
+    <!-- Import and Export side by side; Import's menu also offers the sample files. -->
+    <div class="panel-actions">
+      <app-transaction-import menuPosition="above-start" (imported)="onImported()" />
 
-        <button type="button" class="export-btn" [disabled]="!canExport" (click)="onExportCsv()">
-          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-            <path d="M12 3v12M7.5 10.5 12 15l4.5-4.5M4 19h16" />
-          </svg>
-          Export CSV
-        </button>
-
-      </div>
+      <button type="button" class="export-btn" [disabled]="!canExport" (click)="onExportCsv()">
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+          <path d="M12 3v12M7.5 10.5 12 15l4.5-4.5M4 19h16" />
+        </svg>
+        Export CSV
+      </button>
     </div>
+  </aside>
+
+  <div class="card">
+
+    <h1 class="list-title">{{ listTitle }}</h1>
 
     <!-- Wide enough that a phone scrolls it sideways rather than squeezing. -->
     <div class="table-scroll">
@@ -188,6 +185,7 @@
     }
 
   </div>
+</div>
 
 
   <!-- The details of the row clicked: a drawer on a wide screen, a sheet on a phone. -->

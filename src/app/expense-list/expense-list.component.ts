@@ -59,7 +59,7 @@ const TABS: TransactionTab[] = ['all', 'out', 'in'];
   standalone: true,
   imports: [CommonModule, FormsModule, FitsScreenDirective, TransactionDetailsComponent, TransactionImportComponent],
   templateUrl: './expense-list.component.html',
-  styleUrls: ['./expense-list.component.css', './transaction-summary.css']
+  styleUrls: ['./expense-list.component.css', './transaction-panel.css']
 })
 export class ExpenseListComponent implements OnInit {
   private readonly expenseService = inject(ExpenseService);
@@ -491,6 +491,11 @@ export class ExpenseListComponent implements OnInit {
 
       return valueA < valueB ? -direction : valueA > valueB ? direction : 0;
     });
+  }
+
+  /** The list's heading, naming the tab showing. */
+  get listTitle(): string {
+    return this.tab === 'out' ? 'Debit' : this.tab === 'in' ? 'Credit' : 'All transactions';
   }
 
   /** True when the tab showing has anything to export. */

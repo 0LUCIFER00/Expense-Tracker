@@ -711,15 +711,30 @@ html[data-theme='dark'] {
     padding-bottom: 1rem;
   }
 
-  body.fits-screen app-expense-list .card {
+  /* The panel and the list side by side, both the full height; each scrolls on its own. */
+  body.fits-screen app-expense-list .tx-layout {
     flex: 1 1 auto;
+    min-height: 0;
+    align-items: stretch;
+  }
+
+  /*
+   * Not a scroll box: the Import menu opens out of it and must not be clipped.
+   * The panel is sized to fit the shortest window this layout is used at
+   * (tightened in the laptop tier below).
+   */
+  body.fits-screen app-expense-list .tx-panel {
+    min-height: 0;
+  }
+
+  body.fits-screen app-expense-list .card {
+    flex: 1 1 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
   }
 
-  body.fits-screen app-expense-list .summary-tiles,
-  body.fits-screen app-expense-list .filter-bar,
+  body.fits-screen app-expense-list .list-title,
   body.fits-screen app-expense-list .table-note,
   body.fits-screen app-expense-list .no-record {
     flex-shrink: 0;
@@ -737,6 +752,29 @@ html[data-theme='dark'] {
     top: 0;
     z-index: 1;
     box-shadow: 0 0 0 4px var(--surface);
+  }
+}
+
+/* Transactions on a laptop-height window: the side panel a little tighter, so it fits at 560px. */
+@media (min-width: 900px) and (min-height: 560px) and (max-height: 820px) {
+  body.fits-screen app-expense-list .tx-panel {
+    gap: 0.625rem;
+  }
+
+  body.fits-screen app-expense-list .panel-block + .panel-block {
+    padding-top: 0.625rem;
+  }
+
+  body.fits-screen app-expense-list .sum-row {
+    padding-block: 0.375rem;
+  }
+
+  body.fits-screen app-expense-list .panel-block {
+    gap: 0.5rem;
+  }
+
+  body.fits-screen app-expense-list .panel-actions {
+    padding: 0.625rem 0 0.875rem;
   }
 }
 

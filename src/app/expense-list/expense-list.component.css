@@ -66,13 +66,6 @@
 
 /* ---- filters ---- */
 
-.filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.875rem;
-}
 
 .filter label {
   display: block;
@@ -100,13 +93,6 @@
   box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
-.filter-actions {
-  margin-left: auto;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
 
 .export-btn {
   display: inline-flex;
@@ -363,38 +349,6 @@
 @media (max-width: 760px) {
   .card {
     padding: 1.125rem;
-  }
-
-  .filter-bar {
-    gap: 0.75rem;
-  }
-
-  .filter {
-    flex: 1 1 140px;
-  }
-
-  .filter select {
-    width: 100%;
-  }
-
-  .filter-actions {
-    flex: 1 1 100%;
-    margin-left: 0;
-  }
-
-  .tab-bar {
-    display: flex;
-    flex: 1 1 100%;
-  }
-
-  .tab {
-    flex: 1;
-    padding-inline: 0.5rem;
-  }
-
-  .export-btn {
-    flex: 1 1 auto;
-    justify-content: center;
   }
 
   .table-scroll {

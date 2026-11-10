@@ -4,6 +4,7 @@ import {
   ElementRef,
   EventEmitter,
   HostListener,
+  Input,
   Output,
   ViewChild,
   inject
@@ -85,6 +86,13 @@ export class TransactionImportComponent {
   private readonly incomeService = inject(IncomeService);
   private readonly toast = inject(ToastService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  /**
+   * Where the menu opens: below the button, lined up with its right edge, or
+   * above it, lined up with its left edge (for a button at the foot of a
+   * panel on the left of the page).
+   */
+  @Input() menuPosition: 'below-end' | 'above-start' = 'below-end';
 
   /** Fires after anything was imported, so the list can reload. */
   @Output() imported = new EventEmitter<void>();

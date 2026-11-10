@@ -36,6 +36,12 @@
   stroke-linejoin: round;
 }
 
+/* Fills its slot, wherever it is placed. */
+.imp-anchor > .import-btn {
+  flex: 1;
+  justify-content: center;
+}
+
 .import-btn .chev {
   margin-left: -2px;
   transition: transform 0.15s;
@@ -69,6 +75,14 @@
   border-radius: 12px;
   background-color: var(--surface);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+/* Opening upwards from a button at the foot of a panel on the left of the page. */
+.imp-menu.above-start {
+  top: auto;
+  bottom: calc(100% + 6px);
+  left: 0;
+  right: auto;
 }
 
 .imp-group {

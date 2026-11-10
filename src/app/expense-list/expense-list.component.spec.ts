@@ -556,9 +556,9 @@ describe('ExpenseListComponent', () => {
   });
 
   describe('Import', () => {
-    it('sits beside Export, which is unchanged', () => {
+    it('sits beside Export at the foot of the side panel, and Export is unchanged', () => {
       const fixture = load([expense()]);
-      const actions = (fixture.nativeElement as HTMLElement).querySelector('.filter-actions')!;
+      const actions = (fixture.nativeElement as HTMLElement).querySelector('.tx-panel .panel-actions')!;
       const buttons = Array.from(actions.querySelectorAll('button')).map(b => b.textContent!.trim());
 
       expect(buttons[0]).toContain('Import');
@@ -580,8 +580,8 @@ describe('ExpenseListComponent', () => {
     });
   });
 
-  describe('summary tiles', () => {
-    it('show Debit (your share), Credit and Repaid above the list, out of the toolbar', () => {
+  describe('side panel', () => {
+    it('lists Debit (your share), Credit and Repaid as the totals', () => {
       const fixture = load(
         [expense({ amount: 300 })],
         {},
@@ -589,17 +589,31 @@ describe('ExpenseListComponent', () => {
         [income({ amount: 5000 }), income({ id: 'i2', amount: 250, splitExpenseId: 'e9', splitDescription: 'Dinner' })]
       );
       const el = fixture.nativeElement as HTMLElement;
-      const tiles = Array.from(el.querySelectorAll('.sum-tile')).map(t =>
-        `${t.querySelector('.sum-label')!.textContent!.trim()}: ${t.querySelector('.sum-value')!.textContent!.trim()}`);
+      const totals = Array.from(el.querySelectorAll('.tx-panel .sum-row')).map(row =>
+        `${row.querySelector('dt')!.textContent!.trim()}: ${row.querySelector('dd')!.textContent!.trim()}`);
 
-      expect(tiles).toEqual(['Debit · your share: ₹300', 'Credit: ₹5,000', 'Repaid on splits: ₹250']);
-      expect(el.querySelector('.filter-actions')!.textContent).not.toContain('₹');
+      expect(totals).toEqual(['Debit · your share: ₹300', 'Credit: ₹5,000', 'Repaid on splits: ₹250']);
     });
 
-    it('dim the totals the tab showing leaves out', () => {
+    it('holds the tabs and the labelled filters, and the list is headed by the tab', () => {
+      const fixture = load([expense(), expense({ id: 'e2', category: 'Travel' })]);
+      const el = fixture.nativeElement as HTMLElement;
+      const panel = el.querySelector('.tx-panel')!;
+
+      expect(panel.querySelector('[role="tablist"]')).not.toBeNull();
+      expect(Array.from(panel.querySelectorAll('.filter label')).map(l => l.textContent!.trim()))
+        .toEqual(['Year', 'Month', 'Category']);
+      expect(el.querySelector('.list-title')!.textContent).toContain('All transactions');
+
+      component.onTab('out');
+      fixture.detectChanges();
+      expect(el.querySelector('.list-title')!.textContent).toContain('Debit');
+    });
+
+    it('dims the totals the tab showing leaves out', () => {
       const fixture = load([expense()]);
       const el = fixture.nativeElement as HTMLElement;
-      const muted = () => Array.from(el.querySelectorAll('.sum-tile')).map(t => t.classList.contains('muted'));
+      const muted = () => Array.from(el.querySelectorAll('.sum-row')).map(t => t.classList.contains('muted'));
 
       expect(muted()).toEqual([false, false, false]);
 
