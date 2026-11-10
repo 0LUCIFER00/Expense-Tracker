@@ -1,0 +1,111 @@
+<div class="bin">
+  <div class="bin-head">
+    <div class="bin-title">
+      <h1>Recently deleted</h1>
+      <p>Entries are deleted for good {{ retentionDays }} days after they were removed. Restoring puts one back exactly as it was.</p>
+    </div>
+    @if (canManage) {
+      <button type="button" class="empty-btn" [disabled]="!entries.length" (click)="ask({ action: 'empty' })">
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" /></svg>
+        Empty
+      </button>
+    }
+  </div>
+
+  <div class="bin-tools">
+    <div class="kinds" role="radiogroup" aria-label="Show">
+      @for (k of kinds; track k.value) {
+        <button type="button" role="radio" class="kind" [class.on]="kind === k.value"
+          [attr.aria-checked]="kind === k.value" (click)="setKind(k.value)">{{ k.label }}</button>
+      }
+    </div>
+    <label class="search">
+      <span class="sr-only">Search descriptions</span>
+      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" /></svg>
+      <input type="search" placeholder="Search descriptions" [(ngModel)]="search" autocomplete="off" />
+    </label>
+  </div>
+
+  <div class="bin-scroll">
+    @if (loading) {
+      <p class="bin-empty">Loading…</p>
+    } @else if (loadError) {
+      <p class="bin-empty bad" role="alert">{{ loadError }}</p>
+    } @else if (!entries.length) {
+      <div class="bin-empty">
+        <h3>Nothing here</h3>
+        <p>Entries you remove wait here for {{ retentionDays }} days.</p>
+      </div>
+    } @else {
+      <div class="bin-list">
+        <div class="bin-row bin-labels" aria-hidden="true">
+          <span>Description</span><span>Type</span><span class="r">Amount</span><span>Account</span>
+          <span>Date · deleted</span><span>Left</span><span></span>
+        </div>
+
+        @for (e of visible; track e.kind + e.id) {
+          <div class="bin-row" [attr.data-kind]="e.kind">
+            <span class="b-desc">
+              <span class="b-text">{{ e.description }}</span>
+              @if (e.pending) { <span class="tag wait">Pending</span> }
+              @if (e.splitMembers) { <span class="tag">Split {{ e.splitMembers }} ways</span> }
+              @if (e.repays) { <span class="tag">Repays {{ e.repays }}</span> }
+              @if (e.attachmentCount) { <span class="tag">{{ e.attachmentCount }} receipt{{ e.attachmentCount === 1 ? '' : 's' }}</span> }
+            </span>
+            <span class="b-kind"><span class="kind-pill" [attr.data-kind]="e.kind">{{ e.kind === 'expense' ? 'Expense' : 'Income' }}</span></span>
+            <span class="b-amt tnum" [class.in]="e.kind === 'income'">{{ e.kind === 'income' ? '+' : '−' }}{{ rupees(e.amountPaise) }}</span>
+            <span class="b-acc">{{ e.account ?? '—' }}</span>
+            <!-- The entry's own date, and when it was removed, one under the other. -->
+            <span class="b-dates tnum">
+              <span class="b-date" data-label="Date">{{ shortDate(e.date) }}</span>
+              <span class="b-del" data-label="Deleted">Deleted {{ shortDate(e.deletedAt) }}</span>
+            </span>
+            <span class="b-left" data-label="Deleted for good in">
+              <span class="left-pill" [class.soon]="e.daysLeft <= 3"
+                [attr.title]="'Deleted for good on ' + shortDate(e.expiresAt)">{{ daysLabel(e) }}</span>
+            </span>
+            <span class="b-act">
+              @if (canManage) {
+                <button type="button" class="act restore" (click)="ask({ action: 'restore', entry: e })"
+                  [attr.aria-label]="'Restore ' + e.description">
+                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.6-6.4M3 4v5h5" /></svg>
+                  Restore
+                </button>
+                <button type="button" class="act purge" (click)="ask({ action: 'purge', entry: e })"
+                  [attr.aria-label]="'Delete ' + e.description + ' for good'" title="Delete for good">
+                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" /></svg>
+                </button>
+              }
+            </span>
+          </div>
+        } @empty {
+          <p class="bin-empty">Nothing matches.</p>
+        }
+      </div>
+    }
+  </div>
+
+  @if (entries.length && !canManage) {
+    <p class="bin-note">Restoring and deleting for good need "Remove entries", which is off for this sign-in.</p>
+  }
+</div>
+
+@if (confirming) {
+  <div class="et-overlay bin-overlay" (click)="cancel()">
+    <div class="et-popup" role="alertdialog" aria-modal="true" aria-labelledby="bin-confirm-title"
+      aria-describedby="bin-confirm-body" (click)="$event.stopPropagation()">
+      <h3 id="bin-confirm-title">{{ confirmTitle }}</h3>
+      <div id="bin-confirm-body" class="et-popup-body">
+        @for (line of confirmBody; track $index) { <p class="confirm-line">{{ line }}</p> }
+      </div>
+      @if (confirmError) {
+        <p class="confirm-error" role="alert">{{ confirmError }}</p>
+      }
+      <div class="et-popup-actions">
+        <button type="button" class="et-btn-ghost" [disabled]="busy" (click)="cancel()">Cancel</button>
+        <button type="button" [class]="confirming.action === 'restore' ? 'et-btn-primary' : 'et-btn-danger'"
+          [disabled]="busy" (click)="confirm()">{{ confirmLabel }}</button>
+      </div>
+    </div>
+  </div>
+}

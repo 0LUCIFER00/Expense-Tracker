@@ -16,15 +16,15 @@
     <section class="panel-block" aria-labelledby="totals-title">
       <h2 id="totals-title" class="panel-title">Totals</h2>
       <dl class="sum-list">
-        <div class="sum-row out" [class.muted]="tab === 'in'">
+        <div class="sum-row out" [class.muted]="tab === 'in' || tab === 'deleted'">
           <dt><span class="dot" aria-hidden="true"></span>Debit · your share</dt>
           <dd class="tnum">₹{{ total | number }}</dd>
         </div>
-        <div class="sum-row in" [class.muted]="tab === 'out'">
+        <div class="sum-row in" [class.muted]="tab === 'out' || tab === 'deleted'">
           <dt><span class="dot" aria-hidden="true"></span>Credit</dt>
           <dd class="tnum">₹{{ moneyIn | number }}</dd>
         </div>
-        <div class="sum-row back" [class.muted]="tab === 'out'">
+        <div class="sum-row back" [class.muted]="tab === 'out' || tab === 'deleted'">
           <dt><span class="dot" aria-hidden="true"></span>Repaid on splits</dt>
           <dd class="tnum">₹{{ paidBack | number }}</dd>
         </div>
@@ -52,13 +52,22 @@
             {{ t.label }}
           </button>
         }
+        <!-- Under the three, across their width: removed entries, for 30 days. -->
+        <button type="button" role="tab" class="tab tab-deleted"
+          [class.on]="tab === 'deleted'" [attr.aria-selected]="tab === 'deleted'"
+          (click)="onTab('deleted')">
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+            <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />
+          </svg>
+          Recently deleted
+        </button>
       </div>
 
       <!-- Year and month share a row; both are short. -->
       <div class="filter-pair">
         <div class="filter">
           <label for="yearFilter">Year</label>
-          <select id="yearFilter" (change)="onFilterYear($event)">
+          <select id="yearFilter" [disabled]="tab === 'deleted'" (change)="onFilterYear($event)">
             @for (y of years; track y.value) {
               <option [value]="y.value" [selected]="y.value === selectedYear">{{ y.value === 0 ? 'All years' : y.label }}</option>
             }
@@ -67,7 +76,7 @@
 
         <div class="filter">
           <label for="monthFilter">Month</label>
-          <select id="monthFilter" (change)="onFilterMonth($event)">
+          <select id="monthFilter" [disabled]="tab === 'deleted'" (change)="onFilterMonth($event)">
             @for (m of months; track m.value) {
               <option [value]="m.value" [selected]="m.value === selectedMonth">{{ m.value === 0 ? 'All months' : m.label }}</option>
             }
@@ -78,7 +87,7 @@
       @if (usedCategories.length > 1) {
         <div class="filter">
           <label for="categoryFilter">Category</label>
-          <select id="categoryFilter" (change)="onFilterCategory($event)">
+          <select id="categoryFilter" [disabled]="tab === 'deleted'" (change)="onFilterCategory($event)">
             <option value="" [selected]="!selectedCategory">All categories</option>
             @for (name of usedCategories; track name) {
               <option [value]="name"
@@ -103,6 +112,11 @@
   </aside>
 
   <div class="card">
+
+    <!-- Recently deleted takes the list's place; the panel stays as it is. -->
+    @if (tab === 'deleted') {
+      <app-recently-deleted (restored)="onImported()" />
+    } @else {
 
     <h1 class="list-title">{{ listTitle }}</h1>
 
@@ -191,6 +205,8 @@
         <h3>No record found</h3>
         <p>Nothing matches these filters.</p>
       </div>
+    }
+
     }
 
   </div>

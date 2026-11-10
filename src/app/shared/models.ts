@@ -507,3 +507,47 @@ export interface AccountUsage {
   deletable: boolean;
   reasons: string[];
 }
+
+/** An expense or income in Recently deleted, waiting to be restored or deleted for good. */
+export interface DeletedEntry {
+  kind: 'expense' | 'income';
+  id: string;
+  description: string;
+  /** Integer paise, so no amount is ever off by floating point. */
+  amountPaise: number;
+  /** The entry's own date, as it will be when restored. */
+  date: string;
+  category: string | null;
+  /** Null when this sign-in may not see which account. */
+  account: string | null;
+  /** An expense that was waiting for approval, and will again. */
+  pending: boolean;
+  deletedAt: string;
+  deletedVia: 'user' | 'admin' | 'whatsapp';
+  /** When the daily clean-up deletes it for good. */
+  expiresAt: string;
+  daysLeft: number;
+  /** Removing it moved money, so restoring it moves it again. */
+  movedMoney: boolean;
+  splitMembers: number | null;
+  /** For a repayment, the split expense it pays back. */
+  repays: string | null;
+  attachmentCount: number;
+}
+
+export interface RecycleBin {
+  retentionDays: number;
+  /** "Remove entries" is on: restoring and deleting for good are allowed. */
+  canManage: boolean;
+  entries: DeletedEntry[];
+}
+
+export interface RestoredEntry {
+  kind: 'expense' | 'income';
+  id: string;
+  description: string;
+  movedMoney: boolean;
+  account: string | null;
+  balanceAfter: number | null;
+  budgetAlerts: BudgetAlert[];
+}

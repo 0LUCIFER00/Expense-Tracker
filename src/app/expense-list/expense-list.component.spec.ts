@@ -217,7 +217,7 @@ describe('ExpenseListComponent', () => {
 
       // Asking, not yet removed.
       http.expectNone(req => req.method === 'DELETE');
-      expect(el.querySelector('.foot')!.textContent).toContain('Removing puts ₹250 back in Paytm.');
+      expect(el.querySelector('.foot')!.textContent).toContain('Removing puts ₹250 back in Paytm; you can restore it for 30 days.');
 
       (el.querySelector('.foot .btn.danger-solid') as HTMLButtonElement).click();
       fixture.detectChanges();
@@ -636,6 +636,24 @@ describe('ExpenseListComponent', () => {
       expect(component.rows.length).toBe(2);
       expect(el.querySelector<HTMLSelectElement>('#yearFilter')!.value).toBe('0');
       expect(reset().disabled).toBeTrue();
+    });
+
+    it('offers Recently deleted as a tab, which shows the bin in place of the list', () => {
+      const fixture = load([expense()]);
+      const el = fixture.nativeElement as HTMLElement;
+      const binTab = Array.from(el.querySelectorAll<HTMLButtonElement>('.tx-panel [role="tab"]'))
+        .find(b => b.textContent!.includes('Recently deleted'))!;
+
+      expect(binTab).toBeTruthy();
+      binTab.click();
+      fixture.detectChanges();
+
+      expect(component.tab).toBe('deleted');
+      expect(el.querySelector('app-recently-deleted')).not.toBeNull();
+      expect(el.querySelector('.table-scroll')).toBeNull();
+      expect(el.querySelector<HTMLSelectElement>('#yearFilter')!.disabled).toBeTrue();
+      expect(Array.from(el.querySelectorAll('.sum-row')).every(r => r.classList.contains('muted'))).toBeTrue();
+      http.expectOne('/api/recycle-bin').flush({ retentionDays: 30, canManage: true, entries: [] });
     });
 
     it('dims the totals the tab showing leaves out', () => {

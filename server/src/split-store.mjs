@@ -32,7 +32,8 @@ export function toSplit(row) {
 const SPLIT_COLUMNS = `
   e.id, e.amount, e.description, e.spent_on, e.status,
   e.split_members, e.split_share, e.personal_share,
-  coalesce((select sum(i.amount) from incomes i where i.split_expense_id = e.id), 0) as received
+  coalesce((select sum(i.amount) from incomes i
+             where i.split_expense_id = e.id and i.deleted_at is null), 0) as received
 `;
 
 /**
@@ -43,7 +44,7 @@ export async function listSplits(userId) {
   const { rows } = await query(
     `select ${SPLIT_COLUMNS}
        from expenses e
-      where e.user_id = $1 and e.split_members is not null
+      where e.user_id = $1 and e.split_members is not null and e.deleted_at is null
       order by e.spent_on desc, e.created_at desc`,
     [userId]
   );
@@ -52,7 +53,7 @@ export async function listSplits(userId) {
   const { rows: paid } = await query(
     `select id, split_expense_id, amount, description, received_on, target_category
        from incomes
-      where user_id = $1 and split_expense_id is not null
+      where user_id = $1 and split_expense_id is not null and deleted_at is null
       order by received_on, created_at`,
     [userId]
   );
@@ -95,7 +96,7 @@ export async function lockSplit(client, userId, expenseId) {
     `select id, amount, description, spent_on, status,
             split_members, split_share, personal_share
        from expenses
-      where id = $1 and user_id = $2 and split_members is not null
+      where id = $1 and user_id = $2 and split_members is not null and deleted_at is null
       for update`,
     [expenseId, userId]
   );
@@ -105,7 +106,8 @@ export async function lockSplit(client, userId, expenseId) {
   }
 
   const { rows: sums } = await client.query(
-    'select coalesce(sum(amount), 0) as received from incomes where split_expense_id = $1',
+    `select coalesce(sum(amount), 0) as received from incomes
+      where split_expense_id = $1 and deleted_at is null`,
     [expenseId]
   );
 

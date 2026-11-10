@@ -82,9 +82,10 @@ test('undo is refused when removing entries is switched off (H3)', async () => {
   assert.match(replies[0], /switched off/);
   assert.equal(db.ran(/delete from expenses/).length, 0);
   assert.equal(db.ran(/delete from incomes/).length, 0);
+  assert.equal(db.ran(/set deleted_at/).length, 0);
 });
 
-test('undo still works when removing is allowed', async () => {
+test('undo still works when removing is allowed: the entry moves to Recently deleted', async () => {
   linkedUser();
   db.on(/select created_at from (expenses|incomes)/, () => []);
   db.on(/from expenses\s+where user_id = \$1 and source_channel/, () => [{
@@ -93,12 +94,17 @@ test('undo still works when removing is allowed', async () => {
     status: 'done', source_channel: 'whatsapp'
   }]);
   db.on(/select count\(\*\)::int as n from incomes/, () => [{ n: 0 }]);
-  db.on(/delete from expenses/, () => []);
+  db.on(/update expenses\s+set deleted_at = now\(\)/, () => []);
 
   await handleMessage(message('undo'));
 
-  assert.equal(db.ran(/delete from expenses/).length, 1);
+  // Kept, marked deleted, recorded as WhatsApp's doing; never deleted outright.
+  const marked = db.ran(/update expenses\s+set deleted_at = now\(\)/);
+  assert.equal(marked.length, 1);
+  assert.deepEqual(marked[0].params, ['exp-1', USER, 'whatsapp', false]);
+  assert.equal(db.ran(/delete from expenses/).length, 0);
   assert.match(replies[0], /Removed ₹250/);
+  assert.match(replies[0], /Recently deleted/);
 });
 
 test('an expense is dated by the Indian calendar, not the database clock (M1)', async () => {

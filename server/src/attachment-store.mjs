@@ -29,7 +29,7 @@ function refuse(message, status) {
 /** The expense, if it is this user's. */
 export async function ownsExpense(userId, expenseId) {
   const { rows } = await query(
-    'select id from expenses where id = $1 and user_id = $2',
+    'select id from expenses where id = $1 and user_id = $2 and deleted_at is null',
     [expenseId, userId]
   );
 
@@ -95,7 +95,7 @@ export async function addAttachment(userId, expenseId, buffer, file) {
       // makes uploads to the same expense take turns, so the count below is
       // exact. Reads of the expense, and foreign-key checks, are not blocked.
       const { rows: [expense] } = await client.query(
-        'select id from expenses where id = $1 and user_id = $2 for no key update',
+        'select id from expenses where id = $1 and user_id = $2 and deleted_at is null for no key update',
         [expenseId, userId]
       );
 

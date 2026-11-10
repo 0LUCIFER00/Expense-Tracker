@@ -65,7 +65,7 @@ async function loadSpending(run, userId, month) {
     `select category, status::text as status,
             sum(coalesce(personal_share, amount)) as spent
        from expenses
-      where user_id = $1 and spent_on >= $2 and spent_on < $3
+      where user_id = $1 and spent_on >= $2 and spent_on < $3 and deleted_at is null
       group by category, status`,
     [userId, month.start, month.end]
   );
@@ -300,7 +300,7 @@ export async function loadHistory(userId, end, count) {
       `select to_char(spent_on, 'YYYY-MM') as month, category, status::text as status,
               sum(coalesce(personal_share, amount)) as spent
          from expenses
-        where user_id = $1 and spent_on >= $2 and spent_on < $3
+        where user_id = $1 and spent_on >= $2 and spent_on < $3 and deleted_at is null
         group by 1, 2, 3`,
       [userId, from, to]
     )

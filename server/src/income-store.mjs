@@ -134,7 +134,13 @@ export async function insertIncome(client, userId, entry) {
 }
 
 /**
- * Removes money that came in, taking it back out of the account.
+ * Removes money that came in: it moves to Recently deleted, and it is taken
+ * back out of the account.
+ *
+ * The row is kept, marked deleted, with `delete_reversed` saying whether the
+ * money was taken back, so a restore puts it in again exactly once. A
+ * repayment stays linked to its split; while deleted it no longer counts
+ * towards what has been paid back.
  *
  * The mirror of removeExpense, and used by both the website's delete button and
  * WhatsApp's "undo". The balance is allowed to go no lower than zero in this
@@ -146,18 +152,22 @@ export async function insertIncome(client, userId, entry) {
  *
  * @returns the removed row plus `reversed`, or null when there was nothing.
  */
-export function removeIncome(userId, { incomeId = null, lastFromChannel = null } = {}) {
+export function removeIncome(userId, { incomeId = null, lastFromChannel = null, via = 'user' } = {}) {
+  if (!['user', 'admin', 'whatsapp'].includes(via)) {
+    throw new Error(`Unknown deletion channel: ${via}`);
+  }
+
   return transaction(async client => {
     const { rows } = incomeId
       ? await client.query(
           `select ${COLUMNS} from incomes
-            where id = $1 and user_id = $2
+            where id = $1 and user_id = $2 and deleted_at is null
             for update`,
           [incomeId, userId]
         )
       : await client.query(
           `select ${COLUMNS} from incomes
-            where user_id = $1 and source_channel = $2
+            where user_id = $1 and source_channel = $2 and deleted_at is null
             order by created_at desc
             limit 1
             for update`,
@@ -205,7 +215,12 @@ export function removeIncome(userId, { incomeId = null, lastFromChannel = null }
       return { ...income, reversed: false, shortfall: true, balanceAfter: null };
     }
 
-    await client.query('delete from incomes where id = $1', [income.id]);
+    await client.query(
+      `update incomes
+          set deleted_at = now(), deleted_by = $2, deleted_via = $3, delete_reversed = $4
+        where id = $1`,
+      [income.id, userId, via, reversed]
+    );
 
     return { ...income, reversed, shortfall: false, balanceAfter };
   });

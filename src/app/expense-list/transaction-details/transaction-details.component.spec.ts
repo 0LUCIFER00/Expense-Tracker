@@ -146,7 +146,7 @@ describe('TransactionDetailsComponent', () => {
       fixture.detectChanges();
 
       expect(removed).toBe(0);
-      expect(el().querySelector('.foot')!.textContent).toContain('Removing puts ₹1,455 back in HDFC Bank.');
+      expect(el().querySelector('.foot')!.textContent).toContain('Removing puts ₹1,455 back in HDFC Bank; you can restore it for 30 days.');
 
       (el().querySelector('.foot .btn.danger-solid') as HTMLButtonElement).click();
       expect(removed).toBe(1);
@@ -199,7 +199,7 @@ describe('TransactionDetailsComponent', () => {
       expect(el().querySelector('.facts')!.textContent).toContain('Added to');
       expect(el().querySelector('.sub')!.textContent).toContain('Salary');
       expect(el().textContent).not.toContain('Receipts');
-      expect(el().querySelector('.foot')!.textContent).toContain('Removing takes ₹364 back out of HDFC Bank.');
+      expect(el().querySelector('.foot')!.textContent).toContain('Removing takes ₹364 back out of HDFC Bank; you can restore it for 30 days.');
     });
 
     it('links a repayment to the split it pays back', () => {

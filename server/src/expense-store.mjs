@@ -81,31 +81,44 @@ export async function insertExpense(client, userId, entry, returning = 'id, spen
   return { ...rows[0], debited: debit };
 }
 
+/** How a removal is recorded: the account's normal sign-in, its full-access one, or WhatsApp. */
+export const DELETED_VIA = new Set(['user', 'admin', 'whatsapp']);
+
 /**
- * Removes an expense and puts back any money it debited.
+ * Removes an expense: it moves to Recently deleted, and any money it debited
+ * is put back.
  *
  * Both the website's delete button and WhatsApp's "undo" go through here, so
  * the two cannot drift apart — deleting an entry that moved money must refund
  * it either way, otherwise the balances stop matching the expense list.
  *
- * Pass `expenseId` to remove a specific entry, or `lastFromChannel` to remove
- * the most recent one that arrived over that channel.
+ * The row is kept, marked deleted, with `delete_reversed` saying whether the
+ * refund happened, so a restore takes the money out again exactly once. Its
+ * receipts, repayments and every other link stay as they are; only deleting
+ * it for good (recycle-store.mjs) removes the row.
  *
- * @returns the removed row plus `refunded` and `detachedRepayments`, or null
+ * Pass `expenseId` to remove a specific entry, or `lastFromChannel` to remove
+ * the most recent one that arrived over that channel. `via` records how.
+ *
+ * @returns the removed row plus `refunded` and `linkedRepayments`, or null
  *   when there was nothing to remove.
  */
-export function removeExpense(userId, { expenseId = null, lastFromChannel = null } = {}) {
+export function removeExpense(userId, { expenseId = null, lastFromChannel = null, via = 'user' } = {}) {
+  if (!DELETED_VIA.has(via)) {
+    throw new Error(`Unknown deletion channel: ${via}`);
+  }
+
   return transaction(async client => {
     const { rows } = expenseId
       ? await client.query(
           `select ${COLUMNS} from expenses
-            where id = $1 and user_id = $2
+            where id = $1 and user_id = $2 and deleted_at is null
             for update`,
           [expenseId, userId]
         )
       : await client.query(
           `select ${COLUMNS} from expenses
-            where user_id = $1 and source_channel = $2
+            where user_id = $1 and source_channel = $2 and deleted_at is null
             order by created_at desc
             limit 1
             for update`,
@@ -138,15 +151,22 @@ export function removeExpense(userId, { expenseId = null, lastFromChannel = null
       balanceAfter = credited[0]?.balance ?? null;
     }
 
-    // Counted before the delete, which unlinks them (on delete set null). They
-    // stay as ordinary money in — that money did arrive — and the caller says so.
+    // Repayments made against it stay linked, so a restore brings the whole
+    // split back. While it is in Recently deleted they still read as
+    // repayments; deleting it for good unlinks them (on delete set null).
     const { rows: linked } = await client.query(
-      'select count(*)::int as n from incomes where split_expense_id = $1',
+      `select count(*)::int as n from incomes
+        where split_expense_id = $1 and deleted_at is null`,
       [expense.id]
     );
 
-    await client.query('delete from expenses where id = $1', [expense.id]);
+    await client.query(
+      `update expenses
+          set deleted_at = now(), deleted_by = $2, deleted_via = $3, delete_reversed = $4
+        where id = $1`,
+      [expense.id, userId, via, refunded]
+    );
 
-    return { ...expense, refunded, balanceAfter, detachedRepayments: linked[0].n };
+    return { ...expense, refunded, balanceAfter, linkedRepayments: linked[0].n };
   });
 }

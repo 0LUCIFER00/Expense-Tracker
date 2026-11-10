@@ -314,7 +314,7 @@ async function sendToday(from, userId) {
   // half hours behind and showed yesterday's entries until 5:30am.
   const { rows } = await query(
     `select amount, description, status, split_members, personal_share from expenses
-      where user_id = $1 and spent_on = $2
+      where user_id = $1 and spent_on = $2 and deleted_at is null
       order by created_at`,
     [userId, todayInIndia()]
   );
@@ -368,13 +368,13 @@ async function undoLast(from, userId) {
     const [lastExpense, lastIncome] = await Promise.all([
       query(
         `select created_at from expenses
-          where user_id = $1 and source_channel = 'whatsapp'
+          where user_id = $1 and source_channel = 'whatsapp' and deleted_at is null
           order by created_at desc limit 1`,
         [userId]
       ),
       query(
         `select created_at from incomes
-          where user_id = $1 and source_channel = 'whatsapp'
+          where user_id = $1 and source_channel = 'whatsapp' and deleted_at is null
           order by created_at desc limit 1`,
         [userId]
       )
@@ -387,7 +387,7 @@ async function undoLast(from, userId) {
       return undoIncome(from, userId);
     }
 
-    const removed = await removeExpense(userId, { lastFromChannel: 'whatsapp' });
+    const removed = await removeExpense(userId, { lastFromChannel: 'whatsapp', via: 'whatsapp' });
 
     if (!removed) {
       return sendText(from, 'Nothing to undo — you have not added anything here yet.');
@@ -408,13 +408,10 @@ ${removed.source_category} now ${money(removed.balanceAfter)}.`
 Put back into ${removed.source_category}.`;
     }
 
-    if (removed.detachedRepayments > 0) {
-      tail +=
-        `\n${removed.detachedRepayments} repayment(s) made against it stay, ` +
-        'as ordinary money in.';
-    }
-
-    return sendText(from, `Removed ${money(removed.amount)} — ${removed.description}${tail}`);
+    return sendText(
+      from,
+      `Removed ${money(removed.amount)} — ${removed.description}${tail}\n${RESTORE_HINT}`
+    );
   } catch (error) {
     console.error('[whatsapp] undo failed', error);
     return sendText(from, 'Could not undo that, sorry. Try the website.');
@@ -772,9 +769,12 @@ async function sendSplits(from, userId) {
   );
 }
 
+/** Undo moves an entry to Recently deleted; this says where to get it back. */
+const RESTORE_HINT = 'It can be restored from Transactions › Recently deleted for 30 days.';
+
 /** The money-in half of "undo". */
 async function undoIncome(from, userId) {
-  const removed = await removeIncome(userId, { lastFromChannel: 'whatsapp' });
+  const removed = await removeIncome(userId, { lastFromChannel: 'whatsapp', via: 'whatsapp' });
 
   if (!removed) {
     return sendText(from, 'Nothing to undo — you have not added anything here yet.');
@@ -803,6 +803,6 @@ async function undoIncome(from, userId) {
 
   return sendText(
     from,
-    `Removed ${money(removed.amount)} in — ${removed.description}${tail}`
+    `Removed ${money(removed.amount)} in — ${removed.description}${tail}\n${RESTORE_HINT}`
   );
 }

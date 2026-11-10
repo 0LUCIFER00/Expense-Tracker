@@ -17,8 +17,10 @@ export interface RemovedExpense {
   /** True when a balance was credited back. */
   refunded: boolean;
   sourceCategory: string | null;
-  /** Repayments made against it, which stay behind as ordinary money in. */
-  detachedRepayments?: number;
+  /** Repayments made against it, which stay linked while it is in Recently deleted. */
+  linkedRepayments?: number;
+  /** Always true now: removing moves an entry to Recently deleted. */
+  recentlyDeleted?: boolean;
 }
 
 /**

@@ -121,13 +121,23 @@ test('the cron endpoint runs with the right secret and reports counts only', asy
   db.on(/from recurring_schedules\s+where status = 'active' and next_due_on <= \$1/, () => []);
   db.on(/from recurring_runs\s+where status = 'failed' and attempts < \$2/, () => []);
 
+  db.on(/delete from (expenses|incomes)\s+where deleted_at is not null/, () => []);
+
   const res = await fetch(`${base}/api/recurring/cron`, { headers: { authorization: `Bearer ${CRON}` } });
   const body = await res.json();
 
   assert.equal(res.status, 200);
-  assert.deepEqual(Object.keys(body).sort(), ['added', 'failed', 'today']);
+  assert.deepEqual(Object.keys(body).sort(), ['added', 'failed', 'purged', 'today']);
+  assert.equal(body.purged, 0);
   // Everyone's due schedules: no user filter.
   assert.equal(db.ran(/next_due_on <= \$1/)[0].params[1], null);
+
+  // The same run clears Recently deleted of anything deleted over 30 days ago.
+  const purges = db.ran(/delete from (expenses|incomes)\s+where deleted_at is not null/);
+  assert.equal(purges.length, 2);
+  // By the database's own clock, which stamped deleted_at: no time is passed in.
+  assert.equal(purges[0].params[0], null);
+  assert.match(purges[0].text, /coalesce\(\$1::timestamptz, now\(\)\) - interval '30 days'/);
 });
 
 test('without "Manage recurring" a normal sign-in cannot create, change, pause, delete or retry', async () => {

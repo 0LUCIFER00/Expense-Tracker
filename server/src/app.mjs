@@ -13,6 +13,7 @@ import { goalsRouter } from './routes/goals.mjs';
 import { transfersRouter } from './routes/transfers.mjs';
 import { attachmentsRouter } from './routes/attachments.mjs';
 import { importsRouter } from './routes/imports.mjs';
+import { recycleBinRouter } from './routes/recycle-bin.mjs';
 import { settingsRouter } from './routes/settings.mjs';
 import { whatsappRouter } from './routes/whatsapp.mjs';
 import { linkRouter } from './routes/link.mjs';
@@ -143,6 +144,7 @@ export function createApp() {
   app.use('/api/goals', goalsRouter);
   app.use('/api/transfers', transfersRouter);
   app.use('/api/imports', importsRouter);
+  app.use('/api/recycle-bin', recycleBinRouter);
   app.use('/api/balances', balancesRouter);
   app.use('/api/settings', settingsRouter);
   // The more specific path first: /api/whatsapp would otherwise shadow it.

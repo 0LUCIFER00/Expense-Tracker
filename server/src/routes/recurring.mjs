@@ -4,6 +4,7 @@ import { requireAuth } from '../auth.mjs';
 import { asyncRoute, badRequest, notFound, todayInIndia } from '../http.mjs';
 import { effectivePermissions } from '../settings-store.mjs';
 import { checkBudgetAlertsSafely } from '../budget-store.mjs';
+import { purgeExpired } from '../recycle-store.mjs';
 import { sweepCleanup } from '../attachment-store.mjs';
 import { isConfigured as attachmentStorageReady } from '../attachment-storage.mjs';
 import {
@@ -62,14 +63,25 @@ recurringRouter.get('/cron', asyncRoute(async (req, res) => {
 
   const count = status => results.filter(r => r.status === status).length;
 
-  // Daily housekeeping on the same run: receipt files whose rows are gone
-  // (removed, or deleted with their expense or account) and any earlier
-  // storage deletion that failed.
+  // Daily housekeeping on the same run. First, entries that have waited 30
+  // days in Recently deleted are deleted for good; a failure is logged and
+  // the next day's run tries again. Then receipt files whose rows are gone
+  // (those entries' among them, or removed, or deleted with their account)
+  // and any earlier storage deletion that failed.
+  let purged = { expenses: 0, incomes: 0 };
+
+  try {
+    purged = await purgeExpired();
+  } catch (error) {
+    console.error('[recycle-bin] clean-up failed:', error.message);
+  }
+
   const files = attachmentStorageReady() ? await sweepCleanup({ limit: 500 }) : { removed: 0, failed: 0 };
 
   console.log(`[recurring] ${today}: ${count('posted')} added, ${count('failed')} failed; ` +
+    `deleted for good ${purged.expenses + purged.incomes}; ` +
     `receipt files removed ${files.removed}, still queued ${files.failed}`);
-  res.json({ today, added: count('posted'), failed: count('failed') });
+  res.json({ today, added: count('posted'), failed: count('failed'), purged: purged.expenses + purged.incomes });
 }));
 
 recurringRouter.use(requireAuth);

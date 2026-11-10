@@ -43,13 +43,13 @@ export async function loadExisting(run, userId, dates, batchId = null) {
     run(
       `select t.id, t.spent_on as date, t.amount, t.description
          from expenses t
-        where t.user_id = $1 and t.spent_on = any($2::date[]) ${notFromBatch('expense_id')}`,
+        where t.user_id = $1 and t.spent_on = any($2::date[]) and t.deleted_at is null ${notFromBatch('expense_id')}`,
       params
     ),
     run(
       `select t.id, t.received_on as date, t.amount, t.description
          from incomes t
-        where t.user_id = $1 and t.received_on = any($2::date[]) ${notFromBatch('income_id')}`,
+        where t.user_id = $1 and t.received_on = any($2::date[]) and t.deleted_at is null ${notFromBatch('income_id')}`,
       params
     )
   ]);

@@ -1,0 +1,287 @@
+/*
+ * Recently deleted, in place of the Transactions table. The same tokens as
+ * the rest of the page, so both themes are served; rows become cards when
+ * the list area itself is narrow.
+ */
+
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.bin {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 0.625rem;
+}
+
+.bin-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.bin-title h1 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+
+.bin-title p {
+  margin: 2px 0 0;
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+}
+
+.empty-btn,
+.act {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 8px;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.empty-btn {
+  flex: none;
+  height: 36px;
+  padding: 0 0.75rem;
+  border: 1px solid var(--bad);
+  background-color: var(--surface);
+  color: var(--bad-ink);
+  font-size: 0.8125rem;
+}
+
+.empty-btn:hover:not(:disabled) { background-color: var(--bad-soft); }
+.empty-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bin-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.kinds {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 10px;
+  background-color: var(--sunken);
+}
+
+.kind {
+  height: 32px;
+  padding: 0 0.75rem;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.kind.on { background-color: var(--accent); color: #fff; }
+
+.search {
+  flex: 1 1 200px;
+  max-width: 320px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 38px;
+  box-sizing: border-box;
+  padding: 0 0.75rem;
+  border: 1px solid var(--field-border);
+  border-radius: 8px;
+  background-color: var(--field-bg);
+  color: var(--ink-3);
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.search input:focus { outline: none; }
+.search:focus-within { border-color: var(--focus-border); box-shadow: 0 0 0 2px var(--focus-ring); }
+
+.kind:focus-visible,
+.act:focus-visible,
+.empty-btn:focus-visible {
+  outline: 2px solid var(--focus-border);
+  outline-offset: 2px;
+}
+
+/* ---- the list ---- */
+
+.bin-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  container-type: inline-size;
+}
+
+.bin-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 2fr) 72px 96px minmax(80px, 1fr) 112px 64px 118px;
+  gap: 0 0.625rem;
+  align-items: center;
+  padding: 0.5rem 0.875rem;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+}
+
+.bin-row + .bin-row { margin-top: 6px; }
+
+.bin-row:not(.bin-labels) {
+  background-color: var(--sunken);
+}
+
+.bin-labels {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: var(--table-head);
+  color: var(--table-head-ink);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.r { text-align: right; }
+
+.b-desc { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.375rem; min-width: 0; }
+.b-text { font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.b-amt { text-align: right; font-weight: 800; color: var(--ink); }
+.b-amt.in { color: var(--good-ink); }
+.b-acc { color: var(--ink-2); overflow-wrap: anywhere; }
+.b-dates { display: flex; flex-direction: column; gap: 1px; }
+.b-date { color: var(--ink-2); }
+.b-del { font-size: 0.6875rem; color: var(--ink-3); }
+
+.tag {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background-color: var(--surface);
+  color: var(--ink-3);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.tag.wait { background-color: var(--warn-soft); color: var(--warn-ink); }
+
+.kind-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: var(--bad-soft);
+  color: var(--bad-ink);
+  font-size: 0.6875rem;
+  font-weight: 800;
+}
+
+.kind-pill[data-kind='income'] { background-color: var(--good-soft); color: var(--good-ink); }
+
+.left-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.left-pill.soon { background-color: var(--warn-soft); color: var(--warn-ink); }
+
+.b-act { display: flex; justify-content: flex-end; gap: 0.375rem; }
+
+.act {
+  height: 32px;
+  padding: 0 0.625rem;
+  border: 1px solid var(--field-border);
+  background-color: var(--surface);
+  font-size: 0.75rem;
+}
+
+.act.restore { color: var(--accent-ink); }
+.act.restore:hover { border-color: var(--focus-border); background-color: var(--accent-soft); }
+.act.purge { width: 32px; justify-content: center; padding: 0; color: var(--bad-ink); }
+.act.purge:hover { border-color: var(--bad); background-color: var(--bad-soft); }
+
+.bin-empty {
+  margin: 0;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--ink-3);
+}
+
+.bin-empty h3 { margin: 0 0 0.25rem; color: var(--ink); }
+.bin-empty p { margin: 0; }
+.bin-empty.bad { color: var(--bad-ink); }
+
+.bin-note { margin: 0; font-size: 0.75rem; color: var(--ink-3); }
+
+/* ---- the confirmation ---- */
+
+.bin-overlay { padding-top: calc(54px + 0.75rem); }
+.confirm-line { margin: 0 0 0.375rem; }
+.confirm-error {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background-color: var(--bad-soft);
+  color: var(--bad-ink);
+  font-size: 0.8125rem;
+}
+
+/* ---- narrow: a card per entry ---- */
+
+@container (max-width: 820px) {
+  .bin-labels { display: none; }
+
+  .bin-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'desc amt'
+      'kind acc'
+      'dates left'
+      'act act';
+    gap: 0.25rem 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .b-desc { grid-area: desc; }
+  .b-amt { grid-area: amt; }
+  .b-kind { grid-area: kind; }
+  .b-acc { grid-area: acc; text-align: right; }
+  .b-dates { grid-area: dates; }
+  .b-left { grid-area: left; justify-self: end; align-self: center; }
+  .b-act { grid-area: act; justify-content: flex-start; margin-top: 0.25rem; }
+
+  .b-date::before {
+    content: attr(data-label) ': ';
+    color: var(--ink-3);
+  }
+}

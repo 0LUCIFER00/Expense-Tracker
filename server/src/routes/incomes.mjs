@@ -59,7 +59,7 @@ incomesRouter.get('/', asyncRoute(async (req, res) => {
                join import_batches b on b.id = r.batch_id
               where r.income_id = incomes.id) as import_info
        from incomes
-      where user_id = $1
+      where user_id = $1 and deleted_at is null
       order by received_on desc, created_at desc`,
     [req.session.userId]
   );
@@ -166,7 +166,11 @@ incomesRouter.delete('/:id', asyncRoute(async (req, res) => {
     return res.status(403).json({ error: 'You do not have permission to remove entries' });
   }
 
-  const removed = await removeIncome(req.session.userId, { incomeId: req.params.id });
+  // Into Recently deleted, not gone: restorable for 30 days.
+  const removed = await removeIncome(req.session.userId, {
+    incomeId: req.params.id,
+    via: req.session.loginType === 'admin' ? 'admin' : 'user'
+  });
 
   if (!removed) {
     return notFound(res, 'Entry not found');
@@ -186,6 +190,7 @@ incomesRouter.delete('/:id', asyncRoute(async (req, res) => {
   res.json({
     id: removed.id,
     reversed: removed.reversed,
-    targetCategory: removed.target_category
+    targetCategory: removed.target_category,
+    recentlyDeleted: true
   });
 }));

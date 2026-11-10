@@ -101,7 +101,7 @@ expensesRouter.get('/', asyncRoute(async (req, res) => {
     `select ${SELECT_COLUMNS},
             (select coalesce(sum(i.amount), 0)
                from incomes i
-              where i.split_expense_id = expenses.id) as split_received,
+              where i.split_expense_id = expenses.id and i.deleted_at is null) as split_received,
             (select count(*)::int
                from receipt_attachments a
               where a.expense_id = expenses.id) as attachment_count,
@@ -111,7 +111,7 @@ expensesRouter.get('/', asyncRoute(async (req, res) => {
                join import_batches b on b.id = r.batch_id
               where r.expense_id = expenses.id) as import_info
        from expenses
-      where user_id = $1
+      where user_id = $1 and deleted_at is null
       order by created_at`,
     [req.session.userId]
   );
@@ -217,7 +217,7 @@ expensesRouter.post('/:id/approve', asyncRoute(async (req, res) => {
     const approved = await transaction(async client => {
       const { rows } = await client.query(
         `select ${SELECT_COLUMNS} from expenses
-          where id = $1 and user_id = $2 and status = 'pending'
+          where id = $1 and user_id = $2 and status = 'pending' and deleted_at is null
           for update`,
         [req.params.id, req.session.userId]
       );
@@ -294,24 +294,26 @@ expensesRouter.delete('/:id', asyncRoute(async (req, res) => {
 
   // Shared with WhatsApp's "undo": removing an entry that debited an account
   // puts the money back, so the balances keep matching the list.
-  const removed = await removeExpense(req.session.userId, { expenseId: req.params.id });
+  // Into Recently deleted, not gone: restorable for 30 days.
+  const removed = await removeExpense(req.session.userId, {
+    expenseId: req.params.id,
+    via: req.session.loginType === 'admin' ? 'admin' : 'user'
+  });
 
   if (!removed) {
     return notFound(res, 'Expense not found');
   }
 
-  // Its receipts went with it (the rows by cascade, each file queued by
-  // trigger); delete those files from storage once this has been answered.
-  if (attachmentStorageReady()) {
-    afterResponse(sweepCleanup({ limit: 20 }));
-  }
+  // Its receipts stay with it in Recently deleted; they go only when it is
+  // deleted for good.
 
   res.json({
     id: removed.id,
     refunded: removed.refunded,
     sourceCategory: removed.source_category,
-    // Repayments made against it stay, as ordinary money in: that money did
-    // arrive, whatever happens to the expense.
-    detachedRepayments: removed.detachedRepayments
+    // Repayments made against it stay linked, ready for a restore; deleting
+    // it for good later turns them into ordinary money in.
+    linkedRepayments: removed.linkedRepayments,
+    recentlyDeleted: true
   });
 }));

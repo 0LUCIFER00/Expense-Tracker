@@ -139,18 +139,19 @@ export class TransactionDetailsComponent implements OnChanges, AfterViewInit {
   get removeNote(): string {
     const rupees = `₹${this.amount.toLocaleString('en-IN')}`;
 
+    // Removing moves it to Recently deleted for 30 days, where it can be restored.
     if (this.income) {
       return this.income.balanceUpdated && this.account
-        ? `Removing takes ${rupees} back out of ${this.account}.`
-        : 'Removing it changes no balance.';
+        ? `Removing takes ${rupees} back out of ${this.account}; you can restore it for 30 days.`
+        : 'Removing changes no balance; you can restore it for 30 days.';
     }
 
     const back = this.expense?.balanceUpdated && this.account
-      ? `Removing puts ${rupees} back in ${this.account}.`
-      : 'Removing it changes no balance.';
+      ? `Removing puts ${rupees} back in ${this.account}; you can restore it for 30 days.`
+      : 'Removing changes no balance; you can restore it for 30 days.';
 
     return this.split?.repayments.length
-      ? `${back} Its repayments stay as money in.`
+      ? `${back} Its repayments stay linked to it.`
       : back;
   }
 

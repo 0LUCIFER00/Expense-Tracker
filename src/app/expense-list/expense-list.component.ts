@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { TransactionDetailsComponent } from './transaction-details/transaction-details.component';
 import { TransactionImportComponent } from './transaction-import/transaction-import.component';
+import { RecentlyDeletedComponent } from './recently-deleted/recently-deleted.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -15,7 +16,8 @@ import { parseLocalDate } from '../shared/date-utils';
 import { FitsScreenDirective } from '../shared/fits-screen.directive';
 
 /** Which half of the ledger is on screen. */
-export type TransactionTab = 'all' | 'out' | 'in';
+/** 'deleted' is Recently deleted: removed entries, which the other three never list. */
+export type TransactionTab = 'all' | 'out' | 'in' | 'deleted';
 
 /** How a repayment is labelled where an income would show its source. */
 export const REPAYMENT = 'Repayment';
@@ -44,7 +46,7 @@ export interface TransactionRow {
 
 type SortColumn = 'date' | 'amount' | 'description' | 'category' | 'account' | 'status';
 
-const TABS: TransactionTab[] = ['all', 'out', 'in'];
+const TABS: TransactionTab[] = ['all', 'out', 'in', 'deleted'];
 
 /**
  * Transactions — what used to be View Expenses, now with money in beside it.
@@ -57,7 +59,7 @@ const TABS: TransactionTab[] = ['all', 'out', 'in'];
 @Component({
   selector: 'app-expense-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, FitsScreenDirective, TransactionDetailsComponent, TransactionImportComponent],
+  imports: [CommonModule, FormsModule, FitsScreenDirective, TransactionDetailsComponent, TransactionImportComponent, RecentlyDeletedComponent],
   templateUrl: './expense-list.component.html',
   styleUrls: ['./expense-list.component.css', './transaction-panel.css']
 })
@@ -157,7 +159,7 @@ export class ExpenseListComponent implements OnInit {
     this.reload();
   }
 
-  /** After an import: the new entries, and the totals with them. */
+  /** After an import or a restore: the new entries, and the totals with them. */
   onImported(): void {
     this.reload();
   }
@@ -309,19 +311,13 @@ export class ExpenseListComponent implements OnInit {
   onDelete(expense: Expense): void {
     this.expenseService.remove(expense.id).subscribe({
       next: removed => {
-        // Repayments made against it stay, as ordinary money in; saying so
-        // explains why they are still listed.
-        const detached = removed.detachedRepayments
-          ? ` Its ${removed.detachedRepayments} repayment(s) stay as money in.`
-          : '';
-
         // Say so when money went back, otherwise the balance silently changing
-        // looks like a second bug.
+        // looks like a second bug; and say where it went, so it can be found.
         this.toast.success(
           (removed.refunded
-            ? `Removed. ₹${Number(expense.amount).toLocaleString()} put back ` +
+            ? `Moved to Recently deleted. ₹${Number(expense.amount).toLocaleString()} put back ` +
               `into ${removed.sourceCategory}.`
-            : 'Removed.') + detached
+            : 'Moved to Recently deleted.') + ' You can restore it for 30 days.'
         );
 
         this.reload();
@@ -340,10 +336,10 @@ export class ExpenseListComponent implements OnInit {
     this.incomeService.remove(income.id).subscribe({
       next: removed => {
         this.toast.success(
-          removed.reversed
-            ? `Removed. ₹${Number(income.amount).toLocaleString()} taken back out ` +
+          (removed.reversed
+            ? `Moved to Recently deleted. ₹${Number(income.amount).toLocaleString()} taken back out ` +
               `of ${removed.targetCategory}.`
-            : 'Removed.'
+            : 'Moved to Recently deleted.') + ' You can restore it for 30 days.'
         );
 
         this.reload();
