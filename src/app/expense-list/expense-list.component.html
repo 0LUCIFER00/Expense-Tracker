@@ -308,7 +308,7 @@
         [canViewSource]="canViewSourceDetails" [loading]="loading" (open)="onOpenRow($event)" />
     } @else {
 
-    <!-- Wide enough that a phone scrolls it sideways rather than squeezing. -->
+    <!-- Seven columns where they fit; a compact table, then cards, where they do not. -->
     <div class="table-scroll">
 
       <div class="table-head" role="row" [class.no-account]="!canViewSourceDetails">

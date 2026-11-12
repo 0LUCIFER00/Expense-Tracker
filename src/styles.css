@@ -200,15 +200,26 @@ html[data-theme='dark'] {
  * its own selectors and so outranks these.
  */
 
+/*
+ * Dialogs open below the sticky header, which stays on top of every overlay,
+ * and clear of a notch or home indicator. A dialog taller than the screen
+ * scrolls from its top: auto margins centre it only while it fits, where
+ * `place-items: center` would push its top out of reach.
+ */
 .et-overlay {
   position: fixed;
   inset: 0;
   z-index: 50;
   display: grid;
-  place-items: center;
-  padding: 1rem;
+  justify-items: center;
+  padding: calc(54px + 0.75rem) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
   background-color: rgba(0, 0, 0, 0.45);
   overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.et-overlay > * {
+  margin-block: auto;
 }
 
 .et-popup {
@@ -368,6 +379,23 @@ html[data-theme='dark'] {
 
 .et-open .et-split-caret {
   transform: rotate(180deg);
+}
+
+/*
+ * Small text links and link-style buttons ("See budgets", "Edit", "Clear"):
+ * on a touch screen their tap area reaches past the text, so a finger finds
+ * them without the layout changing at all.
+ */
+@media (pointer: coarse) {
+  :is(.card-link, .link, .text-btn, .create, .switch) {
+    position: relative;
+  }
+
+  :is(.card-link, .link, .text-btn, .create, .switch)::after {
+    content: '';
+    position: absolute;
+    inset: -0.5rem -0.125rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -807,10 +835,6 @@ html[data-theme='dark'] {
  * The Recurring page's form opens below the sticky header (which sits above
  * every page's overlays), and under the toasts, so a refusal is still read.
  */
-app-recurring .et-overlay {
-  padding-top: calc(54px + 0.75rem);
-}
-
 app-recurring .et-overlay > .rec-panel {
   max-height: calc(100dvh - 54px - 1.5rem);
 }
@@ -827,13 +851,24 @@ app-recurring .et-overlay.rec-confirm {
   z-index: 60;
 }
 
-/* ================= Recurring, on a phone ================= */
+/* ================= Recurring, narrower than its table ================= */
 /*
- * Each schedule's table row becomes a two-column card. Here rather than in the
- * page's stylesheet, which is at its size budget; `app-recurring .rows > .row`
- * outranks the page's own `.row`.
+ * Each schedule's table row becomes a two-column card wherever the list is
+ * narrower than its eight columns (800px): on a phone, on a tablet, and on a
+ * laptop with the side lists beside it. Decided by the list's own width, not
+ * the window's. Here rather than in the page's stylesheet, which is at its
+ * size budget; `app-recurring .rows > .row` outranks the page's own `.row`.
  */
-@media (max-width: 760px) {
+app-recurring .rows {
+  container: rec-rows / inline-size;
+}
+
+/* One column that may shrink, so the list never pushes the page wider than the window. */
+app-recurring .rec-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@container rec-rows (max-width: 799px) {
   app-recurring .rows > .row.head {
     display: none;
   }
@@ -860,13 +895,9 @@ app-recurring .et-overlay.rec-confirm {
 /* ================= Savings goals ================= */
 /*
  * Here rather than in the page's stylesheet, which is at its size budget. The
- * form opens below the sticky header and under the toasts, like Recurring's,
- * and its body scrolls between a fixed head and foot.
+ * form opens under the toasts, like Recurring's, and its body scrolls between
+ * a fixed head and foot.
  */
-app-goals .et-overlay {
-  padding-top: calc(54px + 0.75rem);
-}
-
 app-goals .et-overlay > .goals-panel {
   max-height: calc(100dvh - 54px - 1.5rem);
 }

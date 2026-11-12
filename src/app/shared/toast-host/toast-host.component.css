@@ -6,7 +6,7 @@
 .toast-stack {
   position: fixed;
   top: 74px;
-  right: clamp(0.75rem, 2vw, 1.25rem);
+  right: max(clamp(0.75rem, 2vw, 1.25rem), env(safe-area-inset-right));
   z-index: 100;
   display: flex;
   flex-direction: column;

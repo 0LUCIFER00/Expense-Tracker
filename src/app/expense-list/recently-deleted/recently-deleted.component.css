@@ -245,7 +245,6 @@ svg {
 
 /* ---- the confirmation ---- */
 
-.bin-overlay { padding-top: calc(54px + 0.75rem); }
 .confirm-line { margin: 0 0 0.375rem; }
 .confirm-error {
   margin: 0 0 0.75rem;

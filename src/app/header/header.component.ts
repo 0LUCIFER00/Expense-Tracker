@@ -44,7 +44,7 @@ const HOVER_CLICK_GRACE_MS = 400;
   standalone: true,
   imports: [RouterLink, RouterLinkActive],
   templateUrl: './header.component.html',
-  styleUrls: ['./header.component.css', './header.component.dark.css']
+  styleUrls: ['./header.component.css', './header.component.menu.css', './header.component.dark.css']
 })
 export class HeaderComponent implements OnInit, OnDestroy {
 

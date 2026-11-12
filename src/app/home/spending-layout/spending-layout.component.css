@@ -241,7 +241,8 @@ app-spend-chart {
 
 .stat-value {
   margin: 0.25rem 0 0;
-  font-size: 1.125rem;
+  /* A little smaller on the narrowest phones, so a six-figure amount stays on one line. */
+  font-size: clamp(1rem, 0.75rem + 1.25vw, 1.125rem);
   font-weight: 700;
   color: var(--ink);
   overflow-wrap: anywhere;

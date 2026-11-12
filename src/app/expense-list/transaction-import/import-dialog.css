@@ -1,9 +1,12 @@
 /* The import dialog: its frame, the step bar and the simpler steps. */
 
+/* From the top rather than centred: the dialog changes height as its steps change. */
 .imp-overlay {
-  /* Under the sticky header, which stays on top of every overlay. */
-  padding-top: calc(54px + 0.75rem);
   align-items: start;
+}
+
+.imp-overlay > * {
+  margin-top: 0;
 }
 
 .imp-dialog {
@@ -278,6 +281,7 @@
     width: 100%;
     max-height: none;
     height: calc(100dvh - 54px);
+    padding-bottom: env(safe-area-inset-bottom);
     border-radius: 0;
   }
 

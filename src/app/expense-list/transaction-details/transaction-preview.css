@@ -2,8 +2,6 @@
 
 .preview-overlay {
   z-index: 60;
-  /* Below the sticky header, which stays on top of every overlay. */
-  padding-top: calc(54px + 0.75rem);
 }
 .confirm-overlay { z-index: 70; }
 

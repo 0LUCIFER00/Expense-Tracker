@@ -1,0 +1,80 @@
+/*
+ * How the transactions table fits the width it is given, rather than the
+ * window's width. The panel sits beside the list from 900px and above it
+ * below, so the list's own width is what decides whether seven columns fit.
+ *
+ *  - 760px and wider: the full table (expense-list.component.css).
+ *  - 540px to 759px (a tablet, or a laptop with the panel beside it): a
+ *    compact table. The account moves under the description, so the columns
+ *    fit without scrolling sideways and every heading still sorts.
+ *  - narrower: each row becomes a labelled card.
+ */
+.table-scroll {
+  container: tx-rows / inline-size;
+}
+
+@container tx-rows (max-width: 759px) {
+  .table-head,
+  .table-row,
+  .table-head.no-account,
+  .table-row.no-account {
+    grid-template-columns: 60px 82px minmax(0, 1fr) 112px 92px 14px;
+    grid-template-areas:
+      'date amt what cat st go'
+      'date amt acct cat st go';
+    column-gap: 0.5rem;
+    row-gap: 0.125rem;
+    min-width: 0;
+    padding-inline: 0.75rem;
+  }
+
+  .table-head > :nth-child(1), .table-row > .cell-date { grid-area: date; }
+  .table-head > :nth-child(2), .table-row > .cell-amount { grid-area: amt; }
+  .table-head > :nth-child(3), .table-row > .cell-what { grid-area: what; }
+  .table-head > :nth-child(4), .table-row > .cell-category { grid-area: cat; }
+  .table-head:not(.no-account) > :nth-child(5), .table-row > .cell-account { grid-area: acct; }
+  .table-head:not(.no-account) > :nth-child(6), .table-head.no-account > :nth-child(5), .table-row > .cell-status { grid-area: st; }
+  .table-head:not(.no-account) > :nth-child(7), .table-head.no-account > :nth-child(6), .table-row > .cell-go { grid-area: go; }
+
+  /* Without an account column the description has both lines to itself. */
+  .table-row.no-account > .cell-what { grid-row: 1 / span 2; }
+}
+
+@container tx-rows (max-width: 539px) {
+  .table-head {
+    display: none;
+  }
+
+  .table-row,
+  .table-row.no-account {
+    grid-template-columns: 1fr;
+    grid-template-areas: none;
+    gap: 0.375rem;
+    padding: 0.875rem;
+  }
+
+  .table-row > span[data-label],
+  .table-row.no-account > .cell-what {
+    grid-area: auto;
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 0.5rem;
+    align-items: baseline;
+  }
+
+  /* A pill keeps its own width, as in the table, rather than filling the row. */
+  .table-row > span[data-label] > .chip {
+    justify-self: start;
+  }
+
+  .table-row > span[data-label]::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--ink-3);
+  }
+
+  .cell-go {
+    display: none;
+  }
+}

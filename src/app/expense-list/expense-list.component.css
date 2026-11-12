@@ -132,9 +132,9 @@
 /* ---- the table ---- */
 
 /*
- * Seven columns do not fit a phone, and squeezing them makes every cell a
- * two-character column. Below the breakpoint each row becomes a labelled card
- * instead; in between, the table scrolls sideways inside this box.
+ * Seven columns need about 760px. Where the list is narrower the rows become a
+ * compact table, then labelled cards (transaction-table.css); the sideways
+ * scroll is only a fallback.
  */
 .table-scroll {
   overflow-x: auto;
@@ -342,46 +342,9 @@
 }
 
 /* ================= Phone ================= */
-/*
- * Each row becomes a card with its values labelled, and the header strip goes,
- * because a seven-column table cannot be read at this width however it scrolls.
- */
+/* The rows' own layout follows the list's width: see transaction-table.css. */
 @media (max-width: 760px) {
   .card {
     padding: 1.125rem;
-  }
-
-  .table-scroll {
-    overflow-x: visible;
-  }
-
-  .table-head {
-    display: none;
-  }
-
-  .table-row,
-  .table-row.no-account {
-    grid-template-columns: 1fr;
-    gap: 0.375rem;
-    min-width: 0;
-    padding: 0.875rem;
-  }
-
-  .table-row > span[data-label] {
-    display: grid;
-    grid-template-columns: 88px minmax(0, 1fr);
-    gap: 0.5rem;
-    align-items: baseline;
-  }
-
-  .table-row > span[data-label]::before {
-    content: attr(data-label);
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--ink-3);
-  }
-
-  .cell-go {
-    display: none;
   }
 }

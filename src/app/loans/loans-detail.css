@@ -55,8 +55,7 @@
 .h-row.reversed .r .strong { text-decoration: line-through; }
 .pick { padding: 1rem 0; }
 
-/* Dialogs open below the sticky header, as Goals' do; the form's body scrolls between its head and foot. */
-.et-overlay { padding-top: calc(54px + 0.75rem); }
+/* The form's body scrolls between its head and foot; the overlay keeps it below the sticky header. */
 .et-overlay > .loans-panel { max-height: calc(100dvh - 54px - 1.5rem); }
 .loans-panel > * { max-height: inherit; display: flex; flex-direction: column; min-height: 0; }
 .loans-confirm { z-index: 60; }

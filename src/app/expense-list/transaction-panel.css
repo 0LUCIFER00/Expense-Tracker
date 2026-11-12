@@ -296,6 +296,13 @@
   }
 }
 
+/* A short window (a phone on its side): Import and Export sit at the panel's end rather than stuck to the screen's bottom. */
+@media (max-height: 559px) {
+  .panel-actions {
+    position: static;
+  }
+}
+
 @media (max-width: 640px) {
   .tx-panel {
     padding: 1rem;

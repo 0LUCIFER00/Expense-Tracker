@@ -306,6 +306,8 @@ h3 { margin: 0; font-size: 0.875rem; font-weight: 800; }
     border-radius: 22px 22px 0 0;
     box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
     animation-name: slide-up;
+    /* The sheet's buttons stay above the home indicator. */
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   @keyframes slide-up {

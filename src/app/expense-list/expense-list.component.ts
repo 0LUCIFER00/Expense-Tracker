@@ -89,7 +89,7 @@ const TABS: TransactionTab[] = ['all', 'out', 'in', 'deleted'];
   imports: [CommonModule, FormsModule, FitsScreenDirective, TransactionDetailsComponent, TransactionImportComponent, RecentlyDeletedComponent,
     TransactionCalendarComponent],
   templateUrl: './expense-list.component.html',
-  styleUrls: ['./expense-list.component.css', './transaction-panel.css', './transaction-filters.css', './transaction-view.css']
+  styleUrls: ['./expense-list.component.css', './transaction-table.css', './transaction-panel.css', './transaction-filters.css', './transaction-view.css']
 })
 export class ExpenseListComponent implements OnInit {
   private readonly expenseService = inject(ExpenseService);
